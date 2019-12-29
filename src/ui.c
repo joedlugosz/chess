@@ -378,6 +378,13 @@ int main(int argc, char *argv[])
   /* The chess engine used by the UI */
   /* Initialise chess engine */
   init_engine(&engine);
+  /* Parse command line arguments */
+  for(int arg = 1; arg < argc; arg++) {
+    if(strcmp(argv[arg], "x") == 0) {
+      engine.xboard_mode = 1;
+    }
+  }
+
   /* Display startup text */
   print_game_state();
   print_prompt();
