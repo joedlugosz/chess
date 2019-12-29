@@ -1,0 +1,28 @@
+#include "history.h"
+
+void write_history(search_s *ctx, int depth, pos_t from, pos_t to, player_e to_move, score_t score)
+{
+  ctx->search_history[depth].from = from;
+  ctx->search_history[depth].to = to;
+  ctx->search_history[depth].player = to_move;
+  ctx->search_history[depth].score = score;
+}
+
+int check_repeat(search_s *ctx, int depth, pos_t from, pos_t to)
+{
+  /* Super simple checking for moving back to the square you've
+     just come from */
+  /* TODO: Transposition table */
+  if (depth > 1) {
+    if (to == ctx->search_history[depth-2].from
+	&& from == ctx->search_history[depth-2].to) {
+      return 1;
+    }
+  } else if (ctx->n_ai_moves > 0) {
+    if(to == ctx->repeat_history[ctx->n_ai_moves-1].from
+       && from == ctx->repeat_history[ctx->n_ai_moves-1].to) {
+      return 1;
+    }
+  }
+  return 0;
+}
