@@ -61,7 +61,8 @@ void print_thought_moves(FILE *f, int depth, notation_s moves[]);
 void print_program_info();
 
 int get_fen(state_s *state, char *out, size_t outsize);
-int load_fen(state_s *state, const char *fen);
+int load_fen(state_s *state, const char *placement, const char *active,
+             const char *castling, const char *en_passant);
 
 
 #endif /* SYS_H */

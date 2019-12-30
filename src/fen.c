@@ -28,14 +28,15 @@ const int piece_index[N_PIECE_T * 2][8] = {
 };
 
 /* Loads a board state given in FEN, into state */
-int load_fen(state_s *state, const char *fen)
+int load_fen(state_s *state, const char *placement, const char *active,
+             const char *castling, const char *en_passant)
 {
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
   int board[N_SQUARES];
   pos_t pos = 0;
-  const char *ptr = fen;
+  const char *ptr = placement;
 
   /* Start with empty board and zero counters */
   memset(board, EMPTY, sizeof(board));
@@ -67,6 +68,15 @@ int load_fen(state_s *state, const char *fen)
   }
   /* Success - write the new positions to state */
   setup_board(state, board);
+
+  if(active[0] == 'w') {
+    state->to_move = WHITE;
+  } else if(active[0] == 'b') {
+    state->to_move = BLACK;
+  } else {
+    printf("Unrecognised FEN input: '%s'\n", active);
+  }
+
   return 0;
 }
 
