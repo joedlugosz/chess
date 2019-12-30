@@ -40,7 +40,7 @@ int load_fen(state_s *state, const char *fen)
   /* Start with empty board and zero counters */
   memset(board, EMPTY, sizeof(board));
   memset(count, 0, sizeof(count));
-  
+
   while(*ptr) {
     if(*ptr == '/') {
       /* '/' marks the end of a rank, go to the start of the next one */
@@ -52,24 +52,15 @@ int load_fen(state_s *state, const char *fen)
       /* Otherwise, lookup the piece descriptor from the list */
       int piece;
       for(piece = 0; piece < N_PLANES; piece++) {
-	if(*ptr == piece_letter[piece]) {
-	  /* Lookup piece index using type and the counter */
-	  //int index = piece_index[piece_type][count[piece_type]];
-	  //if(index == -1) {
-	    /* If -1 is selected from the table, too many pieces have been added */
-	    //printf("Too many '%c'\n", *ptr);
-	    //return 1;
-	  //}
-	  /* Set index, increment counters */
-	  board[pos++] = piece;
-	  count[piece]++;
-	  break;
-	}
+        if(*ptr == piece_letter[piece]) {
+          board[pos++] = piece;
+          count[piece]++;
+          break;
+        }
       }
-      /* Other characters */
       if(piece == N_PLANES) {
-	printf("Unrecognised FEN input: '%c'\n", *ptr);
-	return 1;
+        printf("Unrecognised FEN input: '%c'\n", *ptr);
+        return 1;
       }
     }
     ptr++;
