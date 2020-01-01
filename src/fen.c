@@ -13,22 +13,6 @@
 /* FEN piece letters */
 const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
-/* Indexes of pieces */
-const int piece_index[N_PIECE_T * 2][8] = {
-  {  0,  7, -1, -1, -1, -1, -1, -1 }, /* White has 2 rooks numbered 0 and 7 */
-  {  1,  6, -1, -1, -1, -1, -1, -1 }, /* Knights */
-  {  2,  5, -1, -1, -1, -1, -1, -1 }, /* Bishops */
-  {  3, -1, -1, -1, -1, -1, -1, -1 }, /* Queen */
-  {  4, -1, -1, -1, -1, -1, -1, -1 }, /* King */
-  {  8,  9, 10, 11, 12, 13, 14, 15 }, /* Pawns */
-  { 24, 31, -1, -1, -1, -1, -1, -1 }, /* Black rooks */
-  { 25, 30, -1, -1, -1, -1, -1, -1 }, /* etc. */
-  { 26, 29, -1, -1, -1, -1, -1, -1 },
-  { 27, -1, -1, -1, -1, -1, -1, -1 },
-  { 28, -1, -1, -1, -1, -1, -1, -1 },
-  { 16, 17, 18, 19, 20, 21, 22, 23 }  
-};
-
 enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
 struct castle_rights_entry {
@@ -67,13 +51,19 @@ int load_fen( state_s *state,
   while(*ptr) {
     if(*ptr == '/') {
       /* '/' marks the end of a rank, go to the start file of the next one */
-      if(file != 8) goto error;
+      if(file < 8) {
+        printf("FEN: Not enough rank input\n");
+        goto error;
+      }
       file = 0;
       rank--;
     } else if(*ptr >= '1' && *ptr <= '8') {
       /* Numeric input skips empty squares */
       file += *ptr - '0';
-      if(file > 8) goto error;
+      if(file > 8) {
+        printf("FEN: Too much rank input\n");
+        goto error;
+      }
     } else {
       /* Otherwise, lookup the piece descriptor from the list */
       int piece;
@@ -92,6 +82,7 @@ int load_fen( state_s *state,
       }
       file++;
       if(file > 8) {
+        printf("FEN: Too much rank input\n");
         goto error;
       }
     }
@@ -116,7 +107,7 @@ int load_fen( state_s *state,
   } else if(active_player_text[0] == 'b' && active_player_text[1] == 0) {
     to_move = BLACK;
   } else {
-    printf("Unrecognised active player input: '%s'\n", active_player_text);
+    printf("Unrecognised active player input\n");
     goto error;
   }
   
