@@ -173,11 +173,15 @@ void ui_eval(engine_s *e) {
 void ui_perft(engine_s *e) {
   int depth, i;
   sscanf(get_input(), "%d", &depth);
-  printf("%8s%16s%12s%12s%12s\n", "Depth", "Moves", "Captures", "Checks", "Checkmates");
-  for(i = 0; i < depth; i++) {
+  printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", 
+    "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx", 
+    "Double Chx", "Checkmates");
+  for(i = 1; i <= depth; i++) {
     perft_s data;
     perft(&data, &(e->game), i);
-    printf("%8d%16lld%12ld%12ld%12ld\n", i, data.moves, data.captures, data.checks, data.checkmates);
+    printf("%8d%16lld%12ld%12s%12ld%12ld%12ld%12s%12s%12ld\n", 
+      i, data.moves, data.captures, "X", data.castles, data.promotions, data.checks, 
+      "X", "X", data.checkmates);
   }
   //encode_move(buf, move->from, move->to, next_state.captured, 0);
   //printf("%4d %20s %12lld\n", depth, buf, p);

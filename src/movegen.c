@@ -86,7 +86,7 @@ int gen_moves(state_s *state, move_s **move_buf_head)
       move_buf[i].next = 0;
       /* Link this entry to the previous entry in the list */
       if(prev) {
-	prev->next = &move_buf[i];
+	      prev->next = &move_buf[i];
       }
       prev = &move_buf[i];
       /* Next move in buffer */
@@ -110,6 +110,8 @@ void perft(perft_s *data, state_s *state, int depth)
   if(depth == 0) {
     data->moves = 1;
     if(state->captured) data->captures = 1;
+    if(state->castled) data->castles = 1;
+    if(state->promoted) data->promotions = 1;
     /* If in check, see if there are any valid moves out of check */
     if(in_check(state)) {
       data->checks = 1;
@@ -117,13 +119,13 @@ void perft(perft_s *data, state_s *state, int depth)
       move = move_buf_head;
       i = 0;
       while(move) {
-	copy_state(&next_state, state);
-	do_move(&next_state, move->from, move->to);
-	/* Count moves out of check */
-	if(!in_check(&next_state)) {
-	  i++;
-	}
-	move = move->next;
+	      copy_state(&next_state, state);
+	      do_move(&next_state, move->from, move->to);
+	      /* Count moves out of check */
+	      if(!in_check(&next_state)) {
+	        i++;
+	      }
+	      move = move->next;
       }
       /* If not, checkmate */
       if(i == 0) data->checkmates = 1;
@@ -143,6 +145,8 @@ void perft(perft_s *data, state_s *state, int depth)
       perft(&next_data, &next_state, depth - 1);
       data->moves += next_data.moves;
       data->captures += next_data.captures;
+      data->promotions += next_data.promotions;
+      data->castles += next_data.castles;
       data->checks += next_data.checks;
       data->checkmates += next_data.checkmates;
       i++;
