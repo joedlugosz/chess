@@ -93,10 +93,13 @@ void ui_new(engine_s *e) {
   START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
 }
 void ui_fen(engine_s *e) {
-  if(load_fen(&e->game, get_input())) {
+  const char *placement = get_input();
+  const char *active = get_input();
+  const char *castling = get_input();
+  const char *enpassant = get_input();
+  if(load_fen(&e->game, placement, active, castling, enpassant)) {
     printf("FEN string not recognised\n");
   }
-  e->force = 1;
 }
 void ui_getfen(engine_s *e) {
   char buf[100];
