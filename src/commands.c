@@ -179,8 +179,9 @@ void ui_perft(engine_s *e) {
   for(i = 0; i < depth; i++) {
     perft_s data;
     perft(&data, &(e->game), i);
-    printf("%8d%16lld%12ld%12s%12s%12s%12ld%12s%12s%12ld\n", 
-      i, data.moves, data.captures, "X", "X", "X", data.checks, "X", "X", data.checkmates);
+    printf("%8d%16lld%12ld%12s%12ld%12s%12ld%12s%12s%12ld\n", 
+      i, data.moves, data.captures, "X", data.castles, "X", data.checks, 
+      "X", "X", data.checkmates);
   }
   //encode_move(buf, move->from, move->to, next_state.captured, 0);
   //printf("%4d %20s %12lld\n", depth, buf, p);
