@@ -111,6 +111,7 @@ void perft(perft_s *data, state_s *state, int depth)
     data->moves = 1;
     if(state->captured) data->captures = 1;
     if(state->castled) data->castles = 1;
+    if(state->promoted) data->promotions = 1;
     /* If in check, see if there are any valid moves out of check */
     if(in_check(state)) {
       data->checks = 1;
@@ -144,6 +145,7 @@ void perft(perft_s *data, state_s *state, int depth)
       perft(&next_data, &next_state, depth - 1);
       data->moves += next_data.moves;
       data->captures += next_data.captures;
+      data->promotions += next_data.promotions;
       data->castles += next_data.castles;
       data->checks += next_data.checks;
       data->checkmates += next_data.checkmates;

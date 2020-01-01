@@ -15,6 +15,7 @@
 typedef struct perft_s_ {
   unsigned long long moves;
   unsigned long captures;
+  unsigned long promotions;
   unsigned long en_passant;
   unsigned long castles;
   unsigned long checks;

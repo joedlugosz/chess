@@ -530,6 +530,7 @@ void do_move(state_s *state, pos_t from, pos_t to)
 
       /* Change the piece type */
       state->piece_at[to] += QUEEN - PAWN;
+      state->promoted = 1;
       /* Piece index does not change */
     }
     break;
