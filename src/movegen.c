@@ -117,13 +117,13 @@ void perft(perft_s *data, state_s *state, int depth)
       move = move_buf_head;
       i = 0;
       while(move) {
-	copy_state(&next_state, state);
-	do_move(&next_state, move->from, move->to);
-	/* Count moves out of check */
-	if(!in_check(&next_state)) {
-	  i++;
-	}
-	move = move->next;
+	      copy_state(&next_state, state);
+	      do_move(&next_state, move->from, move->to);
+	      /* Count moves out of check */
+	      if(!in_check(&next_state)) {
+	        i++;
+	      }
+	      move = move->next;
       }
       /* If not, checkmate */
       if(i == 0) data->checkmates = 1;
