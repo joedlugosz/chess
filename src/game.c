@@ -405,6 +405,8 @@ void do_move(state_s *state, pos_t from, pos_t to)
   plane_t a_to, b_to, c_to, d_to;
   plane_t a_from, b_from, c_from, d_from;
 
+  state->castled = 0;
+
   /* Masks in the planes */
   a_to = pos2mask[to];
   b_to = pos2mask[pos_a2b[to]];
@@ -499,8 +501,10 @@ void do_move(state_s *state, pos_t from, pos_t to)
     /* Treat moving the rook as a separate move and recurse */
     if(from == to + 2) {
       do_move(state, to - 2, to + 1);
+      state->castled = 1;
     } else if(from == to - 2) {
       do_move(state, to + 1, to - 1);
+      state->castled = 1;
     }
     break;
   case ROOK:
@@ -526,6 +530,7 @@ void do_move(state_s *state, pos_t from, pos_t to)
 
       /* Change the piece type */
       state->piece_at[to] += QUEEN - PAWN;
+      state->promoted = 1;
       /* Piece index does not change */
     }
     break;
