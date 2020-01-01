@@ -553,7 +553,7 @@ void do_move(state_s *state, pos_t from, pos_t to)
 
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
-void setup_board(state_s *state, const int *pieces)
+void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved)
 {
   /* Zero the whole thing */
   memset(state, 0, sizeof(*state));
@@ -589,6 +589,8 @@ void setup_board(state_s *state, const int *pieces)
       state->index_at[a_pos] = EMPTY;      
     }
   }  
+  state->to_move = to_move;
+  state->moved = pieces_moved;
   /* Generate moves */
   calculate_moves(state);
 }
@@ -596,10 +598,7 @@ void setup_board(state_s *state, const int *pieces)
 /* Resets the board to the starting position */
 void reset_board(state_s *state)
 {
-  /* Starting position */
-  setup_board(state, start_pieces);
-  /* Default player */  
-  state->to_move = WHITE;
+  setup_board(state, start_pieces, WHITE, 0);
 }
 
 /* Initialises the module */

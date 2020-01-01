@@ -59,7 +59,7 @@ typedef struct state_s_ {
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *state, const int *pieces);
+void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved);
 //void random_state(state_s *s);
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void do_move(state_s *state, pos_t from, pos_t to);
