@@ -174,7 +174,7 @@ void ui_perft(engine_s *e) {
   int depth, i;
   sscanf(get_input(), "%d", &depth);
   printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", 
-    "Captures", "E.P.", "Castles", "Promtions", "Checks", "Disco Chx", 
+    "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx", 
     "Double Chx", "Checkmates");
   for(i = 0; i < depth; i++) {
     perft_s data;
