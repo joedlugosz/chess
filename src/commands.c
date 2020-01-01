@@ -176,7 +176,7 @@ void ui_perft(engine_s *e) {
   printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", 
     "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx", 
     "Double Chx", "Checkmates");
-  for(i = 0; i < depth; i++) {
+  for(i = 1; i <= depth; i++) {
     perft_s data;
     perft(&data, &(e->game), i);
     printf("%8d%16lld%12ld%12s%12ld%12s%12ld%12s%12s%12ld\n", 
