@@ -16,6 +16,7 @@
 #include "chess.h"
 #include "lowlevel.h"
 #include "board.h"
+#include <stdint.h>
 
 //typedef int pos_t;
 typedef enum {
@@ -29,7 +30,7 @@ typedef enum {
   A6, B6, C6, D6, E6, F6, G6, H6,
   A7, B7, C7, D7, E7, F7, G7, H7,
   A8, B8, C8, D8, E8, F8, G8, H8,
-  N_SQUARES
+  N_POS
 } pos_t;
 
 typedef unsigned char status_t;
@@ -68,9 +69,9 @@ typedef struct state_s_ {
   plane_t total_d;           /* Total occupancy */
   plane_t moves[N_PIECES];   /* Set of squares each piece can move to */
   plane_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
-  pos_t pos[N_PIECES];       /* Board position of each piece */
-  piece_e piece_at[N_SQUARES];  /* Piece index at board position */
-  char index_at[N_SQUARES];  /* Piece index at board position */
+  pos_t piece_pos[N_PIECES]; /* Board position of each piece */
+  int8_t piece_at[N_POS];  /* Piece index at board position */
+  uint8_t index_at[N_POS];  /* Piece index at board position */
   /* Other info */
   pos_t from;                /* Position moved from to get to this state */
   pos_t to;                  /* Ditto */
@@ -92,7 +93,7 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece);
 
-extern plane_t pos2mask[N_SQUARES];
+extern plane_t pos2mask[N_POS];
 extern const piece_e piece_type[N_PLANES];
 extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
@@ -119,6 +120,6 @@ static inline void change_player(state_s *state) {
   state->to_move = opponent[state->to_move];
 }
 static inline int is_valid_pos(pos_t pos) {
-  return (pos >= 0 && pos < N_SQUARES);
+  return (pos >= 0 && pos < N_POS);
 }
 #endif /* BOARD_H */
