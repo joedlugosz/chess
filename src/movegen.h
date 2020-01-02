@@ -4,6 +4,7 @@
  *  Move generator and perft
  *
  *  5.0    02/2019   First version
+ *  5.1  24/02/2019  En passant
  */
 
 #ifndef MOVEGEN_H
@@ -17,6 +18,7 @@ typedef struct perft_s_ {
   unsigned long captures;
   unsigned long promotions;
   unsigned long en_passant;
+  unsigned long ep_captures;
   unsigned long castles;
   unsigned long checks;
   unsigned long checkmates;

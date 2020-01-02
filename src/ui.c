@@ -306,7 +306,8 @@ static inline int accept_move(const char *in)
     }
   }    
   /* Update the game state */
-  do_move(&engine.game, from, to);
+  /* TODO: promotion */
+  do_move(&engine.game, from, to, 0);
   /* Success */
   return 0;
 }

@@ -31,6 +31,7 @@ typedef struct notation_s_
   score_t score;
   pos_t from;
   pos_t to;
+  piece_e promotion;
   player_e player;
   status_t captured : 1;
   status_t check : 1;
@@ -40,7 +41,7 @@ typedef struct notation_s_
 typedef struct move_s_ {
   pos_t from, to;
   score_t score;
-  //  state_s state;
+  piece_e promotion;
   struct move_s_ *next;
 } move_s;
 
@@ -51,15 +52,20 @@ enum {
 };
 
 typedef struct search_s_ {
-  int depth;
-  int n_searched;
-  int n_possible;
-  int n_beta;
-  int n_ai_moves;
-  int running;
-  pos_t found_from, found_to;
+  /* Parameters */
+  int depth;        /* Search depth before quiescence */
+  int halt;         /* Halt search */
+  /* State */
   notation_s search_history[SEARCH_DEPTH_MAX];
   notation_s repeat_history[REPEAT_HISTORY_SIZE];
+  /* Results */
+  notation_s found;
+  ai_status_e status;    /* Search status */
+  score_t score;    /* Score of chosen move */
+  int n_searched;   /* Number of nodes searched */
+  int n_possible;
+  int n_beta;       /* Number of beta cutoffs */ 
+  int n_ai_moves;
 } search_s;
 
 void do_ai_move(state_s *state, ai_result_s *res);

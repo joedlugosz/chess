@@ -3,12 +3,14 @@
  *
  *   Move generation, sorting, and perft
  *
- *   5.0   Original
+ *   5.0              Original
+ *   5.1   24/02/2019 En passant
  */
 
 #include "movegen.h"
 #include "history.h"
 #include "sys.h"
+#include "board.h"
 
 const score_t player_fact[N_PLAYERS] = { 1, -1 };
 
@@ -79,18 +81,40 @@ int gen_moves(state_s *state, move_s **move_buf_head)
       plane_t to_mask = next_bit_from(&moves);
       to = mask2pos(to_mask);
       ASSERT(is_valid_pos(to));
-      /* Enter the move info into the buffer, .state has already been calculated */
-      move_buf[i].score = gen_eval(state, from, to);
-      move_buf[i].from = from;
-      move_buf[i].to = to;
-      move_buf[i].next = 0;
-      /* Link this entry to the previous entry in the list */
-      if(prev) {
-	      prev->next = &move_buf[i];
+      int n;
+      /* Promotion */
+      if((to_mask & 0xff000000000000ffull) && piece_type[(int)state->piece_at[from]] == PAWN) {
+        n = KING;
+        while(--n > PAWN) {
+          /* Enter the move info into the buffer */
+          move_buf[i].score = gen_eval(state, from, to);
+          move_buf[i].from = from;
+          move_buf[i].to = to;
+          move_buf[i].promotion = n;
+          move_buf[i].next = 0;
+          /* Link this entry to the previous entry in the list */
+          if(prev) {
+            prev->next = &move_buf[i];
+          }
+          prev = &move_buf[i];
+          /* Next move in buffer */
+          i++;
+        }
+      } else {
+        /* Enter the move info into the buffer */
+        move_buf[i].score = gen_eval(state, from, to);
+        move_buf[i].from = from;
+        move_buf[i].to = to;
+        move_buf[i].promotion = 0;
+        move_buf[i].next = 0;
+        /* Link this entry to the previous entry in the list */
+        if(prev) {
+          prev->next = &move_buf[i];
+        }
+        prev = &move_buf[i];
+        /* Next move in buffer */
+        i++;
       }
-      prev = &move_buf[i];
-      /* Next move in buffer */
-      i++;	      
     }
   }
   if(i) sort_moves(move_buf_head);
@@ -109,7 +133,13 @@ void perft(perft_s *data, state_s *state, int depth)
   
   if(depth == 0) {
     data->moves = 1;
-    if(state->captured) data->captures = 1;
+    if(state->captured) {
+      data->captures = 1;
+    }
+      if(state->ep_captured) {
+	      data->ep_captures = 1;
+      }
+    
     if(state->castled) data->castles = 1;
     if(state->promoted) data->promotions = 1;
     /* If in check, see if there are any valid moves out of check */
@@ -120,7 +150,7 @@ void perft(perft_s *data, state_s *state, int depth)
       i = 0;
       while(move) {
 	      copy_state(&next_state, state);
-	      do_move(&next_state, move->from, move->to);
+	      do_move(&next_state, move->from, move->to, move->promotion);
 	      /* Count moves out of check */
 	      if(!in_check(&next_state)) {
 	        i++;
@@ -138,7 +168,7 @@ void perft(perft_s *data, state_s *state, int depth)
   i = 0;
   while(move) {
     copy_state(&next_state, state);
-    do_move(&next_state, move->from, move->to);
+    do_move(&next_state, move->from, move->to, move->promotion);
     /* Can't move into check */
     if(!in_check(&next_state)) {
       change_player(&next_state);
@@ -149,6 +179,7 @@ void perft(perft_s *data, state_s *state, int depth)
       data->castles += next_data.castles;
       data->checks += next_data.checks;
       data->checkmates += next_data.checkmates;
+      data->ep_captures += next_data.ep_captures;
       i++;
     }
     move = move->next;

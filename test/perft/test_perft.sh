@@ -15,10 +15,12 @@ test_perft() {
     DEPTH=$2
     read FEN < $REFERENCE
     $EXENAME x <<< 'fen '$FEN' getfen perft '$DEPTH' q' > perft.out
-    diff -E perft.out <(head -n `expr $DEPTH + 2` $REFERENCE) > diff.out
+    diff perft.out <(head -n `expr $DEPTH + 2` $REFERENCE) > diff.out
     if [ $? -eq 1 ]
     then
         echo Failed test $TEST_NUMBER
+        printf "   "
+        sed -n 2,2p $REFERENCE 
         cat diff.out
         #cleanup
         #exit 1
