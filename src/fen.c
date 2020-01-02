@@ -13,7 +13,9 @@
 /* FEN piece letters */
 const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
-enum { N_CASTLE_RIGHTS_MASKS = 4 };
+enum { N_CASTLE_RIGHTS_MASKS = 4,
+       CASTLE_RIGHTS_ALL = 0x9100000000000091ull
+};
 
 struct castle_rights_entry {
   char c;
@@ -161,9 +163,16 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   *ptr++ = ' ';
   *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
+  /* Castling rights */
+  int cr = 0;
   for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if(~state->moved & castle_rights[i].mask) *ptr++ = castle_rights[i].c;
+    if(~state->moved & castle_rights[i].mask) {
+      *ptr++ = castle_rights[i].c;
+      cr = 1;
   }
+  }
+  /* No castling rights */
+  if(!cr) *ptr++ = '-';
   *ptr++ = ' ';
   //encode_position(ptr, mask2pos(state->en_passant));
   //ptr += 2;

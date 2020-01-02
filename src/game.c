@@ -350,7 +350,7 @@ static void calculate_moves(state_s *state)
     int piece = state->piece_at[pos];
     int index = state->index_at[pos];
     if(piece != EMPTY) {
-      pos_t from = state->pos[index];      
+      pos_t from = state->piece_pos[index];      
       player_e player = piece_player[piece];
       plane_t moves;
       /* Get moves for the piece including taking moves for all pieces */
@@ -471,7 +471,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
     /* If the player is trying to take one of their own pieces, something has gone wrong */
     ASSERT(take_player != state->to_move);
     /* Set position to empty */
-    state->pos[(int)state->index_at[to]] = EMPTY;
+    state->piece_pos[(int)state->index_at[to]] = EMPTY;
     /* Remove piece at "to" from all views */
     clear(state, to, take_piece, take_player);
     /* This move has captured */
@@ -493,7 +493,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
   /* Check player is trying to move own piece */
   ASSERT(move_player == state->to_move);
   /* Change position of moving piece */
-  state->pos[(int)state->index_at[from]] = to;
+  state->piece_pos[(int)state->index_at[from]] = to;
   /* Set bits for "to" position */
   set(state, to, move_piece, move_player);
   /* Clear bits for "from" position */
@@ -605,7 +605,7 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
     state->piece_at[a_pos] = (char)piece;
     if(piece != EMPTY) {
       state->index_at[a_pos] = (char)index;
-      state->pos[index] = a_pos;
+      state->piece_pos[index] = a_pos;
       player_e player = piece_player[piece];
       set(state, a_pos, piece, player);
       index++;
