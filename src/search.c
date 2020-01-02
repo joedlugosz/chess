@@ -54,11 +54,6 @@ const options_s search_opts = { N_SEARCH_OPTS, _search_opts };
 /* in this file */
 //static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, score_t beta);
 
-#if (LOGGING == YES) 
-# define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
-#else
-# define LOG_THOUGHT(c, d, s, a, b)
-#endif
 
 void set_depth(int d)
 {
@@ -68,27 +63,24 @@ void set_depth(int d)
 /*
  *  Thought Printing
  */
-
+/* Thoughts shown by XBoard */
 void xboard_thought(FILE *f, search_s *ctx, int depth, score_t score, clock_t time, int nodes)
 {
   fprintf(f, "\n%2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes); 
   print_thought_moves(f, depth, ctx->search_history);
 }
-
+/* Thought logging stuff */
+#ifndef LOGGING
+# define LOG_THOUGHT(c, d, s, a, b)
+#else
+# define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
 void debug_thought(FILE *f, search_s *ctx, int depth, score_t score, score_t alpha, score_t beta)
 {
   fprintf(f, "\n%2d %10d ", depth, ctx->n_searched);
-
-  if(alpha > -100000)  
-    fprintf(f, "%7d ", alpha); 
-  else
-    fprintf(f, "     -B "); 
-
-  if(beta < 100000)  
-    fprintf(f, "%7d ", beta); 
-  else
-    fprintf(f, "     +B "); 
-  
+  if(alpha > -100000) fprintf(f, "%7d ", alpha); 
+  else                fprintf(f, "     -B "); 
+  if(beta  <  100000) fprintf(f, "%7d ", beta); 
+  else                fprintf(f, "     +B "); 
   print_thought_moves(f, depth, ctx->search_history);
 }
 
@@ -100,6 +92,8 @@ void log_thought(log_s *log, search_s *ctx, int depth, score_t score, score_t al
     close_log(log);
   }
 }
+#endif
+
 
 /* Quiescence search */
 score_t quiesce(search_s *ctx, state_s *current_state, int depth, score_t alpha, score_t beta)
@@ -114,7 +108,7 @@ score_t quiesce(search_s *ctx, state_s *current_state, int depth, score_t alpha,
   ASSERT(depth < SEARCH_DEPTH_MAX);
   //ASSERT(piece_player[(int)current_state->piece_at[current_state->to]] != current_state->to_move);
   /* TODO: ctx->running will be used to break out of a search */
-  if(!ctx->running) {
+  if(ctx->halt) {
     return 0;
   }
   /* Evaluate taking no action - i.e. not making any possible capture
@@ -146,7 +140,8 @@ score_t quiesce(search_s *ctx, state_s *current_state, int depth, score_t alpha,
     ASSERT(from != to);
     /* Copy into next_state and do the move */
     copy_state(&next_state, current_state);
-    do_move(&next_state, from, to);    
+    /* TODO: what about taking and promoting? */
+    do_move(&next_state, from, to, 0);    
     /* Can't move into check */
     if(in_check(&next_state))
       continue;
@@ -174,9 +169,8 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
 {
   /* Limit for search and repeat history */
   ASSERT(depth < SEARCH_DEPTH_MAX);
-  /* TODO: ctx->running will be used to break out of a search */
-  if(!ctx->running)
-    return 0;
+  /* ctx->halt breaks out of a search */
+  if(ctx->halt) return 0;
   state_s next_state;
   /* Buffer to be used by gen_moves */
   move_s move_buf[N_MOVES];
@@ -192,13 +186,12 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
     //    printf("%d %d\n", ctx->n_nodes, depth);
     /* Copy and do the move so the result is in next_state */
     copy_state(&next_state, state);
-    do_move(&next_state, move->from, move->to);
-    /* Can't move into check */
+    do_move(&next_state, move->from, move->to, move->promotion);
+    /* Can't move into check */ 
     if(in_check(&next_state)) {
       move = move->next;
       continue;
     }
-    change_player(&next_state);
     /* Most of the history must be written at this point so it passes to the next recursion */
     write_history(ctx, depth, move->from, move->to, state->to_move, 0);
     /* Can't repeat a move, relaxed if in check */
@@ -207,6 +200,7 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
       move = move->next;
       continue;
     }
+    change_player(&next_state);
   /* Recurse down to search_depth - 1, then do quiescence search if necessary */
     if(depth < search_depth - 1) {
       score = -search(ctx, &next_state, depth + 1, -beta, -alpha);
@@ -225,8 +219,9 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
       alpha = score;
       /* Record the move if found at the top level */
       if(depth == 0) {
-	ctx->found_from = move->from;
-	ctx->found_to = move->to;
+        ctx->found.from = move->from;
+        ctx->found.to = move->to;
+        ctx->found.promotion = move->promotion;
       }
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
@@ -240,8 +235,8 @@ void do_ai_move(state_s *state, ai_result_s *res)
 {
   search_s ctx;
   memset(&ctx, 0, sizeof(ctx));
-  ctx.running = 1;
-  ctx.found_from = EMPTY;  
+  ctx.halt = 0;
+  ctx.found.from = EMPTY;  
   res->status = NO_MOVE;
   //search_start_time = clock();
   //session_extreme = 0;
@@ -258,14 +253,14 @@ void do_ai_move(state_s *state, ai_result_s *res)
     found_to = to_pos;
     }
   */
-  if(ctx.found_from == EMPTY) {
+  if(ctx.found.from == NO_POS) {
     if(state->check) {
       res->status = CHECKMATE;
     } else {
       res->status = STALEMATE;
     }
   } else {
-    do_move(state, ctx.found_from, ctx.found_to);
+    do_move(state, ctx.found.from, ctx.found.to, ctx.found.promotion);
     res->status = MOVED;
   }
   res->n_searched = ctx.n_searched;

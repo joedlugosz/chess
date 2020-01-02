@@ -84,36 +84,36 @@ int gen_moves(state_s *state, move_s **move_buf_head)
       int n;
       /* Promotion */
       if((to_mask & 0xff000000000000ffull) && piece_type[(int)state->piece_at[from]] == PAWN) {
-	  n = KING;
-	  while(--n > PAWN) {
-	    /* Enter the move info into the buffer */
-      move_buf[i].score = gen_eval(state, from, to);
-      move_buf[i].from = from;
-      move_buf[i].to = to;
-	    move_buf[i].promotion = n;
-      move_buf[i].next = 0;
-      /* Link this entry to the previous entry in the list */
-      if(prev) {
-	      prev->next = &move_buf[i];
-      }
-      prev = &move_buf[i];
-      /* Next move in buffer */
-	    i++;
-	  }
+        n = KING;
+        while(--n > PAWN) {
+          /* Enter the move info into the buffer */
+          move_buf[i].score = gen_eval(state, from, to);
+          move_buf[i].from = from;
+          move_buf[i].to = to;
+          move_buf[i].promotion = n;
+          move_buf[i].next = 0;
+          /* Link this entry to the previous entry in the list */
+          if(prev) {
+            prev->next = &move_buf[i];
+          }
+          prev = &move_buf[i];
+          /* Next move in buffer */
+          i++;
+        }
       } else {
-	/* Enter the move info into the buffer */
-	move_buf[i].score = gen_eval(state, from, to);
-	move_buf[i].from = from;
-	move_buf[i].to = to;
-	move_buf[i].promotion = 0;
-	move_buf[i].next = 0;
-	/* Link this entry to the previous entry in the list */
-	if(prev) {
-	  prev->next = &move_buf[i];
-	}
-	prev = &move_buf[i];
-	/* Next move in buffer */
-	i++;
+        /* Enter the move info into the buffer */
+        move_buf[i].score = gen_eval(state, from, to);
+        move_buf[i].from = from;
+        move_buf[i].to = to;
+        move_buf[i].promotion = 0;
+        move_buf[i].next = 0;
+        /* Link this entry to the previous entry in the list */
+        if(prev) {
+          prev->next = &move_buf[i];
+        }
+        prev = &move_buf[i];
+        /* Next move in buffer */
+        i++;
       }
     }
   }
@@ -135,10 +135,11 @@ void perft(perft_s *data, state_s *state, int depth)
     data->moves = 1;
     if(state->captured) {
       data->captures = 1;
+    }
       if(state->ep_captured) {
 	      data->ep_captures = 1;
       }
-    }
+    
     if(state->castled) data->castles = 1;
     if(state->promoted) data->promotions = 1;
     /* If in check, see if there are any valid moves out of check */
