@@ -136,7 +136,7 @@ void perft(perft_s *data, state_s *state, int depth)
     if(state->captured) {
       data->captures = 1;
       if(state->ep_captured) {
-	data->ep_captures = 1;
+	      data->ep_captures = 1;
       }
     }
     if(state->castled) data->castles = 1;
@@ -149,7 +149,7 @@ void perft(perft_s *data, state_s *state, int depth)
       i = 0;
       while(move) {
 	      copy_state(&next_state, state);
-	do_move(&next_state, move->from, move->to, move->promotion);
+	      do_move(&next_state, move->from, move->to, move->promotion);
 	      /* Count moves out of check */
 	      if(!in_check(&next_state)) {
 	        i++;
