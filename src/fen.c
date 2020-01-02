@@ -37,7 +37,7 @@ int load_fen( state_s *state,
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
-  int board[N_SQUARES];
+  int board[N_POS];
   int file = 0;
   int rank = 7;
   const char *ptr = placement_text;
