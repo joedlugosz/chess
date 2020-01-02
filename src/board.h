@@ -1,11 +1,37 @@
+/*
+ *  board.h
+ *
+ *  Definition of the game state and FIDE rules.
+ *
+ *  Limitations:
+ *   * No under-promotion
+ *
+ *  Revisions:
+ *   5.1            En passant, underpromotion
+ */
+
 #ifndef BOARD_H
 #define BOARD_H
 
 #include "chess.h"
 #include "lowlevel.h"
-//#include "hash.h"
+#include "board.h"
 
-typedef int pos_t;
+//typedef int pos_t;
+typedef enum {
+  NO_POS = -1,
+  A1 = 0,
+      B1, C1, D1, E1, F1, G1, H1,
+  A2, B2, C2, D2, E2, F2, G2, H2,
+  A3, B3, C3, D3, E3, F3, G3, H3,
+  A4, B4, C4, D4, E4, F4, G4, H4,
+  A5, B5, C5, D5, E5, F5, G5, H5,
+  A6, B6, C6, D6, E6, F6, G6, H6,
+  A7, B7, C7, D7, E7, F7, G7, H7,
+  A8, B8, C8, D8, E8, F8, G8, H8,
+  N_SQUARES
+} pos_t;
+
 typedef unsigned char status_t;
 
 /* Piece types */
@@ -19,8 +45,6 @@ typedef enum piece_e_ {
 enum {
   /* Planes in a stack */
   N_PLANES = N_PIECE_T * N_PLAYERS,
-  /* Squares on the board */
-  N_SQUARES = 64,
   /* Pieces */
   N_PIECES = 32,
 };
@@ -51,11 +75,13 @@ typedef struct state_s_ {
   pos_t from;                /* Position moved from to get to this state */
   pos_t to;                  /* Ditto */
   status_t captured : 1;     /* Whether the last move captured */
+  status_t ep_captured : 1;  /* Whether the last move capture was en passant */
   status_t castled : 1;      /* Whether the last move castled */
   status_t promoted : 1;     /* Whether the last move promoted */
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   plane_t moved;             /* Flags for pieces which have moved */
+  plane_t en_passant;        /* En-passant squares */
   hash_t hash;
 } state_s;
 
@@ -64,7 +90,7 @@ void reset_board(state_s *state);
 void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved);
 //void random_state(state_s *s);
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
-void do_move(state_s *state, pos_t from, pos_t to);
+void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece);
 
 extern plane_t pos2mask[N_SQUARES];
 extern const piece_e piece_type[N_PLANES];

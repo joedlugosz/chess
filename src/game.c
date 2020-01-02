@@ -14,6 +14,9 @@
  *                  Fixed bug preventing castling
  *   5.0            Added assertion for attack check on own pieces
  *                  Fixed attack checking during castling
+ *   5.1            En passant, underpromotion, 
+ *                  Changed searching for slider attacks,
+ *                  Replaced moved pieces plane with castling rights flags
  */
 
 #include "chess.h"
@@ -320,13 +323,20 @@ plane_t get_attacks(state_s *state, pos_t target, player_e attacking)
   ASSERT(piece_player[(int)state->piece_at[target]] != attacking);
   /* Note - viewed as if the non-attacking player is attacking */
   attacks = pawn_takes[opponent[attacking]][target] & state->a[base + PAWN];
-  if(target_mask & state->moves[attacking * 24]) attacks |= pos2mask[state->pos[attacking * 24]]; 
-  if(target_mask & state->moves[attacking * 24 + 2]) attacks |= pos2mask[state->pos[attacking * 24 + 2]]; 
-  if(target_mask & state->moves[attacking * 24 + 3]) attacks |= pos2mask[state->pos[attacking * 24 + 3]]; 
-  if(target_mask & state->moves[attacking * 24 + 5]) attacks |= pos2mask[state->pos[attacking * 24 + 5]]; 
-  if(target_mask & state->moves[attacking * 24 + 7]) attacks |= pos2mask[state->pos[attacking * 24 + 7]]; 
   attacks |= knight_moves[target] & state->a[base + KNIGHT];
   attacks |= king_moves[target] & state->a[base + KING];
+  plane_t sliders = state->a[base + ROOK] | state->a[base + BISHOP] | state->a[base + QUEEN];
+  while(sliders) {
+    plane_t attacker = next_bit_from(&sliders);
+    if(target_mask & state->moves[(int)state->index_at[mask2pos(attacker)]]) attacks |= attacker;
+  }
+  /*
+  if(target_mask & state->moves[attacking * 24]) attacks |= pos2mask[state->piece_pos[attacking * 24]]; 
+  if(target_mask & state->moves[attacking * 24 + 2]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 2]]; 
+  if(target_mask & state->moves[attacking * 24 + 3]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 3]]; 
+  if(target_mask & state->moves[attacking * 24 + 5]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 5]]; 
+  if(target_mask & state->moves[attacking * 24 + 7]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 7]]; 
+  */  
   return attacks;
 }
 
@@ -361,7 +371,7 @@ static void calculate_moves(state_s *state)
 	  /* Apply block to pawn advances */
 	  moves = pawn_advances[player][from] & ~block;
 	  /* Add taking moves */
-	  moves |= pawn_takes[player][from] & state->occ_a[opponent[player]];
+	  moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
 	}
 	break;
       case ROOK:
@@ -393,8 +403,54 @@ static void calculate_moves(state_s *state)
   }
 }
 
+static inline void set(state_s *state, pos_t pos, piece_e piece, player_e player)
+{
+  plane_t a_mask, b_mask, c_mask, d_mask;
+  /* Masks in the planes */
+  a_mask = pos2mask[pos];
+  b_mask = pos2mask[pos_a2b[pos]];
+  c_mask = pos2mask[pos_a2c[pos]];
+  d_mask = pos2mask[pos_a2d[pos]];
+  state->a[piece] |= a_mask;
+  state->b[piece] |= b_mask;
+  state->c[piece] |= c_mask;
+  state->d[piece] |= d_mask;
+  state->occ_a[player] |= a_mask;
+  state->occ_b[player] |= b_mask;
+  state->occ_c[player] |= c_mask;
+  state->occ_d[player] |= d_mask;
+  state->total_a |= a_mask;
+  state->total_b |= b_mask;
+  state->total_c |= c_mask;
+  state->total_d |= d_mask;
+  state->hash ^= hash_values[pos * piece];
+}
+
+static inline void clear(state_s *state, pos_t pos, piece_e piece, player_e player)
+{
+  plane_t a_mask, b_mask, c_mask, d_mask;
+  /* Masks in the planes */
+  a_mask = pos2mask[pos];
+  b_mask = pos2mask[pos_a2b[pos]];
+  c_mask = pos2mask[pos_a2c[pos]];
+  d_mask = pos2mask[pos_a2d[pos]];
+  state->a[piece] &= ~a_mask;
+  state->b[piece] &= ~b_mask;
+  state->c[piece] &= ~c_mask;
+  state->d[piece] &= ~d_mask;
+  state->occ_a[player] &= ~a_mask;
+  state->occ_b[player] &= ~b_mask;
+  state->occ_c[player] &= ~c_mask;
+  state->occ_d[player] &= ~d_mask;
+  state->total_a &= ~a_mask;
+  state->total_b &= ~b_mask;
+  state->total_c &= ~c_mask;
+  state->total_d &= ~d_mask;
+  state->hash ^= hash_values[pos * piece];
+}
+
 /* Alters the game state to effect a move.  There is no validity checking. */
-void do_move(state_s *state, pos_t from, pos_t to)
+void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
 {
   ASSERT(is_valid_pos(from));
   ASSERT(is_valid_pos(to));
@@ -402,16 +458,10 @@ void do_move(state_s *state, pos_t from, pos_t to)
   
   int move_piece, take_piece;
   player_e player;
-  plane_t a_to, b_to, c_to, d_to;
-  plane_t a_from, b_from, c_from, d_from;
-
-  state->castled = 0;
-
+  plane_t a_from, a_to;
+  
   /* Masks in the planes */
   a_to = pos2mask[to];
-  b_to = pos2mask[pos_a2b[to]];
-  c_to = pos2mask[pos_a2c[to]];
-  d_to = pos2mask[pos_a2d[to]];
   /* If there is something at "to", it is a taking move */
   take_piece = state->piece_at[to];
   if(take_piece != EMPTY) {
@@ -423,18 +473,7 @@ void do_move(state_s *state, pos_t from, pos_t to)
     /* Set position to empty */
     state->pos[(int)state->index_at[to]] = EMPTY;
     /* Remove piece at "to" from all views */
-    state->a[take_piece] &= ~a_to;
-    state->b[take_piece] &= ~b_to;
-    state->c[take_piece] &= ~c_to;
-    state->d[take_piece] &= ~d_to;
-    state->occ_a[take_player] &= ~a_to;
-    state->occ_b[take_player] &= ~b_to;
-    state->occ_c[take_player] &= ~c_to;
-    state->occ_d[take_player] &= ~d_to;
-    state->total_a &= ~a_to;
-    state->total_b &= ~b_to;
-    state->total_c &= ~c_to;
-    state->total_d &= ~d_to;
+    clear(state, to, take_piece, take_player);
     /* This move has captured */
     state->captured = 1;
     /* Remove the captured piece from hash */
@@ -456,38 +495,14 @@ void do_move(state_s *state, pos_t from, pos_t to)
   /* Change position of moving piece */
   state->pos[(int)state->index_at[from]] = to;
   /* Set bits for "to" position */
-  state->a[move_piece] |= a_to;
-  state->b[move_piece] |= b_to;
-  state->c[move_piece] |= c_to;
-  state->d[move_piece] |= d_to;
-  state->occ_a[move_player] |= a_to;
-  state->occ_b[move_player] |= b_to;
-  state->occ_c[move_player] |= c_to;
-  state->occ_d[move_player] |= d_to;
-  state->total_a |= a_to;
-  state->total_b |= b_to;
-  state->total_c |= c_to;
-  state->total_d |= d_to;
+  set(state, to, move_piece, move_player);
+  /* Clear bits for "from" position */
+  clear(state, from, move_piece, move_player);
+  a_from = pos2mask[from];
+  /* Set "to" to "from" */
   state->piece_at[to] = state->piece_at[from];
   state->index_at[to] = state->index_at[from];
-  state->hash ^= hash_values[to * move_piece];
-  /* Clear bits for "from" position */
-  a_from = pos2mask[from];
-  b_from = pos2mask[pos_a2b[from]];
-  c_from = pos2mask[pos_a2c[from]];
-  d_from = pos2mask[pos_a2d[from]];
-  state->a[move_piece] &= ~a_from;
-  state->b[move_piece] &= ~b_from;
-  state->c[move_piece] &= ~c_from;
-  state->d[move_piece] &= ~d_from;
-  state->occ_a[move_player] &= ~a_from;
-  state->occ_b[move_player] &= ~b_from;
-  state->occ_c[move_player] &= ~c_from;
-  state->occ_d[move_player] &= ~d_from;
-  state->total_a &= ~a_from;
-  state->total_b &= ~b_from;
-  state->total_c &= ~c_from;
-  state->total_d &= ~d_from;
+  /* Set "from" to empty */
   state->piece_at[from] = EMPTY;
   state->index_at[from] = EMPTY;
   state->hash ^= hash_values[from * move_piece];
@@ -495,17 +510,17 @@ void do_move(state_s *state, pos_t from, pos_t to)
   /* Castling, pawn promotion and other special stuff */
   switch(piece_type[move_piece]) {
   case KING:
-    /* Register that the king has moved to prevent castling */
-    state->moved |= a_from;
     /* If this is a castling move (2 spaces each direction) */
     /* Treat moving the rook as a separate move and recurse */
     if(from == to + 2) {
-      do_move(state, to - 2, to + 1);
+      do_move(state, to - 2, to + 1, 0);
       state->castled = 1;
     } else if(from == to - 2) {
-      do_move(state, to + 1, to - 1);
+      do_move(state, to + 1, to - 1, 0);
       state->castled = 1;
     }
+    /* Register that the king has moved to prevent castling */
+    state->moved |= a_from;
     break;
   case ROOK:
     /* Register that the rook has moved to prevent castling*/
@@ -514,28 +529,47 @@ void do_move(state_s *state, pos_t from, pos_t to)
   case PAWN:
     /* If pawn has been promoted */
     if(a_to & (0xffull << 56 | 0xffull)) {
+      ASSERT(promotion_piece > PAWN);
       /* Clear pawn bits for "to" position */
-      state->a[move_piece] &= ~a_to;
-      state->b[move_piece] &= ~b_to;
-      state->c[move_piece] &= ~c_to;
-      state->d[move_piece] &= ~d_to;
-      state->hash ^= hash_values[to * move_piece];
-
+      clear(state, to, move_piece, move_player);
       /* Set queen bits for "to" position */
-      state->a[move_piece + (QUEEN - PAWN)] |= a_to;
-      state->b[move_piece + (QUEEN - PAWN)] |= b_to;
-      state->c[move_piece + (QUEEN - PAWN)] |= c_to;
-      state->d[move_piece + (QUEEN - PAWN)] |= d_to;
-      state->hash ^= hash_values[to * move_piece + (QUEEN - PAWN)];
-
+      set(state, to, move_piece + promotion_piece - PAWN, move_player);
       /* Change the piece type */
-      state->piece_at[to] += QUEEN - PAWN;
+      state->piece_at[to] += promotion_piece - PAWN;
       state->promoted = 1;
-      /* Piece index does not change */
+    }
+    /* If pawn has taken en-passant */
+    if(a_to & state->en_passant) {
+      pos_t target_pos = to;
+      if(state->to_move == WHITE) target_pos -= 8;
+      else target_pos += 8;
+      piece_e target_piece = state->piece_at[target_pos];
+      player_e target_player = piece_player[target_piece];
+      ASSERT(target_piece != EMPTY);
+      ASSERT(target_player != state->to_move);
+      clear(state, target_pos, target_piece, target_player);
+      /* Set piece position to empty */
+      //state->piece_pos[(int)state->index_at[target_pos]] = NO_POS;
+      state->piece_at[target_pos] = EMPTY;
+      state->index_at[target_pos] = EMPTY;
+      state->ep_captured = 1;
+    } else {
+      state->ep_captured = 0;
     }
     break;
   default:
     break;
+  }
+  /* Clear previous en passant state */
+  state->en_passant = 0;
+  /* If pawn has jumped, set en passant square */
+  if(piece_type[move_piece] == PAWN) {
+    if(from - to == 16) {
+      state->en_passant = pos2mask[from - 8];
+    }
+    if(from - to == -16) {
+      state->en_passant = pos2mask[from + 8];
+    }
   }
 
   /* Calculate moves for all pieces */
@@ -564,6 +598,7 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
   memset(state, 0, sizeof(*state));
   int index = 0;
   state->hash = 0;
+  state->moved = pieces_moved;
   /* Iterate through positions */
   for(pos_t a_pos = 0; a_pos < N_SQUARES; a_pos++) {
     int piece = pieces[a_pos];
@@ -571,24 +606,8 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
     if(piece != EMPTY) {
       state->index_at[a_pos] = (char)index;
       state->pos[index] = a_pos;
-      plane_t a_mask = pos2mask[a_pos];
-      plane_t b_mask = pos2mask[pos_a2b[a_pos]];
-      plane_t c_mask = pos2mask[pos_a2c[a_pos]];
-      plane_t d_mask = pos2mask[pos_a2d[a_pos]];
       player_e player = piece_player[piece];
-      state->a[piece] |= a_mask;
-      state->b[piece] |= b_mask;
-      state->c[piece] |= c_mask;
-      state->d[piece] |= d_mask;
-      state->occ_a[player] |= a_mask;
-      state->occ_b[player] |= b_mask;
-      state->occ_c[player] |= c_mask;
-      state->occ_d[player] |= d_mask;
-      state->total_a |= a_mask;
-      state->total_b |= b_mask;
-      state->total_c |= c_mask;
-      state->total_d |= d_mask;
-      state->hash ^= hash_values[a_pos * piece];
+      set(state, a_pos, piece, player);
       index++;
     } else {
       state->index_at[a_pos] = EMPTY;      

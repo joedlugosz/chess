@@ -40,7 +40,7 @@ typedef struct notation_s_
 typedef struct move_s_ {
   pos_t from, to;
   score_t score;
-  //  state_s state;
+  piece_e promotion;
   struct move_s_ *next;
 } move_s;
 
