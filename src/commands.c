@@ -171,11 +171,11 @@ void ui_eval(engine_s *e) {
 }
 
 void ui_perft(engine_s *e) {
-  int depth, i;
+  int depth;
   if(!sscanf(get_input(), "%d", &depth)) {
     return;
   }
-  perft_total(e, depth);
+  perft_total(&e->game, depth);
 }
 
 /*

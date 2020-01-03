@@ -68,9 +68,9 @@ typedef struct state_s_ {
   plane_t total_d;           /* Total occupancy */
   plane_t moves[N_PIECES];   /* Set of squares each piece can move to */
   plane_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
-  pos_t pos[N_PIECES];       /* Board position of each piece */
-  int8_t piece_at[N_SQUARES];  /* Piece index at board position */
-  char index_at[N_SQUARES];  /* Piece index at board position */
+  pos_t piece_pos[N_PIECES];       /* Board position of each piece */
+  int8_t piece_at[N_POS];  /* Piece index at board position */
+  char index_at[N_POS];  /* Piece index at board position */
 
   /* Other info */
   pos_t from;                /* Position moved from to get to this state */
