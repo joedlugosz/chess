@@ -26,7 +26,7 @@
 typedef unsigned char rank_t;
 
 enum {
-  N_HASH_VALUES = N_PIECE_T * N_SQUARES  
+  N_HASH_VALUES = N_PIECE_T * N_POS  
 };
 
 hash_t hash_values[N_HASH_VALUES];
@@ -37,10 +37,10 @@ hash_t hash_values[N_HASH_VALUES];
 
 /* Mapping from A-pos to B-pos
    Calculated at init using a formula */
-pos_t pos_a2b[N_SQUARES];
+pos_t pos_a2b[N_POS];
 
 /* Mapping from A-pos to C-pos */
-const pos_t pos_a2c[N_SQUARES] = {
+const pos_t pos_a2c[N_POS] = {
   0,  1,  3,  6, 10, 15, 21, 28,
   2,  4,  7, 11, 16, 22, 29, 36,
   5,  8, 12, 17, 23, 30, 37, 43,
@@ -53,7 +53,7 @@ const pos_t pos_a2c[N_SQUARES] = {
 
 /* For each A-pos, the amount that the C-stack must be
    shifted to get the start of a diagonal row */
-const pos_t shift_c[N_SQUARES] = {
+const pos_t shift_c[N_POS] = {
   0,  1,  3,  6, 10, 15, 21, 28,
   1,  3,  6, 10, 15, 21, 28, 36,
   3,  6, 10, 15, 21, 28, 36, 43,
@@ -66,7 +66,7 @@ const pos_t shift_c[N_SQUARES] = {
 
 /* For each A-pos, the mask that must be applied to 
    obtain a single diagonal row */
-const rank_t mask_c[N_SQUARES] = {
+const rank_t mask_c[N_POS] = {
   0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff,
   0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff, 0x7f,
   0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff, 0x7f, 0x3f,
@@ -79,7 +79,7 @@ const rank_t mask_c[N_SQUARES] = {
 
 /* Amount that occupancy mask occ_c2a[occ] must 
    be shifted to get to the correct diagonal */
-const pos_t shift_c2a[N_SQUARES] = {
+const pos_t shift_c2a[N_POS] = {
   0,  1,  2,  3,  4,  5,  6,  7,
   1,  2,  3,  4,  5,  6,  7, 15,
   2,  3,  4,  5,  6,  7, 15, 23,
@@ -90,7 +90,7 @@ const pos_t shift_c2a[N_SQUARES] = {
   7, 15, 23, 31, 39, 47, 55, 63,
 };
 /* Ditto D-stack */
-const pos_t shift_d2a[N_SQUARES] = {
+const pos_t shift_d2a[N_POS] = {
   0,  1,  2,  3,  4,  5,  6,  7,
   8,  0,  1,  2,  3,  4,  5,  6,
   16,  8,  0,  1,  2,  3,  4,  5,
@@ -103,9 +103,9 @@ const pos_t shift_d2a[N_SQUARES] = {
 
 /* These are reflections in the vertical axis of their C-pos counterparts 
    which are calculated at run-time */
-pos_t pos_a2d[N_SQUARES];
-rank_t shift_d[N_SQUARES];
-rank_t mask_d[N_SQUARES];
+pos_t pos_a2d[N_POS];
+rank_t shift_d[N_POS];
+rank_t mask_d[N_POS];
 
 /* Rank blocking table for Rook, Bishop and Queen moves */
 unsigned int blocking[8][256];
@@ -115,9 +115,9 @@ unsigned int blocking[8][256];
 plane_t occ_b2a[256], occ_c2a[256], occ_d2a[256];
 
 /* Knight and king moves */
-plane_t knight_moves[N_SQUARES], king_moves[N_SQUARES];
+plane_t knight_moves[N_POS], king_moves[N_POS];
 /* Pawn advances and takes */
-plane_t pawn_advances[N_PLAYERS][N_SQUARES], pawn_takes[N_PLAYERS][N_SQUARES];
+plane_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
 /* Castling */
 const pos_t rook_start_pos[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
 const pos_t king_start_pos[N_PLAYERS] = { 4, 60 };
@@ -134,7 +134,7 @@ const plane_t starting_a[N_PLANES] = {
   0xffull<<48, 0x81ull<<56, 0x42ull<<56, 0x24ull<<56, 0x08ull<<56, 0x10ull<<56
 };
 
-const char start_indexes[N_SQUARES] = {
+const char start_indexes[N_POS] = {
    0,   1,   2,   3,   4,   5,   6,   7,
    8,   9,  10,  11,  12,  13,  14,  15,
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
@@ -156,7 +156,7 @@ const piece_e piece_type[N_PIECE_T * N_PLAYERS] = {
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING  
 };
 
-const piece_e start_pieces[N_SQUARES] = { 
+const piece_e start_pieces[N_POS] = { 
   ROOK,  KNIGHT, BISHOP, QUEEN, KING,  BISHOP, KNIGHT, ROOK,
   PAWN,  PAWN,   PAWN,   PAWN,  PAWN,  PAWN,   PAWN,   PAWN,
   EMPTY, EMPTY,  EMPTY,  EMPTY, EMPTY, EMPTY,  EMPTY,  EMPTY,
@@ -178,7 +178,7 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 };
 
 const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
-plane_t pos2mask[N_SQUARES];
+plane_t pos2mask[N_POS];
 
 
 /*
@@ -346,11 +346,11 @@ static void calculate_moves(state_s *state)
 {
   state->claim[0] = 0;
   state->claim[1] = 0;
-  for(pos_t pos = 0; pos < N_SQUARES; pos++) {
+  for(pos_t pos = 0; pos < N_POS; pos++) {
     int piece = state->piece_at[pos];
     int index = state->index_at[pos];
     if(piece != EMPTY) {
-      pos_t from = state->pos[index];      
+      pos_t from = state->piece_pos[index];      
       player_e player = piece_player[piece];
       plane_t moves;
       /* Get moves for the piece including taking moves for all pieces */
@@ -474,7 +474,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
     /* If the player is trying to take one of their own pieces, something has gone wrong */
     ASSERT(take_player != state->to_move);
     /* Set position to empty */
-    state->pos[(int)state->index_at[to]] = EMPTY;
+    state->piece_pos[(int)state->index_at[to]] = EMPTY;
     /* Remove piece at "to" from all views */
     clear(state, to, take_piece, take_player);
     /* This move has captured */
@@ -493,7 +493,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
   /* Check player is trying to move own piece */
   ASSERT(move_player == state->to_move);
   /* Change position of moving piece */
-  state->pos[(int)state->index_at[from]] = to;
+  state->piece_pos[(int)state->index_at[from]] = to;
   /* Set bits for "to" position */
   set(state, to, move_piece, move_player);
   /* Clear bits for "from" position */
@@ -599,12 +599,12 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
   state->hash = 0;
   state->moved = pieces_moved;
   /* Iterate through positions */
-  for(pos_t a_pos = 0; a_pos < N_SQUARES; a_pos++) {
+  for(pos_t a_pos = 0; a_pos < N_POS; a_pos++) {
     int piece = pieces[a_pos];
     state->piece_at[a_pos] = (char)piece;
     if(piece != EMPTY) {
       state->index_at[a_pos] = (char)index;
-      state->pos[index] = a_pos;
+      state->piece_pos[index] = a_pos;
       player_e player = piece_player[piece];
       set(state, a_pos, piece, player);
       index++;
@@ -636,7 +636,7 @@ void init_board(void)
   /* 
    *  Position-indexed tables 
    */
-  for(pos = 0; pos < N_SQUARES; pos++) {
+  for(pos = 0; pos < N_POS; pos++) {
     /* Position to mask */
     pos2mask[pos] = 1ull << pos;
     /* Calculate A->B */
@@ -717,7 +717,7 @@ void init_board(void)
    *  Knight and King moves 
    */
 
-  for(pos = 0; pos < N_SQUARES; pos++) {
+  for(pos = 0; pos < N_POS; pos++) {
     pos_mask = pos2mask[pos];
 
     /* Possible knight moves: A-H
@@ -766,7 +766,7 @@ void init_board(void)
    */
 
   for(player = 0; player < N_PLAYERS; player++) {
-    for(pos = 0; pos < N_SQUARES; pos++) {
+    for(pos = 0; pos < N_POS; pos++) {
       plane_t current, advance, jump, take;
       /* Mask for pawn */
       current = pos2mask[pos];
