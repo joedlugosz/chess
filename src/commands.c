@@ -177,6 +177,13 @@ void ui_perft(engine_s *e) {
   }
   perft_total(&e->game, depth);
 }
+void ui_perftd(engine_s *e) {
+  int depth;
+  if(!sscanf(get_input(), "%d", &depth)) {
+    return;
+  }
+  perft_divide(&e->game, depth);
+}
 
 /*
  *  Command Table
@@ -196,7 +203,7 @@ typedef struct ui_cmd_s_ {
 } ui_cmd_s;
 
 enum {
-  N_UI_CMDS = 29
+  N_UI_CMDS = 30
 };
 
 const ui_cmd_s cmds[N_UI_CMDS];
@@ -251,6 +258,7 @@ const ui_cmd_s cmds[N_UI_CMDS] = {
   { CT_XBOARD,  "option",   ui_option,     "     - Set engine option" },
   { CT_UNIMP,   "otim",     ui_noop_1arg,  "TIME - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "perft",    ui_perft,      "     - Move generator performance test" },
+  { CT_GAMECTL, "perftd",   ui_perftd,     "     - Move generator performance test, divided by move" },
   { CT_DISPLAY, "print",    ui_print,      "     - Display the board" },
   { CT_XBOARD,  "protover", ui_protover,   "PROT - ??? Selects an XBoard protocol of at least PROT" },
   { CT_GAMECTL, "quit",     ui_quit,       "     - Quit the program" },
