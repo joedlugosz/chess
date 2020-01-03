@@ -460,6 +460,9 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
   player_e player;
   plane_t a_from, a_to;
   
+  state->ep_captured = 0;
+  state->captured = 0;
+
   /* Masks in the planes */
   a_to = pos2mask[to];
   /* If there is something at "to", it is a taking move */
@@ -482,9 +485,6 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
     if(piece_type[take_piece] == ROOK) {
       state->moved |= a_to;
     }
-  } else {
-    /* This move has not captured a piece */
-    state->captured = 0;
   }
 
   /* Get moving piece */
@@ -543,7 +543,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
       pos_t target_pos = to;
       if(state->to_move == WHITE) target_pos -= 8;
       else target_pos += 8;
-      piece_e target_piece = state->piece_at[target_pos];
+      uint8_t target_piece = state->piece_at[target_pos];
       player_e target_player = piece_player[target_piece];
       ASSERT(target_piece != EMPTY);
       ASSERT(target_player != state->to_move);
@@ -553,8 +553,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
       state->piece_at[target_pos] = EMPTY;
       state->index_at[target_pos] = EMPTY;
       state->ep_captured = 1;
-    } else {
-      state->ep_captured = 0;
+      state->captured = 1;
     }
     break;
   default:

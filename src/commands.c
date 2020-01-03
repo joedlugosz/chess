@@ -180,7 +180,7 @@ void ui_perft(engine_s *e) {
     perft_s data;
     perft(&data, &(e->game), i);
     printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", 
-      i, data.moves, data.captures, data.en_passant, data.castles, 
+      i, data.moves, data.captures, data.ep_captures, data.castles, 
       data.promotions, data.checks, 
       "X", "X", data.checkmates);
   }

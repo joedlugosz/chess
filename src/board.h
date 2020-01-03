@@ -16,7 +16,7 @@
 #include "chess.h"
 #include "lowlevel.h"
 #include "board.h"
-
+#include <stdint.h>
 //typedef int pos_t;
 typedef enum {
   NO_POS = -1,
@@ -69,7 +69,7 @@ typedef struct state_s_ {
   plane_t moves[N_PIECES];   /* Set of squares each piece can move to */
   plane_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
   pos_t pos[N_PIECES];       /* Board position of each piece */
-  piece_e piece_at[N_SQUARES];  /* Piece index at board position */
+  int8_t piece_at[N_SQUARES];  /* Piece index at board position */
   char index_at[N_SQUARES];  /* Piece index at board position */
   /* Other info */
   pos_t from;                /* Position moved from to get to this state */
