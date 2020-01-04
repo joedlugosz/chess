@@ -297,10 +297,10 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
     if(!blocked) {
       /* For each slide square, mark any attacked square as blocked */
       while(slides) {
-	plane_t mask = next_bit_from(&slides);
-	if(get_attacks(state, mask2pos(mask), opponent[player])) {
-	  blocked |= mask;
-	}
+        plane_t mask = next_bit_from(&slides);
+        if(get_attacks(state, mask2pos(mask), opponent[player])) {
+          blocked |= mask;
+        }
       }
     }
     /* If there are no blocked or attacked squares preventing castling, 
