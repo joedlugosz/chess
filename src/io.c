@@ -100,6 +100,7 @@ int encode_move(char *instr, pos_t from, pos_t to, int capture, int check)
   if(capture) *ptr++ = '+';
   if(check) *ptr++ = '#';
   *ptr = 0;
+  return 0;
 }
 
 void print_thought_moves(FILE *f, int depth, notation_s moves[])
