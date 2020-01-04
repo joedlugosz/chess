@@ -144,6 +144,9 @@ const char start_indexes[N_POS] = {
   16,  17,  18,  19,  20,  21,  22,  23, 
   24,  25,  26,  27,  28,  29,  30,  31
 };
+const char king_index[N_PLAYERS] = {
+  4, 28
+};
 /*
 const int piece_plane[N_PIECES] = { 
   ROOK,           KNIGHT,           BISHOP,           QUEEN,           KING,           BISHOP,           KNIGHT,           ROOK,
@@ -342,61 +345,71 @@ static void calculate_moves(state_s *state)
 {
   state->claim[0] = 0;
   state->claim[1] = 0;
+
   for(pos_t pos = 0; pos < N_POS; pos++) {
     int piece = state->piece_at[pos];
+    if(piece == EMPTY || piece_type[piece] == KING) 
+      continue;
     int index = state->index_at[pos];
-    if(piece != EMPTY) {
-      pos_t from = state->piece_pos[index];      
-      ASSERT(from == pos);
-      player_e player = piece_player[piece];
-      plane_t moves;
-      /* Get moves for the piece including taking moves for all pieces */
-      switch(piece_type[piece]) {	
-      case PAWN:
-        {
-          /* Pawns are blocked from moving ahead by any piece */
-          plane_t block = state->total_a;
-          /* Special case for double advance to prevent jumping */
-          /* Remove the pawn so it does not block itself */
-          block &= ~pos2mask[from];
-          /* Blocking piece does not just block its own square but also the next */
-          if(player == WHITE) {
-            block |= block << 8;
-          } else {
-            block |= block >> 8;
-          }
-          /* Apply block to pawn advances */
-          moves = pawn_advances[player][from] & ~block;
-          /* Add taking moves */
-          moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
+    pos_t from = state->piece_pos[index];      
+    ASSERT(from == pos);
+    player_e player = piece_player[piece];
+    plane_t moves;
+    /* Get moves for the piece including taking moves for all pieces */
+    switch(piece_type[piece]) {	
+    case PAWN:
+      {
+        /* Pawns are blocked from moving ahead by any piece */
+        plane_t block = state->total_a;
+        /* Special case for double advance to prevent jumping */
+        /* Remove the pawn so it does not block itself */
+        block &= ~pos2mask[from];
+        /* Blocking piece does not just block its own square but also the next */
+        if(player == WHITE) {
+          block |= block << 8;
+        } else {
+          block |= block >> 8;
         }
-        break;
-      case ROOK:
-        moves = get_rook_moves(state, from);
-        break;
-      case KNIGHT:
-        moves = knight_moves[from];
-        break;
-      case BISHOP:
-        moves = get_bishop_moves(state, from);
-        break;
-      case QUEEN:
-        moves = get_bishop_moves(state, from) | get_rook_moves(state, from);
-        break;
-      case KING:
-      /* Player info is required for castling checking */
-        moves = get_king_moves(state, from, player);
-        break;
-      default:
-        moves = 0;
-        break;
+        /* Apply block to pawn advances */
+        moves = pawn_advances[player][from] & ~block;
+        /* Add taking moves */
+        moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
       }
-      /* You can't take your own piece */
-      moves &= ~state->occ_a[player];
-      
-      state->moves[index] = moves;
-      state->claim[player] |= moves;
+      break;
+    case ROOK:
+      moves = get_rook_moves(state, from);
+      break;
+    case KNIGHT:
+      moves = knight_moves[from];
+      break;
+    case BISHOP:
+      moves = get_bishop_moves(state, from);
+      break;
+    case QUEEN:
+      moves = get_bishop_moves(state, from) | get_rook_moves(state, from);
+      break;
+    case KING:
+    /* Player info is required for castling checking */
+      moves = get_king_moves(state, from, player);
+      break;
+    default:
+      moves = 0;
+      break;
     }
+    /* You can't take your own piece */
+    moves &= ~state->occ_a[player];
+      
+    state->moves[index] = moves;
+    state->claim[player] |= moves;
+  }
+  
+  for(player_e player = WHITE; player <= BLACK; player++) {
+    int index = king_index[player];
+    plane_t moves = get_king_moves(state, state->piece_pos[index], player);
+    /* You can't take your own piece */
+    moves &= ~state->occ_a[player];
+    state->moves[index] = moves;
+    state->claim[player] |= moves;
   }
 }
 
