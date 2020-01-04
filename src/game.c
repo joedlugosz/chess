@@ -121,7 +121,7 @@ plane_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
 /* Castling */
 const pos_t rook_start_pos[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
 const pos_t king_start_pos[N_PLAYERS] = { 4, 60 };
-const plane_t castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
+const plane_t castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cull << 56, 0x60ull << 56 } };
 const plane_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 const plane_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
 
