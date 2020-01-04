@@ -121,7 +121,8 @@ plane_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
 /* Castling */
 const pos_t rook_start_pos[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
 const pos_t king_start_pos[N_PLAYERS] = { 4, 60 };
-const plane_t castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cull << 56, 0x60ull << 56 } };
+const plane_t king_castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cull << 56, 0x60ull << 56 } };
+const plane_t rook_castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
 const plane_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 const plane_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
 
@@ -290,14 +291,16 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
       continue;
     }
     /* All squares that the king will slide through */
-    plane_t slides = castle_slides[player][side];
-    /* Are there any pieces in the way of the slide? */
-    plane_t blocked = all & slides;
+    plane_t king_slides = king_castle_slides[player][side];
+    plane_t rook_slides = rook_castle_slides[player][side];
+    /* Are there any pieces in the way of the rook sliding? */
+    plane_t blocked = all & rook_slides;
     /* If so, blocked is nonzero, and can't castle on this side */
     if(!blocked) {
-      /* For each slide square, mark any attacked square as blocked */
-      while(slides) {
-        plane_t mask = next_bit_from(&slides);
+      /* For each slide square, mark any attacked square that the king
+       * will move through as blocked */
+      while(king_slides) {
+        plane_t mask = next_bit_from(&king_slides);
         if(get_attacks(state, mask2pos(mask), opponent[player])) {
           blocked |= mask;
         }
