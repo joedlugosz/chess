@@ -56,6 +56,7 @@ EXENAME=$1
 
 set_test 100
 test_perftd starting 4
+test_perftd position2 2
 #test_perft starting 5
 #test_perft position2 4
 #test_perft position3 3
