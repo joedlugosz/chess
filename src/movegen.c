@@ -185,3 +185,50 @@ void perft(perft_s *data, state_s *state, int depth)
     move = move->next;
   }
 }
+
+void perft_divide(state_s *state, int depth)
+{
+  move_s move_buf[N_MOVES];
+  move_s *move, *move_buf_head = move_buf;
+  state_s next_state;
+  perft_s next_data;
+  char buf[6];
+
+  gen_moves(state, &move_buf_head);
+  move = move_buf_head;
+  while(move) {
+    copy_state(&next_state, state);
+    do_move(&next_state, move->from, move->to, move->promotion);
+    /* Can't move into check */
+    if(!in_check(&next_state)) {
+      change_player(&next_state);
+      perft(&next_data, &next_state, depth - 1);
+      encode_move_bare(buf, move->from, move->to);
+      printf("%s: %lld\n", buf, next_data.moves);
+  /*    data->captures += next_data.captures;
+      data->promotions += next_data.promotions;
+      data->castles += next_data.castles;
+      data->checks += next_data.checks;
+      data->checkmates += next_data.checkmates;
+      data->ep_captures += next_data.ep_captures;*/
+    }
+    move = move->next;
+  }
+}
+  //printf("%4d %20s %12lld\n", depth, buf, p);
+  //printf("Perft: %lld\n", perft(&(e->game), depth));
+
+void perft_total(state_s *state, int depth) 
+{
+  printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", 
+    "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx", 
+    "Double Chx", "Checkmates");
+  for(int i = 1; i <= depth; i++) {
+    perft_s data;
+    perft(&data, state, i);
+    printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", 
+      i, data.moves, data.captures, data.ep_captures, data.castles, 
+      data.promotions, data.checks, 
+      "X", "X", data.checkmates);
+  }
+}

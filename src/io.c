@@ -72,28 +72,35 @@ int decode_instruction(const char *instr, pos_t *from, pos_t *to)
   return 1;
 }
 
-void encode_position(char *instr, pos_t pos)
+int encode_position(char *instr, pos_t pos)
 {
-  if(pos == -1) {
+  if(pos == -1 || pos >= N_POS) {
     instr[0] = 'X';
     instr[1] = 'X';
-  } else {
-    instr[0] = (char)(pos % 8) + 'a';
-    instr[1] = (char)(pos / 8) + '1';
+    instr[2] = 0;
+    return 1;
   }
+  instr[0] = (char)(pos % 8) + 'a';
+  instr[1] = (char)(pos / 8) + '1';
   instr[2] = 0;
+  return 0;
 }
 
-void encode_move(char *instr, pos_t from, pos_t to, int capture, int check)
+int encode_move_bare(char *instr, pos_t from, pos_t to)
 {
+  if(encode_position(instr, from)) return 1;
+  if(encode_position(instr+2, to)) return 1;
+  return 0;
+}
+
+int encode_move(char *instr, pos_t from, pos_t to, int capture, int check)
+{
+  if(encode_move_bare(instr, from, to)) return 1;
   char *ptr = instr + 4;
-  encode_position(instr, from);
-  encode_position(instr+2, to);
   if(capture) *ptr++ = '+';
   if(check) *ptr++ = '#';
-  else *ptr++ = ' ';
-  if(!capture) *ptr++ = ' '; 
   *ptr = 0;
+  return 0;
 }
 
 void print_thought_moves(FILE *f, int depth, notation_s moves[])

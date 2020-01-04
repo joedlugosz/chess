@@ -25,6 +25,7 @@ typedef struct perft_s_ {
 } perft_s;
 
 int gen_moves(state_s *state, move_s **move_buf_head);
-void perft(perft_s *data, state_s *state, int depth);
+void perft_total(state_s *state, int depth);
+void perft_divide(state_s *state, int depth);
 
 #endif /* MOVEGEN_H */
