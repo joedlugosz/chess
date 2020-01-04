@@ -36,9 +36,10 @@ int check_move(state_s *state, pos_t from, pos_t to);
 
 int decode_position(const char *instr, pos_t *pos);
 int decode_instruction(const char *instr, pos_t *from, pos_t *to);
-void encode_position(char *instr, pos_t pos);
+int encode_position(char *instr, pos_t pos);
 //void encode_instruction(char *instr, pos_t from, pos_t to);
-void encode_move(char *instr, pos_t from, pos_t to, int check, int capture);
+int encode_move(char *instr, pos_t from, pos_t to, int check, int capture);
+int encode_move_bare(char *instr, pos_t from, pos_t to);
 
 void list_features(void);
 void feature_accepted(const char *name);
