@@ -458,6 +458,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
   
   state->ep_captured = 0;
   state->captured = 0;
+  state->castled = 0;
 
   /* Masks in the planes */
   a_to = pos2mask[to];
