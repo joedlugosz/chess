@@ -141,8 +141,8 @@ const char start_indexes[N_POS] = {
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-  24,  25,  26,  27,  28,  29,  30,  31,
-  16,  17,  18,  19,  20,  21,  22,  23 
+  16,  17,  18,  19,  20,  21,  22,  23, 
+  24,  25,  26,  27,  28,  29,  30,  31
 };
 const char king_index[N_PLAYERS] = {
   4, 28
@@ -672,9 +672,9 @@ void init_board(void)
     occ_d2a[i] = 0;
     for(bit = 0; bit < 8; bit++) {
       if(i & (1 << bit)) {
-	occ_b2a[i] |= pos2mask[pos_a2b[bit]]; 
-	occ_c2a[i] |= pos2mask[bit * 7];
-	occ_d2a[i] |= pos2mask[bit * 9];
+      occ_b2a[i] |= pos2mask[pos_a2b[bit]]; 
+      occ_c2a[i] |= pos2mask[bit * 7];
+      occ_d2a[i] |= pos2mask[bit * 9];
       }
     }
   }
@@ -783,17 +783,17 @@ void init_board(void)
       advance = current;
       /* White and black advance in different directions */
       if(player == WHITE) {
-	/* Mask for pawn if it has not been moved */
-	jump = advance & starting_a[PAWN];
-	/* All pieces can advance by 1 square */
-	advance <<= 8;
-	/* Advance the pieces not previously moved by 2 squares */
-	jump <<= 16;
-      } else {
-	/* Other direction for black */
-	jump = advance & starting_a[PAWN + N_PIECE_T];
-	advance >>= 8;
-	jump >>= 16;
+      /* Mask for pawn if it has not been moved */
+      jump = advance & starting_a[PAWN];
+      /* All pieces can advance by 1 square */
+      advance <<= 8;
+      /* Advance the pieces not previously moved by 2 squares */
+      jump <<= 16;
+          } else {
+      /* Other direction for black */
+      jump = advance & starting_a[PAWN + N_PIECE_T];
+      advance >>= 8;
+      jump >>= 16;
       }
       /* Set of all possible advance or jump moves */		 
       pawn_advances[player][pos] = advance | jump;
@@ -802,11 +802,11 @@ void init_board(void)
       take = 0;
       /* If pawn is not on file 0, it can move to a lower file to take */
       if(current & 0x7f7f7f7f7f7f7f7full) {
-	take |= advance << 1;
+      	take |= advance << 1;
       }  
       /* If pawn is not on file 7, it can move to a higher file to take */
       if(current & 0xfefefefefefefefeull) {
-	take |= advance >> 1;
+	      take |= advance >> 1;
       }
       /* Set of all possible taking moves */		 
       pawn_takes[player][pos] = take;
