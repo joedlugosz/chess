@@ -347,48 +347,49 @@ static void calculate_moves(state_s *state)
     int index = state->index_at[pos];
     if(piece != EMPTY) {
       pos_t from = state->piece_pos[index];      
+      ASSERT(from == pos);
       player_e player = piece_player[piece];
       plane_t moves;
       /* Get moves for the piece including taking moves for all pieces */
       switch(piece_type[piece]) {	
       case PAWN:
-	{
-	  /* Pawns are blocked from moving ahead by any piece */
-	  plane_t block = state->total_a;
-	  /* Special case for double advance to prevent jumping */
-	  /* Remove the pawn so it does not block itself */
-	  block &= ~pos2mask[from];
-	  /* Blocking piece does not just block its own square but also the next */
-	  if(player == WHITE) {
-	    block |= block << 8;
-	  } else {
-	    block |= block >> 8;
-	  }
-	  /* Apply block to pawn advances */
-	  moves = pawn_advances[player][from] & ~block;
-	  /* Add taking moves */
-	  moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
-	}
-	break;
+        {
+          /* Pawns are blocked from moving ahead by any piece */
+          plane_t block = state->total_a;
+          /* Special case for double advance to prevent jumping */
+          /* Remove the pawn so it does not block itself */
+          block &= ~pos2mask[from];
+          /* Blocking piece does not just block its own square but also the next */
+          if(player == WHITE) {
+            block |= block << 8;
+          } else {
+            block |= block >> 8;
+          }
+          /* Apply block to pawn advances */
+          moves = pawn_advances[player][from] & ~block;
+          /* Add taking moves */
+          moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
+        }
+        break;
       case ROOK:
-	moves = get_rook_moves(state, from);
-	break;
+        moves = get_rook_moves(state, from);
+        break;
       case KNIGHT:
-	moves = knight_moves[from];
-	break;
+        moves = knight_moves[from];
+        break;
       case BISHOP:
-	moves = get_bishop_moves(state, from);
-	break;
+        moves = get_bishop_moves(state, from);
+        break;
       case QUEEN:
-	moves = get_bishop_moves(state, from) | get_rook_moves(state, from);
-	break;
+        moves = get_bishop_moves(state, from) | get_rook_moves(state, from);
+        break;
       case KING:
-	/* Player info is required for castling checking */
-	moves = get_king_moves(state, from, player);
-	break;
+      /* Player info is required for castling checking */
+        moves = get_king_moves(state, from, player);
+        break;
       default:
-	moves = 0;
-	break;
+        moves = 0;
+        break;
       }
       /* You can't take your own piece */
       moves &= ~state->occ_a[player];
