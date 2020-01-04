@@ -348,7 +348,7 @@ static void calculate_moves(state_s *state)
 
   for(int8_t index = 0; index < N_PIECES; index++) {
     pos_t pos = state->piece_pos[index];      
-    ASSERT(state->index_at[pos] == pos);
+    ASSERT(state->index_at[pos] == index);
     int piece = state->piece_at[pos];
     if(piece_type[piece] == KING) 
       continue;
@@ -402,8 +402,13 @@ static void calculate_moves(state_s *state)
     state->claim[player] |= moves;
   }
   
-  for(player_e player = WHITE; player <= BLACK; player++) {
-    int index = king_index[player];
+  for(int8_t index = 0; index < N_PIECES; index++) {
+    pos_t pos = state->piece_pos[index];      
+    ASSERT(state->index_at[pos] == index);
+    int piece = state->piece_at[pos];
+    if(piece_type[piece] != KING) 
+      continue;
+    player_e player = piece_player[piece];
     plane_t moves = get_king_moves(state, state->piece_pos[index], player);
     /* You can't take your own piece */
     moves &= ~state->occ_a[player];
