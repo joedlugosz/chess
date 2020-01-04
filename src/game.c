@@ -286,10 +286,6 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
     if(state->moved & castle_moves[player][side]) {
       continue;
     }
-    /* If this side's rook is not under attack */
-    if(get_attacks(state, rook_start_pos[player][side], opponent[player])) {
-      continue;
-    }
     /* All squares that the king will slide through */
     plane_t slides = castle_slides[player][side];
     /* Are there any pieces in the way of the slide? */
