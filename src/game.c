@@ -346,13 +346,12 @@ static void calculate_moves(state_s *state)
   state->claim[0] = 0;
   state->claim[1] = 0;
 
-  for(pos_t pos = 0; pos < N_POS; pos++) {
+  for(int8_t index = 0; index < N_PIECES; index++) {
+    pos_t pos = state->piece_pos[index];      
+    ASSERT(state->index_at[pos] == pos);
     int piece = state->piece_at[pos];
-    if(piece == EMPTY || piece_type[piece] == KING) 
+    if(piece_type[piece] == KING) 
       continue;
-    int index = state->index_at[pos];
-    pos_t from = state->piece_pos[index];      
-    ASSERT(from == pos);
     player_e player = piece_player[piece];
     plane_t moves;
     /* Get moves for the piece including taking moves for all pieces */
@@ -363,7 +362,7 @@ static void calculate_moves(state_s *state)
         plane_t block = state->total_a;
         /* Special case for double advance to prevent jumping */
         /* Remove the pawn so it does not block itself */
-        block &= ~pos2mask[from];
+        block &= ~pos2mask[pos];
         /* Blocking piece does not just block its own square but also the next */
         if(player == WHITE) {
           block |= block << 8;
@@ -371,26 +370,26 @@ static void calculate_moves(state_s *state)
           block |= block >> 8;
         }
         /* Apply block to pawn advances */
-        moves = pawn_advances[player][from] & ~block;
+        moves = pawn_advances[player][pos] & ~block;
         /* Add taking moves */
-        moves |= pawn_takes[player][from] & (state->occ_a[opponent[player]] | state->en_passant);
+        moves |= pawn_takes[player][pos] & (state->occ_a[opponent[player]] | state->en_passant);
       }
       break;
     case ROOK:
-      moves = get_rook_moves(state, from);
+      moves = get_rook_moves(state, pos);
       break;
     case KNIGHT:
-      moves = knight_moves[from];
+      moves = knight_moves[pos];
       break;
     case BISHOP:
-      moves = get_bishop_moves(state, from);
+      moves = get_bishop_moves(state, pos);
       break;
     case QUEEN:
-      moves = get_bishop_moves(state, from) | get_rook_moves(state, from);
+      moves = get_bishop_moves(state, pos) | get_rook_moves(state, pos);
       break;
     case KING:
     /* Player info is required for castling checking */
-      moves = get_king_moves(state, from, player);
+      moves = get_king_moves(state, pos, player);
       break;
     default:
       moves = 0;
