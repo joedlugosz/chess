@@ -374,8 +374,10 @@ static void calculate_moves(state_s *state)
         }
         /* Apply block to pawn advances */
         moves = pawn_advances[player][pos] & ~block;
-        /* Add taking moves */
+        /* Add actual taking moves */
         moves |= pawn_takes[player][pos] & (state->occ_a[opponent[player]] | state->en_passant);
+        /* Claim for pawns is only taking moves */
+        state->claim[player] |= pawn_takes[player][pos];
       }
       break;
     case ROOK:
@@ -402,7 +404,9 @@ static void calculate_moves(state_s *state)
     moves &= ~state->occ_a[player];
       
     state->moves[index] = moves;
-    state->claim[player] |= moves;
+    if(piece_type[piece] != PAWN) {
+      state->claim[player] |= moves;
+    }
   }
   
   for(int8_t index = 0; index < N_PIECES; index++) {
