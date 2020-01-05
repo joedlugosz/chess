@@ -351,8 +351,12 @@ static void calculate_moves(state_s *state)
 
   for(int8_t index = 0; index < N_PIECES; index++) {
     pos_t pos = state->piece_pos[index];      
+    if(pos == NO_POS) {
+      continue;
+    }
     ASSERT(state->index_at[pos] == index);
     int piece = state->piece_at[pos];
+    /* King handled at the end */
     if(piece_type[piece] == KING) 
       continue;
     player_e player = piece_player[piece];
@@ -411,6 +415,9 @@ static void calculate_moves(state_s *state)
   
   for(int8_t index = 0; index < N_PIECES; index++) {
     pos_t pos = state->piece_pos[index];      
+    if(pos == NO_POS) {
+      continue;
+    }
     ASSERT(state->index_at[pos] == index);
     int piece = state->piece_at[pos];
     if(piece_type[piece] != KING) 
@@ -571,7 +578,7 @@ void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece)
       ASSERT(target_player != state->to_move);
       clear(state, target_pos, target_piece, target_player);
       /* Set piece position to empty */
-      //state->piece_pos[(int)state->index_at[target_pos]] = NO_POS;
+      state->piece_pos[(int)state->index_at[target_pos]] = NO_POS;
       state->piece_at[target_pos] = EMPTY;
       state->index_at[target_pos] = EMPTY;
       state->ep_captured = 1;
