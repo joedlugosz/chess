@@ -206,7 +206,6 @@ void init_engine()
   reset_board(&engine.game);
   /* Game control initial values */
   engine.game_n = 1;
-  engine.run = 1;
   engine.waiting = 1;
   engine.ai_player = BLACK;
   engine.engine_mode = ENGINE_PLAYING_AS_BLACK;
@@ -334,7 +333,7 @@ static inline int user_input()
     /* Print a prompt for the next command, unless the engine is no longer
        running (immediately following 'quit' command), or if AI is about to 
        move next (e.g. as a result of 'white'/'black') */
-    if(engine.run &&
+    if(engine.engine_mode != QUIT &&
        ((engine.ai_player != engine.game.to_move) || engine.force))
       return 1;
     else

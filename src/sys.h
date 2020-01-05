@@ -19,7 +19,6 @@ typedef struct engine_s_ {
   
   int xboard_mode;
   player_e ai_player;
-  int run;
   int force;
   int waiting;
   int resign;
