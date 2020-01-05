@@ -32,10 +32,6 @@ typedef struct engine_s_ {
 
 } engine_s;
 
-//extern engine_s engine;
-//extern state_s ui_game;
-
-
 /* command.c*/
 typedef void (*ui_fn)(engine_s *);
 int accept_command(engine_s *e, const char *in);
@@ -43,13 +39,10 @@ int accept_command(engine_s *e, const char *in);
 /* moves.c */
 int check_force_move(state_s *state, pos_t from);
 int check_move(state_s *state, pos_t from, pos_t to);
-//void ai_move(void);
-//int process_move(const char *in);
 
 int decode_position(const char *instr, pos_t *pos);
 int decode_instruction(const char *instr, pos_t *from, pos_t *to);
 int encode_position(char *instr, pos_t pos);
-//void encode_instruction(char *instr, pos_t from, pos_t to);
 int encode_move(char *instr, pos_t from, pos_t to, int check, int capture);
 int encode_move_bare(char *instr, pos_t from, pos_t to);
 
@@ -59,7 +52,6 @@ void list_options(void);
 int set_option(engine_s *e, const char *name);
 
 /* io.c */
-//const char *get_line(void);
 const char *get_input(void);
 const char *get_delim(char delim);
 
