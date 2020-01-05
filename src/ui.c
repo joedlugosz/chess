@@ -116,10 +116,6 @@ static inline void print_game_state(void)
 
 static inline void print_prompt(void)
 {
-  if(engine.engine_mode == QUIT) {
-    return;
-  }
-
   if(!engine.xboard_mode) {
     if(engine.engine_mode != FORCE_MODE) {
       printf("%s %s> ", player_text[engine.game.to_move],
@@ -225,16 +221,10 @@ void finished_move()
   }    
 }
 
-int ai_to_move()
+static inline int ai_to_move()
 {
-  /* AI to move unless */
-  /* External player is next to move in a game */
   if(engine.game.to_move != engine.engine_mode) return 0;
-  /* Running in force mode */
-  if(engine.engine_mode == FORCE_MODE) return 0;
-  /* Waiting for 'go' command */
-  if(engine.waiting) return 0;
-  return 1;
+  else return 1;
 }
 
 static inline void ai_move(void)
@@ -385,16 +375,15 @@ int main(int argc, char *argv[])
 
   /* Display startup text */
   print_game_state();
-  print_prompt();
 
   while(engine.engine_mode != QUIT) {
-    if(engine.engine_mode == engine.game.to_move) {
+    if(!ai_to_move(&engine)) {
+      print_prompt();
+    }
+    if(ai_to_move(&engine)) {
       ai_move();
     } else {
       user_input();
-    }
-    if(engine.engine_mode != engine.game.to_move) {
-      print_prompt();
     }
   }
 }
