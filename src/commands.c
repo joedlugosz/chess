@@ -28,11 +28,9 @@ void ui_go(engine_s *e) {
 void ui_computer(engine_s *e) {
 }
 void ui_black(engine_s *e) {
-  e->ai_player = BLACK;
   e->engine_mode = ENGINE_PLAYING_AS_BLACK;
 }
 void ui_white(engine_s *e) {
-  e->ai_player = WHITE;
   e->engine_mode = ENGINE_PLAYING_AS_WHITE;
 }
 void ui_new(engine_s *e) {
@@ -41,7 +39,7 @@ void ui_new(engine_s *e) {
   e->resign = 0;
   e->waiting = 1;
   e->game.to_move = WHITE;
-  e->ai_player = BLACK;
+  e->engine_mode = ENGINE_PLAYING_AS_BLACK;
   reset_board(&e->game);
   START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
   START_LOG(&xboard_log, NE_GAME, "%s", "xboard");

@@ -96,7 +96,7 @@ static inline void print_statistics(void) {
     double time = (double)(t2 - t1) / (double)CLOCKS_PER_SEC;
     printf("%d : %0.2lf sec", 
 	   eval(&engine.game)/10, time);
-    if(engine.game.to_move == engine.ai_player) {
+    if(engine.game.to_move == engine.engine_mode) {
       printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", engine.result.n_searched,
 	     engine.result.cutoff, (double)engine.result.n_searched / (time * 1000.0));
     }
@@ -119,7 +119,7 @@ static inline void print_prompt(void)
   if(!engine.xboard_mode) {
     if(engine.engine_mode != FORCE_MODE) {
       printf("%s %s> ", player_text[engine.game.to_move],
-	     engine.game.to_move == engine.ai_player ? "(AI) " : "");
+	     engine.game.to_move == engine.engine_mode ? "(AI) " : "");
     } else {
       printf("FORCE > ");
     }
@@ -207,7 +207,6 @@ void init_engine()
   /* Game control initial values */
   engine.game_n = 1;
   engine.waiting = 1;
-  engine.ai_player = BLACK;
   engine.engine_mode = ENGINE_PLAYING_AS_BLACK;
 }
 
@@ -226,7 +225,7 @@ int ai_to_move()
 {
   /* AI to move unless */
   /* External player is next to move in a game */
-  if(engine.game.to_move != engine.ai_player) return 0;
+  if(engine.game.to_move != engine.engine_mode) return 0;
   /* Running in force mode */
   if(engine.engine_mode == FORCE_MODE) return 0;
   /* Waiting for 'go' command */
@@ -256,8 +255,9 @@ static inline void ai_move(void)
     return;
   }
   char buf[20];
+  ASSERT(engine.engine_mode < FORCE_MODE);
   encode_move(buf, engine.game.from, engine.game.to, engine.game.captured,
-	      engine.game.check[opponent[engine.ai_player]]);
+	      engine.game.check[opponent[engine.engine_mode]]);
   /* Log move */
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   /* Output */
@@ -333,11 +333,16 @@ static inline int user_input()
     /* Print a prompt for the next command, unless the engine is no longer
        running (immediately following 'quit' command), or if AI is about to 
        move next (e.g. as a result of 'white'/'black') */
+    if(engine.engine_mode == QUIT || engine.engine_mode == engine.game.to_move) {
+      return 0;
+    }
+    return 1;
+    /*
     if(engine.engine_mode != QUIT &&
-       ((engine.ai_player != engine.game.to_move) || engine.engine_mode == FORCE_MODE))
+       ((engine.engine_mode != engine.game.to_move) || engine.engine_mode == FORCE_MODE))
       return 1;
     else
-      return 0;
+      return 0;*/
   }
   /* Move */
   switch(accept_move(in)) {
