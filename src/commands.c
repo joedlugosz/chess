@@ -12,6 +12,62 @@
  *  Commands
  */ 
 
+/* Game Control */
+void ui_quit(engine_s *e) {
+  e->run = 0;
+}
+void ui_result(engine_s *e) {
+  PRINT_LOG(&xboard_log, "%s ", get_input());
+}
+void ui_force(engine_s *e) {
+  e->force = 1;
+}
+void ui_go(engine_s *e) {
+  e->waiting = 0;
+}
+void ui_computer(engine_s *e) {
+}
+void ui_black(engine_s *e) {
+  e->ai_player = BLACK;
+  e->force = 0;
+}
+void ui_white(engine_s *e) {
+  e->ai_player = WHITE;
+  e->force = 0;
+}
+void ui_new(engine_s *e) {
+  e->game_n++;
+  e->move_n = 1;
+  e->resign = 0;
+  e->waiting = 1;
+  e->game.to_move = WHITE;
+  e->ai_player = BLACK;
+  reset_board(&e->game);
+  START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
+  START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
+}
+
+
+/* Handles "xboard" command - Switch to XBoard mode */
+void ui_xboard(engine_s *e) {
+  e->xboard_mode = 1;
+}
+
+/* Engine control */
+void ui_sd(engine_s *e) {
+  int depth;
+  sscanf(get_input(), "%d", &depth);
+  set_depth(depth);
+}
+void ui_level(engine_s *e) {
+  get_input();
+  get_input();
+  get_input();
+}
+void ui_otim(engine_s *e) {
+  sscanf(get_input(), "%lu", &e->otim);
+}
+
 /* Handles "protover" command - for protocol version >= 2 */
 void ui_protover(engine_s *e) {
   int ver;
@@ -52,46 +108,16 @@ void ui_accepted(engine_s *e) {
   }
 }
 
-/* Handles "xboard" command - Switch to XBoard mode */
-void ui_xboard(engine_s *e) {
-  e->xboard_mode = 1;
+/* XBoard accepts an option or feature */
+int accept(void)
+{
+  if(strcmp(get_input(), "accepted") == 0) { 
+    return 1;
+  }
+  return 0;
 }
 
-/* Engine control */
-void ui_sd(engine_s *e) {
-  int depth;
-  sscanf(get_input(), "%d", &depth);
-  set_depth(depth);
-}
-void ui_level(engine_s *e) {
-  get_input();
-  get_input();
-  get_input();
-}
-void ui_otim(engine_s *e) {
-  sscanf(get_input(), "%lu", &e->otim);
-}
 
-/* Game Control */
-void ui_black(engine_s *e) {
-  e->ai_player = BLACK;
-  e->force = 0;
-}
-void ui_white(engine_s *e) {
-  e->ai_player = WHITE;
-  e->force = 0;
-}
-void ui_new(engine_s *e) {
-  e->game_n++;
-  e->move_n = 1;
-  e->resign = 0;
-  e->waiting = 1;
-  e->game.to_move = WHITE;
-  e->ai_player = BLACK;
-  reset_board(&e->game);
-  START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
-  START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
-}
 void ui_fen(engine_s *e) {
   const char *placement = get_input();
   const char *active = get_input();
@@ -101,40 +127,11 @@ void ui_fen(engine_s *e) {
     printf("FEN string not recognised\n");
   }
 }
+
 void ui_getfen(engine_s *e) {
   char buf[100];
   get_fen(&e->game, buf, sizeof(buf));
   printf("%s\n", buf);
-}
-void ui_quit(engine_s *e) {
-  e->run = 0;
-}
-void ui_result(engine_s *e) {
-  PRINT_LOG(&xboard_log, "%s ", get_input());
-}
-void ui_force(engine_s *e) {
-  e->force = 1;
-}
-void ui_go(engine_s *e) {
-  e->waiting = 0;
-}
-void ui_computer(engine_s *e) {
-}
-
-/* No Operation */
-void ui_noop(engine_s *e) {
-}
-void ui_noop_1arg(engine_s *e) {
-  get_input();
-}
-
-/* XBoard accepts an option or feature */
-int accept(void)
-{
-  if(strcmp(get_input(), "accepted") == 0) { 
-    return 1;
-  }
-  return 0;
 }
 
 /* Debug */
@@ -177,12 +174,20 @@ void ui_perft(engine_s *e) {
   }
   perft_total(&e->game, depth);
 }
+
 void ui_perftd(engine_s *e) {
   int depth;
   if(!sscanf(get_input(), "%d", &depth)) {
     return;
   }
   perft_divide(&e->game, depth);
+}
+
+/* No Operation */
+void ui_noop(engine_s *e) {
+}
+void ui_noop_1arg(engine_s *e) {
+  get_input();
 }
 
 /*
