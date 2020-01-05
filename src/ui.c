@@ -341,7 +341,7 @@ static inline int user_input()
   /* Move */
   if(!accept_move(in)) {
     /* A valid move was entered and it has been made */
-    if(engine.engine_mode != FORCE_MODE) {
+    if(engine.engine_mode < FORCE_MODE) {
       print_statistics();
     }
     print_game_state();
@@ -396,8 +396,8 @@ int main(int argc, char *argv[])
     } else {
       /* Process user input */
       if(user_input()) {
-	/* Sometimes a prompt is not needed */
-	print_prompt();
+        /* Sometimes a prompt is not needed */
+        print_prompt();
       }
     }
   }
