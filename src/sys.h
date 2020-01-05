@@ -5,19 +5,33 @@
 # include "chess.h"
 # include "board.h"
 # include "search.h"
+
 typedef struct engine_s_ {
+  enum {
+    ENGINE_PLAYING_AS_WHITE = WHITE,
+    ENGINE_PLAYING_AS_BLACK = BLACK,
+    FORCE_MODE,
+    ANALYSE_MODE
+  } engine_mode;
+
+  player_e side_to_move;
+  
   int xboard_mode;
   player_e ai_player;
   int run;
   int force;
   int waiting;
   int resign;
+  clock_t ui_clock;
+  
   unsigned long otim;
   int move_n;
   int game_n;
-  clock_t ui_clock;
+  
   state_s game;
+
   ai_result_s result;
+
 } engine_s;
 
 extern engine_s engine;
