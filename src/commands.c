@@ -12,26 +12,19 @@
  *  Commands
  */ 
 
+void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
+
 /* Game Control */
-void ui_quit(engine_s *e) {
-  e->engine_mode = QUIT;
-}
+void ui_quit(engine_s *e)  { e->engine_mode = QUIT; }
+void ui_force(engine_s *e) { e->engine_mode = FORCE_MODE; }
+void ui_black(engine_s *e) { e->engine_mode = ENGINE_PLAYING_AS_BLACK; }
+void ui_white(engine_s *e) { e->engine_mode = ENGINE_PLAYING_AS_WHITE; }
+
+void ui_go(engine_s *e)       { }
+void ui_computer(engine_s *e) { }
+
 void ui_result(engine_s *e) {
   PRINT_LOG(&xboard_log, "%s ", get_input());
-}
-void ui_force(engine_s *e) {
-  e->engine_mode = FORCE_MODE;
-}
-void ui_go(engine_s *e) {
-  e->waiting = 0;
-}
-void ui_computer(engine_s *e) {
-}
-void ui_black(engine_s *e) {
-  e->engine_mode = ENGINE_PLAYING_AS_BLACK;
-}
-void ui_white(engine_s *e) {
-  e->engine_mode = ENGINE_PLAYING_AS_WHITE;
 }
 void ui_new(engine_s *e) {
   e->game_n++;
@@ -43,12 +36,6 @@ void ui_new(engine_s *e) {
   reset_board(&e->game);
   START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
   START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
-}
-
-
-/* Handles "xboard" command - Switch to XBoard mode */
-void ui_xboard(engine_s *e) {
-  e->xboard_mode = 1;
 }
 
 /* Engine control */
