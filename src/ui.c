@@ -339,22 +339,18 @@ static inline int user_input()
     return 1;
   }
   /* Move */
-  switch(accept_move(in)) {
-  case 0:
+  if(!accept_move(in)) {
     /* A valid move was entered and it has been made */
     if(engine.engine_mode != FORCE_MODE) {
       print_statistics();
     }
     print_game_state();
     finished_move();
+    /* No prompt when it's computer's turn */
     return 0;
-  case 1:
-    /* A well-formed move instruction but not a valid move, error message 
-       has already been printed, no further action */
+  } else {
     return 1;
-  default:
-    break;
-  }  
+  }
   /* Not a command or a move */
   print_msg("Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
   return 1;
