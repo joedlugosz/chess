@@ -348,32 +348,29 @@ static inline int user_input()
   return 1;
 }
 
+void parse_command_line_args(engine_s *e, int argc, char *argv[])
+{
+  for(int arg = 1; arg < argc; arg++) {
+    if(strcmp(argv[arg], "x") == 0) {
+      e->xboard_mode = 1;
+    }
+  }
+}
+
 /*
  *  UI Main Loop
  */
 int main(int argc, char *argv[])
 {
-  /* Start session logs */
   start_session_log();
-  /* Turn off buffering on stdout */
   setbuf(stdout, NULL);
-  /* OS-specific initialisation */
   init_os();
-  /* Initialise lookup tables etc. */
   init_board();
-  /* Initialise random numbers */
   srand(clock());
-  /* The chess engine used by the UI */
-  /* Initialise chess engine */
   init_engine(&engine);
-  /* Parse command line arguments */
-  for(int arg = 1; arg < argc; arg++) {
-    if(strcmp(argv[arg], "x") == 0) {
-      engine.xboard_mode = 1;
-    }
-  }
+  
+  parse_command_line_args(&engine, argc, argv);
 
-  /* Display startup text */
   print_game_state();
 
   while(engine.engine_mode != QUIT) {
