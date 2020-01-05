@@ -20,7 +20,7 @@ void ui_result(engine_s *e) {
   PRINT_LOG(&xboard_log, "%s ", get_input());
 }
 void ui_force(engine_s *e) {
-  e->force = 1;
+  e->engine_mode = FORCE_MODE;
 }
 void ui_go(engine_s *e) {
   e->waiting = 0;
@@ -29,11 +29,11 @@ void ui_computer(engine_s *e) {
 }
 void ui_black(engine_s *e) {
   e->ai_player = BLACK;
-  e->force = 0;
+  e->engine_mode = ENGINE_PLAYING_AS_BLACK;
 }
 void ui_white(engine_s *e) {
   e->ai_player = WHITE;
-  e->force = 0;
+  e->engine_mode = ENGINE_PLAYING_AS_WHITE;
 }
 void ui_new(engine_s *e) {
   e->game_n++;

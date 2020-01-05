@@ -117,7 +117,7 @@ static inline void print_game_state(void)
 static inline void print_prompt(void)
 {
   if(!engine.xboard_mode) {
-    if(!engine.force) {
+    if(engine.engine_mode != FORCE_MODE) {
       printf("%s %s> ", player_text[engine.game.to_move],
 	     engine.game.to_move == engine.ai_player ? "(AI) " : "");
     } else {
@@ -228,7 +228,7 @@ int ai_to_move()
   /* External player is next to move in a game */
   if(engine.game.to_move != engine.ai_player) return 0;
   /* Running in force mode */
-  if(engine.force) return 0;
+  if(engine.engine_mode == FORCE_MODE) return 0;
   /* Waiting for 'go' command */
   if(engine.waiting) return 0;
   return 1;
@@ -246,7 +246,7 @@ static inline void ai_move(void)
   if(engine.resign || engine.result.status == CHECKMATE) {
     PRINT_LOG(&xboard_log, "%s", "\nAI > resign");
     print_ai_resign();
-    engine.force = 1;
+    engine.engine_mode = FORCE_MODE;
     return;
   }
   /* If no valid move was found */
@@ -283,7 +283,7 @@ static inline int accept_move(const char *in)
     return 2;
   }
   /* Normal mode */
-  if(!engine.force) {
+  if(engine.engine_mode != FORCE_MODE) {
     /* Check from and to */
     if(check_move(&engine.game, from, to)) {
       /* Invalid move */
@@ -334,7 +334,7 @@ static inline int user_input()
        running (immediately following 'quit' command), or if AI is about to 
        move next (e.g. as a result of 'white'/'black') */
     if(engine.engine_mode != QUIT &&
-       ((engine.ai_player != engine.game.to_move) || engine.force))
+       ((engine.ai_player != engine.game.to_move) || engine.engine_mode == FORCE_MODE))
       return 1;
     else
       return 0;
@@ -343,7 +343,7 @@ static inline int user_input()
   switch(accept_move(in)) {
   case 0:
     /* A valid move was entered and it has been made */
-    if(!engine.force) {
+    if(engine.engine_mode != FORCE_MODE) {
       print_statistics();
     }
     print_game_state();
