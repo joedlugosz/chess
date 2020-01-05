@@ -14,7 +14,7 @@
 
 /* Game Control */
 void ui_quit(engine_s *e) {
-  e->run = 0;
+  e->engine_mode = QUIT;
 }
 void ui_result(engine_s *e) {
   PRINT_LOG(&xboard_log, "%s ", get_input());

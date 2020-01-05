@@ -209,6 +209,7 @@ void init_engine()
   engine.run = 1;
   engine.waiting = 1;
   engine.ai_player = BLACK;
+  engine.engine_mode = ENGINE_PLAYING_AS_BLACK;
 }
 
 void finished_move()
@@ -391,7 +392,7 @@ int main(int argc, char *argv[])
   print_prompt();
 
   /* Main loop */
-  while(engine.run) {
+  while(engine.engine_mode != QUIT) {
     /* AI turn to move */
     if(ai_to_move(&engine)) {
       /* Do AI move */
