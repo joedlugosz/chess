@@ -4,13 +4,14 @@ EXENAME=""
 
 TEST_NUMBER=0
 set_test() {
-    TEST_NUMBER="$1"
+    TEST_NUMBER=$1
 }
 next_test() {
     ((TEST_NUMBER++))
 }
 
 test_perft() {
+    echo Test $TEST_NUMBER
     REFERENCE=$1/$1
     DEPTH=$2
     read FEN < $REFERENCE
@@ -56,11 +57,11 @@ EXENAME=$1
 
 set_test 1
 #test_perftd starting 4
-test_perftd position2 4
+#test_perftd position2 4
 
 #set_test 100
-test_perft starting 4
+test_perft starting 5
 test_perft position2 4
-test_perft position3 4
+test_perft position3 5
 test_perft position4 2
 cleanup
