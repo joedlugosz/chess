@@ -337,12 +337,6 @@ static inline int user_input()
       return 0;
     }
     return 1;
-    /*
-    if(engine.engine_mode != QUIT &&
-       ((engine.engine_mode != engine.game.to_move) || engine.engine_mode == FORCE_MODE))
-      return 1;
-    else
-      return 0;*/
   }
   /* Move */
   switch(accept_move(in)) {
