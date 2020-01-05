@@ -385,6 +385,16 @@ int main(int argc, char *argv[])
   print_game_state();
   print_prompt();
 
+  while(engine.engine_mode != QUIT) {
+    if(engine.engine_mode == engine.game.to_move) {
+      ai_move();
+    } else {
+      user_input();
+    }
+    print_prompt();
+  }
+}
+#if 0
   /* Main loop */
   while(engine.engine_mode != QUIT) {
     /* AI turn to move */
@@ -402,3 +412,4 @@ int main(int argc, char *argv[])
     }
   }
 }
+#endif 
