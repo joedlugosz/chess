@@ -357,6 +357,20 @@ void parse_command_line_args(engine_s *e, int argc, char *argv[])
   }
 }
 
+void main_loop(engine_s *engine) 
+{
+  while(engine->engine_mode != QUIT) {
+    if(!ai_to_move(engine)) {
+      print_prompt();
+    }
+    if(ai_to_move(engine)) {
+      ai_move();
+    } else {
+      user_input();
+    }
+  }
+}
+
 /*
  *  UI Main Loop
  */
@@ -368,38 +382,7 @@ int main(int argc, char *argv[])
   init_board();
   srand(clock());
   init_engine(&engine);
-  
   parse_command_line_args(&engine, argc, argv);
-
   print_game_state();
-
-  while(engine.engine_mode != QUIT) {
-    if(!ai_to_move(&engine)) {
-      print_prompt();
-    }
-    if(ai_to_move(&engine)) {
-      ai_move();
-    } else {
-      user_input();
-    }
-  }
+  main_loop(&engine);
 }
-#if 0
-  /* Main loop */
-  while(engine.engine_mode != QUIT) {
-    /* AI turn to move */
-    if(ai_to_move(&engine)) {
-      /* Do AI move */
-      ai_move();
-      /* Prompt for user move */
-      print_prompt();
-    } else {
-      /* Process user input */
-      if(user_input()) {
-        /* Sometimes a prompt is not needed */
-        print_prompt();
-      }
-    }
-  }
-}
-#endif 
