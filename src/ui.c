@@ -116,6 +116,10 @@ static inline void print_game_state(void)
 
 static inline void print_prompt(void)
 {
+  if(engine.engine_mode == QUIT) {
+    return;
+  }
+
   if(!engine.xboard_mode) {
     if(engine.engine_mode != FORCE_MODE) {
       printf("%s %s> ", player_text[engine.game.to_move],
@@ -330,10 +334,8 @@ static inline int user_input()
   }
   /* Command */
   if(!accept_command(&engine, in)) {
-    /* Print a prompt for the next command, unless the engine is no longer
-       running (immediately following 'quit' command), or if AI is about to 
-       move next (e.g. as a result of 'white'/'black') */
-    if(engine.engine_mode == QUIT || engine.engine_mode == engine.game.to_move) {
+    /* No prompt if AI is about to move next (e.g. as a result of 'white'/'black') */
+    if(engine.engine_mode == engine.game.to_move) {
       return 0;
     }
     return 1;
@@ -391,7 +393,9 @@ int main(int argc, char *argv[])
     } else {
       user_input();
     }
-    print_prompt();
+    if(engine.engine_mode != engine.game.to_move) {
+      print_prompt();
+    }
   }
 }
 #if 0
