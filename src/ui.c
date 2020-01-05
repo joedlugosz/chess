@@ -309,43 +309,34 @@ static inline int accept_move(const char *in)
 /*
  *  Returns 1 to print a prompt after
  */
-static inline int user_input()
+static inline void user_input()
 {
   const char *in;
   in = get_input();
   /* No input */
   if(in[0] == 0) {
-    return 0;
+    return;
   }
   /* Message from server etc. */
   if(in[0] == '{') {
     PRINT_LOG(&xboard_log, "Msg : %s", in+1);
-    return 0;
+    return;
   }
   /* Command */
   if(!accept_command(&engine, in)) {
-    /* No prompt if AI is about to move next (e.g. as a result of 'white'/'black') */
-    if(engine.engine_mode == engine.game.to_move) {
-      return 0;
-    }
-    return 1;
+    return;
   }
   /* Move */
   if(!accept_move(in)) {
-    /* A valid move was entered and it has been made */
     if(engine.engine_mode < FORCE_MODE) {
       print_statistics();
     }
     print_game_state();
     finished_move();
-    /* No prompt when it's computer's turn */
-    return 0;
-  } else {
-    return 1;
+    return;
   }
   /* Not a command or a move */
   print_msg("Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
-  return 1;
 }
 
 void parse_command_line_args(engine_s *e, int argc, char *argv[])
