@@ -627,6 +627,11 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
   int index = 0;
   state->hash = 0;
   state->moved = pieces_moved;
+
+  for(int i = 0; i < N_PIECES; i++) {
+    state->piece_pos[i] = NO_POS;
+  }
+
   /* Iterate through positions */
   for(pos_t a_pos = 0; a_pos < N_POS; a_pos++) {
     int piece = pieces[a_pos];
