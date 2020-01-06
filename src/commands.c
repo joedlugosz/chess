@@ -15,12 +15,26 @@
 void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
 
 /* Game Control */
-void ui_quit(engine_s *e)  { e->engine_mode = QUIT; }
-void ui_force(engine_s *e) { e->engine_mode = FORCE_MODE; }
-void ui_black(engine_s *e) { e->engine_mode = ENGINE_PLAYING_AS_BLACK; }
-void ui_white(engine_s *e) { e->engine_mode = ENGINE_PLAYING_AS_WHITE; }
-
-void ui_go(engine_s *e)       { }
+void ui_quit(engine_s *e) { 
+  e->engine_mode = QUIT; 
+}
+void ui_force(engine_s *e) { 
+  e->engine_mode = FORCE_MODE; 
+}
+void ui_black(engine_s *e) { 
+  e->engine_mode = ENGINE_PLAYING_AS_BLACK;
+  e->game.to_move = WHITE;
+}
+void ui_white(engine_s *e) { 
+  e->engine_mode = ENGINE_PLAYING_AS_WHITE; 
+  e->game.to_move = BLACK;
+}
+void ui_go(engine_s *e) { 
+  e->engine_mode = e->game.to_move; 
+}
+void ui_playother(engine_s *e) { 
+  e->engine_mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.to_move; 
+}
 void ui_computer(engine_s *e) { }
 
 void ui_result(engine_s *e) {
