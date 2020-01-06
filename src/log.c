@@ -126,5 +126,5 @@ void assert_fail(log_s *log, const char *file, const char *func, const int line,
 {
   log_error(log, file, func, line, "Debug assertation failed: ", condition);
   printf("resign\n");
-  //  abort();
+  abort();
 }
