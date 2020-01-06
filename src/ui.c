@@ -42,7 +42,7 @@ enum {
 const char err_msg[N_ERR][80] = {
 };
 
-engine_s engine;
+//engine_s engine;
 
 /* XBoard comms log */
 log_s xboard_log = {
@@ -77,11 +77,12 @@ void start_session_log(void)
   START_LOG(&xboard_log, NE_SESSION, "%s", "xboard");
   START_LOG(&error_log, NE_SESSION, "%s", "error");
 }
-void start_move_log(void)
+void start_move_log(engine_s *e)
 {
 #if (LOGGING == YES)
   char buf[20];
-  snprintf(buf, sizeof(buf), "g%02d-%c%02d", engine.game_n, (engine.ai_player == 0) ? 'w' : 'b', engine.move_n);
+  snprintf(buf, sizeof(buf), "g%02d-%c%02d", 
+    e->game_n, (e->engine_mode == ENGINE_PLAYING_AS_WHITE) ? 'w' : 'b', e->move_n);
   START_LOG(&think_log, NE_MOVE, "%s", buf);
   START_LOG(&xboard_log, NE_MOVE, "%s-xboard", buf);
 #endif
@@ -91,66 +92,62 @@ void start_move_log(void)
 /*
  *  Output
  */
-static inline void print_statistics(void) {
-  if(!engine.xboard_mode) {
+static inline void print_statistics(engine_s *engine) {
+  if(!engine->xboard_mode) {
     double time = (double)(t2 - t1) / (double)CLOCKS_PER_SEC;
     printf("%d : %0.2lf sec", 
-	   eval(&engine.game)/10, time);
-    if(engine.game.to_move == engine.ai_player) {
-      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", engine.result.n_searched,
-	     engine.result.cutoff, (double)engine.result.n_searched / (time * 1000.0));
+	   eval(&engine->game)/10, time);
+    if(engine->game.to_move == engine->engine_mode) {
+      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", engine->result.n_searched,
+	     engine->result.cutoff, (double)engine->result.n_searched / (time * 1000.0));
     }
     printf("\n");
   }
 }
 
-static inline void print_game_state(void)
+static inline void print_game_state(engine_s *engine)
 {
-  if(!engine.xboard_mode) {
-    print_board(stdout, &engine.game, 0, 0);
-    if(in_check(&engine.game)) {
-      printf("%s is in check.\n", player_text[engine.game.to_move]);
+  if(!engine->xboard_mode) {
+    print_board(stdout, &engine->game, 0, 0);
+    if(in_check(&engine->game)) {
+      printf("%s is in check.\n", player_text[engine->game.to_move]);
     }
   }
 }
 
-static inline void print_prompt(void)
+static inline void print_prompt(engine_s *engine)
 {
-  if(!engine.xboard_mode) {
-    if(!engine.force) {
-      printf("%s %s> ", player_text[engine.game.to_move],
-	     engine.game.to_move == engine.ai_player ? "(AI) " : "");
+  if(!engine->xboard_mode) {
+    if(engine->engine_mode != FORCE_MODE) {
+      printf("%s %s> ", player_text[engine->game.to_move],
+	     engine->game.to_move == engine->engine_mode ? "(AI) " : "");
     } else {
       printf("FORCE > ");
     }
   }
 }
 
-static inline void print_ai_resign(void)
+static inline void print_ai_resign(engine_s *engine)
 {
-  /* XBoard-mode output */
-  if(engine.xboard_mode) {
+  if(engine->xboard_mode) {
     printf("resign\n");
-  /* Console-mode output */ 
   } else {
-    printf("%s resigns.", player_text[engine.game.to_move]);
+    printf("%s resigns.", player_text[engine->game.to_move]);
   }
 }
 
-static inline void print_ai_move(char *buf)
+static inline void print_ai_move(engine_s *engine, char *buf)
 {
-  /* XBoard-mode output */
-  if(engine.xboard_mode) {
+  if(engine->xboard_mode) {
     printf("move %s\n", buf);
-  /* Console-mode output */ 
   } else {
-    print_prompt();
+    print_prompt(engine);
     printf("%s\n", buf);
   }
 }
 
-static void print_msg(const char *fmt, pos_t from, pos_t to) {
-  if(!engine.xboard_mode) {
+static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
+  if(!engine->xboard_mode) {
     if(from >= 0) {
       char from_buf[10];
       encode_position(from_buf, from);
@@ -170,102 +167,98 @@ static void print_msg(const char *fmt, pos_t from, pos_t to) {
 /* 
  *  Move Checking 
  */
-int check_force_move(state_s *state, pos_t from)
+int check_force_move(engine_s *engine, pos_t from)
 {
-  if((pos2mask[from] & state->total_a) == 0) {
-    print_msg("There is no piece at %s.\n", from, -1);
+  if((pos2mask[from] & engine->game.total_a) == 0) {
+    print_msg(engine, "There is no piece at %s.\n", from, -1);
     return 1;
   } 
   return 0;
 }
 
-int check_move(state_s *state, pos_t from, pos_t to)
+int check_move(engine_s *engine, pos_t from, pos_t to)
 {
-  if(check_force_move(state, from)) {
+  if(check_force_move(engine, from)) {
     return 1;
   }
   if(from == to) {
-    print_msg("The origin %s is the same as the destination.\n", from, -1);
+    print_msg(engine, "The origin %s is the same as the destination.\n", from, -1);
     return 1;
   } 
-  if((pos2mask[from] & get_my_pieces(state)) == 0) {
-    print_msg("The piece at %s is not your piece.\n", from, -1);
+  if((pos2mask[from] & get_my_pieces(&engine->game)) == 0) {
+    print_msg(engine, "The piece at %s is not your piece.\n", from, -1);
     return 1;
   } 
-  if((pos2mask[to] & get_moves(state, from)) == 0) { 
-    print_msg("The piece at %s cannot move to %s.\n", from, to);
+  if((pos2mask[to] & get_moves(&engine->game, from)) == 0) { 
+    print_msg(engine, "The piece at %s cannot move to %s.\n", from, to);
     return 1;
   } 
   return 0;
 }
 
 
-void init_engine()
+void init_engine(engine_s *engine)
 {
   /* Set up the chess board */
-  reset_board(&engine.game);
+  reset_board(&engine->game);
   /* Game control initial values */
-  engine.game_n = 1;
-  engine.run = 1;
-  engine.waiting = 1;
-  engine.ai_player = BLACK;
+  engine->xboard_mode = 0;
+  engine->resign = 0;
+  engine->game_n = 1;
+  engine->waiting = 1;
+  engine->engine_mode = ENGINE_PLAYING_AS_BLACK;
 }
 
-void finished_move()
+void finished_move(engine_s *engine)
 {
   /* It is now the other players turn */
-  change_player(&engine.game);
+  change_player(&engine->game);
   /* move_n holds number of complete moves, incremented when it is
      white's move */
-  if(engine.game.to_move == WHITE) {
-    engine.move_n++;
+  if(engine->game.to_move == WHITE) {
+    engine->move_n++;
   }    
 }
 
-int ai_to_move()
+static inline int ai_to_move(engine_s *engine)
 {
-  /* AI to move unless */
-  /* External player is next to move in a game */
-  if(engine.game.to_move != engine.ai_player) return 0;
-  /* Running in force mode */
-  if(engine.force) return 0;
-  /* Waiting for 'go' command */
-  if(engine.waiting) return 0;
-  return 1;
+  if(engine->game.to_move != engine->engine_mode) return 0;
+  else return 1;
 }
 
-static inline void ai_move(void)
+static inline void ai_move(engine_s *engine)
 {
   /* Start move log */
-  start_move_log();
+  start_move_log(engine);
   /* Do AI move */
   t1 = clock();
-  do_ai_move(&engine.game, &engine.result);
+  do_ai_move(&engine->game, &engine->result);
   t2 = clock();
   /* Resign if appropriate */
-  if(engine.resign || engine.result.status == CHECKMATE) {
+  if(engine->resign || engine->result.status == CHECKMATE) {
     PRINT_LOG(&xboard_log, "%s", "\nAI > resign");
-    print_ai_resign();
-    engine.force = 1;
+    print_ai_resign(engine);
+    engine->engine_mode = FORCE_MODE;
     return;
   }
   /* If no valid move was found */
   /* Delay resign by a cycle to see if checkmate is given */
-  if(engine.result.status == STALEMATE) {
-    engine.resign = 1;
+  if(engine->result.status == STALEMATE) {
+    engine->resign = 1;
     return;
   }
   char buf[20];
-  encode_move(buf, engine.game.from, engine.game.to, engine.game.captured,
-	      engine.game.check[opponent[engine.ai_player]]);
+  ASSERT(engine->engine_mode < FORCE_MODE);
+  encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
+	      engine->game.check[opponent[engine->engine_mode]]);
   /* Log move */
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   /* Output */
-  print_ai_move(buf);
-  print_statistics();
-  print_game_state();
+  print_ai_move(engine, buf);
+  print_statistics(engine);
+  print_game_state(engine);
   /* Completed a valid move */
-  finished_move();
+  finished_move(engine);
   /* Start timer for user move */
   t1 = clock();
 }
@@ -274,7 +267,7 @@ static inline void ai_move(void)
    Return:  0 - Valid move
             1 - Well formed but not valid
 	    2 - Not recognised */
-static inline int accept_move(const char *in)
+static inline int accept_move(engine_s *engine, const char *in)
 {
   pos_t from, to;
   
@@ -283,127 +276,102 @@ static inline int accept_move(const char *in)
     return 2;
   }
   /* Normal mode */
-  if(!engine.force) {
+  if(engine->engine_mode != FORCE_MODE) {
     /* Check from and to */
-    if(check_move(&engine.game, from, to)) {
+    if(check_move(engine, from, to)) {
       /* Invalid move */
       return 1;
     } else {
       /* If a valid move has been entered, mark the time taken */
       t2 = clock();
       /* Don't count elapsed time while waiting for first move */
-      if(engine.waiting) { 
+      if(engine->waiting) { 
 	  t1 = t2;
       } 	  
       /* If waiting after a new game, first user move begins the game as white */
-      engine.waiting = 0;
+      engine->waiting = 0;
     }
   } else {
     /* Force mode - Only check that there is a piece to move */
-    if(!check_force_move(&engine.game, from)) {
+    if(check_force_move(engine, from)) {
       /* Invalid move */
       return 1;
     }
   }    
   /* Update the game state */
   /* TODO: promotion */
-  do_move(&engine.game, from, to, 0);
+  do_move(&engine->game, from, to, 0);
   /* Success */
   return 0;
 }
 
-/*
- *  Returns 1 to print a prompt after
- */
-static inline int user_input()
+static inline void user_input(engine_s *engine)
 {
   const char *in;
   in = get_input();
   /* No input */
   if(in[0] == 0) {
-    return 0;
+    return;
   }
   /* Message from server etc. */
   if(in[0] == '{') {
     PRINT_LOG(&xboard_log, "Msg : %s", in+1);
-    return 0;
+    return;
   }
   /* Command */
-  if(!accept_command(&engine, in)) {
-    /* Print a prompt for the next command, unless the engine is no longer
-       running (immediately following 'quit' command), or if AI is about to 
-       move next (e.g. as a result of 'white'/'black') */
-    if(engine.run &&
-       ((engine.ai_player != engine.game.to_move) || engine.force))
-      return 1;
-    else
-      return 0;
+  if(!accept_command(engine, in)) {
+    return;
   }
   /* Move */
-  switch(accept_move(in)) {
-  case 0:
-    /* A valid move was entered and it has been made */
-    if(!engine.force) {
-      print_statistics();
+  if(!accept_move(engine, in)) {
+    if(engine->engine_mode < FORCE_MODE) {
+      print_statistics(engine);
     }
-    print_game_state();
-    finished_move();
-    return 0;
-  case 1:
-    /* A well-formed move instruction but not a valid move, error message 
-       has already been printed, no further action */
-    return 1;
-  default:
-    break;
-  }  
+    print_game_state(engine);
+    finished_move(engine);
+    return;
+  }
   /* Not a command or a move */
-  print_msg("Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
-  return 1;
+  print_msg(engine, "Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
 }
 
 /*
  *  UI Main Loop
  */
-int main(int argc, char *argv[])
+void main_loop(engine_s *engine) 
 {
-  /* Start session logs */
-  start_session_log();
-  /* Turn off buffering on stdout */
-  setbuf(stdout, NULL);
-  /* OS-specific initialisation */
-  init_os();
-  /* Initialise lookup tables etc. */
-  init_board();
-  /* Initialise random numbers */
-  srand(clock());
-  /* The chess engine used by the UI */
-  /* Initialise chess engine */
-  init_engine(&engine);
-  /* Parse command line arguments */
+  while(engine->engine_mode != QUIT) {
+    if(!ai_to_move(engine)) {
+      print_prompt(engine);
+    }
+    if(ai_to_move(engine)) {
+      ai_move(engine);
+    } else {
+      user_input(engine);
+    }
+  }
+}
+
+void parse_command_line_args(engine_s *e, int argc, char *argv[])
+{
   for(int arg = 1; arg < argc; arg++) {
     if(strcmp(argv[arg], "x") == 0) {
-      engine.xboard_mode = 1;
+      e->xboard_mode = 1;
     }
   }
+}
 
-  /* Display startup text */
-  print_game_state();
-  print_prompt();
+int main(int argc, char *argv[])
+{
+  start_session_log();
+  setbuf(stdout, NULL);
+  init_os();
+  init_board();
+  srand(clock());
 
-  /* Main loop */
-  while(engine.run) {
-    /* AI turn to move */
-    if(ai_to_move(&engine)) {
-      /* Do AI move */
-      ai_move();
-      /* Prompt for user move */
-      print_prompt();
-    } else {
-      /* Process user input */
-      if(user_input()) {
-	/* Sometimes a prompt is not needed */
-	print_prompt();
-      }
-    }
-  }
+  engine_s engine;
+  init_engine(&engine);
+  parse_command_line_args(&engine, argc, argv);
+  print_game_state(&engine);
+  main_loop(&engine);
 }
