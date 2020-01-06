@@ -143,7 +143,7 @@ void ui_attacks(engine_s *e) {
   if(decode_position(get_input(), &target)) {
     return;
   }
-  if(check_force_move(&(e->game), target)) {
+  if(check_force_move(e, target)) {
     printf("No piece\n");
     return;
   }
@@ -155,7 +155,7 @@ void ui_moves(engine_s *e) {
   if(decode_position(get_input(), &from)) {
     return;
   }
-  if(check_force_move(&(e->game), from)) {
+  if(check_force_move(e, from)) {
     printf("No piece\n");
     return;
   }

@@ -37,8 +37,8 @@ typedef void (*ui_fn)(engine_s *);
 int accept_command(engine_s *e, const char *in);
 
 /* moves.c */
-int check_force_move(state_s *state, pos_t from);
-int check_move(state_s *state, pos_t from, pos_t to);
+int check_force_move(engine_s *, pos_t);
+int check_move(engine_s *, pos_t, pos_t);
 
 int decode_position(const char *instr, pos_t *pos);
 int decode_instruction(const char *instr, pos_t *from, pos_t *to);
