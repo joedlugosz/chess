@@ -345,12 +345,10 @@ static inline void user_input(engine_s *engine)
 void main_loop(engine_s *engine) 
 {
   while(engine->engine_mode != QUIT) {
-    if(!ai_to_move(engine)) {
-      print_prompt(engine);
-    }
     if(ai_to_move(engine)) {
       ai_move(engine);
     } else {
+      print_prompt(engine);
       user_input(engine);
     }
   }
