@@ -45,9 +45,9 @@ const char player_text[N_PLAYERS][6] = {
 /*
  *  Instruction encoding and decoding
  */
-int decode_position(const char *instr, pos_t *pos)
+int parse_pos(const char *buf, pos_t *pos)
 {
-  const char *ptr = instr;
+  const char *ptr = buf;
   *pos = -1;
   if(*ptr == 0) return 1;
   if(!isalpha(*ptr)) return 1;
@@ -62,41 +62,39 @@ int decode_position(const char *instr, pos_t *pos)
   return 0;
 }
 
-int decode_instruction(const char *instr, pos_t *from, pos_t *to)
+int parse_move(const char *buf, pos_t *from, pos_t *to)
 {
-  if(!decode_position(instr, from)) {
-    if(!decode_position(instr+2, to)) {
+  if(!parse_pos(buf, from)) {
+    if(!parse_pos(buf+2, to)) {
       return 0;
     }
   }
   return 1;
 }
 
-int encode_position(char *instr, pos_t pos)
+int format_pos(char *buf, pos_t pos)
 {
-  if(pos == -1 || pos >= N_POS) {
-    instr[0] = 'X';
-    instr[1] = 'X';
-    instr[2] = 0;
+  if(pos < 0 || pos >= N_POS) {
+    buf[0] = 0;
     return 1;
   }
-  instr[0] = (char)(pos % 8) + 'a';
-  instr[1] = (char)(pos / 8) + '1';
-  instr[2] = 0;
+  buf[0] = (char)(pos % 8) + 'a';
+  buf[1] = (char)(pos / 8) + '1';
+  buf[2] = 0;
   return 0;
 }
 
-int encode_move_bare(char *instr, pos_t from, pos_t to)
+int format_move_bare(char *buf, pos_t from, pos_t to)
 {
-  if(encode_position(instr, from)) return 1;
-  if(encode_position(instr+2, to)) return 1;
+  if(format_pos(buf, from)) return 1;
+  if(format_pos(buf+2, to)) return 1;
   return 0;
 }
 
-int encode_move(char *instr, pos_t from, pos_t to, int capture, int check)
+int format_move(char *buf, pos_t from, pos_t to, int capture, int check)
 {
-  if(encode_move_bare(instr, from, to)) return 1;
-  char *ptr = instr + 4;
+  if(format_move_bare(buf, from, to)) return 1;
+  char *ptr = buf + 4;
   if(capture) *ptr++ = '+';
   if(check) *ptr++ = '#';
   *ptr = 0;
@@ -108,7 +106,7 @@ void print_thought_moves(FILE *f, int depth, notation_s moves[])
   char buf[6];
   int i;
   for(i = 0; i <= depth; i++) {
-    encode_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
+    format_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
     fprintf(f, "%s ", buf);
   }
 }

@@ -140,11 +140,10 @@ void ui_print(engine_s *e) {
 
 void ui_attacks(engine_s *e) {
   pos_t target;
-  if(decode_position(get_input(), &target)) {
+  if(parse_pos(get_input(), &target)) {
     return;
   }
-  if(check_force_move(e, target)) {
-    printf("No piece\n");
+  if(no_piece_at_pos(e, target)) {
     return;
   }
   print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.to_move])); 
@@ -152,11 +151,10 @@ void ui_attacks(engine_s *e) {
   
 void ui_moves(engine_s *e) {
   pos_t from;
-  if(decode_position(get_input(), &from)) {
+  if(parse_pos(get_input(), &from)) {
     return;
   }
-  if(check_force_move(e, from)) {
-    printf("No piece\n");
+  if(no_piece_at_pos(e, from)) {
     return;
   }
   print_board(stdout, &(e->game), get_moves(&(e->game), from), pos2mask[from]);

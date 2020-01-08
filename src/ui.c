@@ -53,7 +53,6 @@ log_s error_log = {
   .new_every = NE_SESSION
 };
 
-clock_t t1, t2;
 
 /*
  *  Options
@@ -88,6 +87,23 @@ void start_move_log(engine_s *e)
 #endif
 }
 
+/*
+ *  Clocks
+ */
+static inline void reset_time(engine_s *engine)
+{
+  engine->start_time = clock();
+  engine->elapsed_time = 0;
+}
+static inline void mark_time(engine_s *engine)
+{
+  engine->elapsed_time = clock() - engine->start_time;
+}
+static inline clock_t get_time(engine_s *engine) 
+{
+  return engine->elapsed_time;
+}
+
 static inline int ai_to_move(engine_s *engine)
 {
   if(engine->game.to_move != engine->engine_mode) return 0;
@@ -105,7 +121,7 @@ static inline int is_in_normal_play(engine_s *engine) {
  */
 static inline void print_statistics(engine_s *engine) {
   if(!engine->xboard_mode) {
-    double time = (double)(t2 - t1) / (double)CLOCKS_PER_SEC;
+    double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("%d : %0.2lf sec", 
 	   eval(&engine->game)/10, time);
     if(engine->game.to_move == engine->engine_mode) {
@@ -153,7 +169,7 @@ static inline void print_ai_move(engine_s *engine)
   ASSERT(is_in_normal_play(engine));
 
   char buf[20];  
-  encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
+  format_move(buf, engine->game.from, engine->game.to, engine->game.captured,
 	      engine->game.check[opponent[engine->engine_mode]]);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
@@ -172,10 +188,10 @@ static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
   if(!engine->xboard_mode) {
     if(from >= 0) {
       char from_buf[10];
-      encode_position(from_buf, from);
+      format_pos(from_buf, from);
       if(to >= 0) {
         char to_buf[10];
-        encode_position(to_buf, to);
+        format_pos(to_buf, to);
         printf(fmt, from_buf, to_buf);
       } else {
         printf(fmt, from_buf);
@@ -189,18 +205,18 @@ static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
 /* 
  *  Move Checking 
  */
-int check_force_move(engine_s *engine, pos_t from)
+int no_piece_at_pos(engine_s *engine, pos_t pos) 
 {
-  if((pos2mask[from] & engine->game.total_a) == 0) {
-    print_msg(engine, "There is no piece at %s.\n", from, -1);
+  if((pos2mask[pos] & engine->game.total_a) == 0) {
+    print_msg(engine, "There is no piece at %s.\n", pos, -1);
     return 1;
-  } 
+  }
   return 0;
 }
 
-int is_legal_move(engine_s *engine, pos_t from, pos_t to)
+int move_is_illegal(engine_s *engine, pos_t from, pos_t to)
 {
-  if(check_force_move(engine, from)) {
+  if(no_piece_at_pos(engine, from)) {
     return 1;
   }
   if(from == to) {
@@ -251,9 +267,7 @@ static inline void log_ai_move(move_s *move, int captured, int check) {
 static inline void ai_move(engine_s *engine)
 {
   start_move_log(engine);
-  t1 = clock();
   do_ai_move(&engine->game, &engine->result);
-  t2 = clock();
   /* Resign if appropriate */
   if(engine->resign || engine->result.status == CHECKMATE) {
     print_ai_resign(engine);
@@ -266,10 +280,10 @@ static inline void ai_move(engine_s *engine)
     engine->resign = 1;
     return;
   }
-
+  mark_time(engine);
   print_ai_move(engine);
   finished_move(engine);
-  t1 = clock();
+  reset_time(engine);
 }
 
 /* Accept a valid user move.
@@ -280,20 +294,19 @@ static inline int accept_move(engine_s *engine, const char *in)
 {
   pos_t from, to;
   
-  if(decode_instruction(in, &from, &to)) {
+  if(parse_move(in, &from, &to)) {
     return 2;
   }
-  if(!is_legal_move(engine, from, to)) {
+  if(move_is_illegal(engine, from, to)) {
     return 1;
-  } else {
-    t2 = clock();
-    /* If waiting after a new game, first user move begins the game as white */
-    /* Don't count elapsed time while waiting for first move */
-    if(engine->waiting) { 
-      engine->waiting = 0;
-  	  t1 = t2;
-    } 	  
   }
+  mark_time(engine);
+  /* If waiting after a new game, first user move begins the game as white */
+  /* Don't count elapsed time while waiting for first move */
+  if(engine->waiting) { 
+    engine->waiting = 0;
+    reset_time(engine);
+  } 	  
   /* TODO: promotion */
   do_move(&engine->game, from, to, 0);
   return 0;

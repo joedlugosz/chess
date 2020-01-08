@@ -21,6 +21,8 @@ typedef struct engine_s_ {
   int waiting;
   int resign;
   clock_t ui_clock;
+  clock_t start_time;
+  clock_t elapsed_time;
   
   unsigned long otim;
   int move_n;
@@ -36,15 +38,13 @@ typedef struct engine_s_ {
 typedef void (*ui_fn)(engine_s *);
 int accept_command(engine_s *e, const char *in);
 
-/* moves.c */
-int check_force_move(engine_s *, pos_t);
-int check_move(engine_s *, pos_t, pos_t);
-
-int decode_position(const char *instr, pos_t *pos);
-int decode_instruction(const char *instr, pos_t *from, pos_t *to);
-int encode_position(char *instr, pos_t pos);
-int encode_move(char *instr, pos_t from, pos_t to, int check, int capture);
-int encode_move_bare(char *instr, pos_t from, pos_t to);
+int no_piece_at_pos(engine_s *, pos_t);
+int move_is_illegal(engine_s *, pos_t, pos_t);
+int parse_pos(const char *instr, pos_t *pos);
+int parse_move(const char *instr, pos_t *from, pos_t *to);
+int format_pos(char *instr, pos_t pos);
+int format_move(char *instr, pos_t from, pos_t to, int check, int capture);
+int format_move_bare(char *instr, pos_t from, pos_t to);
 
 void list_features(void);
 void feature_accepted(const char *name);
