@@ -314,25 +314,25 @@ static inline int accept_move(engine_s *engine, const char *in)
   return 0;
 }
 
-static inline void user_input(engine_s *engine)
+static inline void get_user_input(engine_s *engine)
 {
-  const char *in;
-  in = get_input();
+  const char *input;
+  input = get_input();
   /* No input */
-  if(in[0] == 0) {
+  if(input[0] == 0) {
     return;
   }
   /* Message from server etc. */
-  if(in[0] == '{') {
-    PRINT_LOG(&xboard_log, "Msg : %s", in+1);
+  if(input[0] == '{') {
+    PRINT_LOG(&xboard_log, "Msg : %s", input+1);
     return;
   }
   /* Command */
-  if(!accept_command(engine, in)) {
+  if(!accept_command(engine, input)) {
     return;
   }
   /* Move */
-  if(!accept_move(engine, in)) {
+  if(!accept_move(engine, input)) {
     if(is_in_normal_play(engine)) {
       print_statistics(engine);
     }
@@ -353,8 +353,8 @@ void main_loop(engine_s *engine)
     if(ai_to_move(engine)) {
       ai_move(engine);
     } else {
-      print_prompt(engine);
-      user_input(engine);
+      print_user_prompt(engine);
+      get_user_input(engine);
     }
   }
 }
