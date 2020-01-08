@@ -22,12 +22,12 @@ void ui_force(engine_s *e) {
   e->engine_mode = FORCE_MODE; 
 }
 void ui_black(engine_s *e) { 
-  e->engine_mode = ENGINE_PLAYING_AS_BLACK;
-  e->game.to_move = WHITE;
+  //e->engine_mode = ENGINE_PLAYING_AS_BLACK;
+  //e->game.to_move = WHITE;
 }
 void ui_white(engine_s *e) { 
-  e->engine_mode = ENGINE_PLAYING_AS_WHITE; 
-  e->game.to_move = BLACK;
+  //e->engine_mode = ENGINE_PLAYING_AS_WHITE; 
+  //e->game.to_move = BLACK;
 }
 void ui_go(engine_s *e) { 
   e->engine_mode = e->game.to_move; 

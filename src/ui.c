@@ -232,7 +232,7 @@ static inline void ai_move(engine_s *engine)
   start_move_log(engine);
   /* Do AI move */
   t1 = clock();
-  do_ai_move(&engine->game, &engine->result);
+    do_ai_move(&engine->game, &engine->result);
   t2 = clock();
   /* Resign if appropriate */
   if(engine->resign || engine->result.status == CHECKMATE) {
