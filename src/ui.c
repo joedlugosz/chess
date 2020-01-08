@@ -198,7 +198,7 @@ int check_force_move(engine_s *engine, pos_t from)
   return 0;
 }
 
-int is_valid_move(engine_s *engine, pos_t from, pos_t to)
+int is_legal_move(engine_s *engine, pos_t from, pos_t to)
 {
   if(check_force_move(engine, from)) {
     return 1;
@@ -280,33 +280,22 @@ static inline int accept_move(engine_s *engine, const char *in)
 {
   pos_t from, to;
   
-  /* If not a valid chess instruction */
   if(decode_instruction(in, &from, &to)) {
     return 2;
   }
-  if(is_in_normal_play(engine)) {
-    if(!is_valid_move(engine, from, to)) {
-      return 1;
-    } else {
-      t2 = clock();
-      /* Don't count elapsed time while waiting for first move */
-      if(engine->waiting) { 
-    	  t1 = t2;
-      } 	  
-      /* If waiting after a new game, first user move begins the game as white */
-      engine->waiting = 0;
-    }
+  if(!is_legal_move(engine, from, to)) {
+    return 1;
   } else {
-    /* Force mode - Only check that there is a piece to move */
-    if(check_force_move(engine, from)) {
-      /* Invalid move */
-      return 1;
-    }
-  }    
-  /* Update the game state */
+    t2 = clock();
+    /* If waiting after a new game, first user move begins the game as white */
+    /* Don't count elapsed time while waiting for first move */
+    if(engine->waiting) { 
+      engine->waiting = 0;
+  	  t1 = t2;
+    } 	  
+  }
   /* TODO: promotion */
   do_move(&engine->game, from, to, 0);
-  /* Success */
   return 0;
 }
 
