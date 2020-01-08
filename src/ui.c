@@ -88,6 +88,17 @@ void start_move_log(engine_s *e)
 #endif
 }
 
+static inline int ai_to_move(engine_s *engine)
+{
+  if(engine->game.to_move != engine->engine_mode) return 0;
+  else return 1;
+}
+
+static inline int is_in_normal_play(engine_s *engine) {
+  if(engine->engine_mode >= FORCE_MODE) return 0;
+  else return 1;
+}
+
 
 /*
  *  Output
@@ -139,9 +150,9 @@ static inline void print_ai_resign(engine_s *engine)
 
 static inline void print_ai_move(engine_s *engine)
 {
-  char buf[20];
-  ASSERT(engine->engine_mode < FORCE_MODE);
-  
+  ASSERT(is_in_normal_play(engine));
+
+  char buf[20];  
   encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
 	      engine->game.check[opponent[engine->engine_mode]]);
 
@@ -163,11 +174,11 @@ static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
       char from_buf[10];
       encode_position(from_buf, from);
       if(to >= 0) {
-	char to_buf[10];
-	encode_position(to_buf, to);
-	printf(fmt, from_buf, to_buf);
+        char to_buf[10];
+        encode_position(to_buf, to);
+        printf(fmt, from_buf, to_buf);
       } else {
-	printf(fmt, from_buf);
+        printf(fmt, from_buf);
       }
     } else {
       printf("%s", fmt);
@@ -231,12 +242,6 @@ void finished_move(engine_s *engine)
   }    
 }
 
-static inline int ai_to_move(engine_s *engine)
-{
-  if(engine->game.to_move != engine->engine_mode) return 0;
-  else return 1;
-}
-
 static inline void log_ai_move(move_s *move, int captured, int check) {
 #ifdef DEBUG
 #endif
@@ -280,7 +285,7 @@ static inline int accept_move(engine_s *engine, const char *in)
     return 2;
   }
   /* Normal mode */
-  if(engine->engine_mode != FORCE_MODE) {
+  if(is_in_normal_play(engine)) {
     /* Check from and to */
     if(check_move(engine, from, to)) {
       /* Invalid move */
@@ -328,7 +333,7 @@ static inline void user_input(engine_s *engine)
   }
   /* Move */
   if(!accept_move(engine, in)) {
-    if(engine->engine_mode < FORCE_MODE) {
+    if(is_in_normal_play(engine)) {
       print_statistics(engine);
     }
     print_game_state(engine);
