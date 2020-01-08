@@ -129,6 +129,7 @@ static inline void print_prompt(engine_s *engine)
 
 static inline void print_ai_resign(engine_s *engine)
 {
+  PRINT_LOG(&xboard_log, "%s", "\nAI > resign");
   if(engine->xboard_mode) {
     printf("resign\n");
   } else {
@@ -136,13 +137,23 @@ static inline void print_ai_resign(engine_s *engine)
   }
 }
 
-static inline void print_ai_move(engine_s *engine, char *buf)
+static inline void print_ai_move(engine_s *engine)
 {
+  char buf[20];
+  ASSERT(engine->engine_mode < FORCE_MODE);
+  
+  encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
+	      engine->game.check[opponent[engine->engine_mode]]);
+
+  PRINT_LOG(&xboard_log, "\nAI > %s", buf);
+  
   if(engine->xboard_mode) {
     printf("move %s\n", buf);
   } else {
     print_prompt(engine);
     printf("%s\n", buf);
+    print_statistics(engine);
+    print_game_state(engine);
   }
 }
 
@@ -231,17 +242,15 @@ static inline void log_ai_move(move_s *move, int captured, int check) {
 #endif
 }
 
+
 static inline void ai_move(engine_s *engine)
 {
-  /* Start move log */
   start_move_log(engine);
-  /* Do AI move */
   t1 = clock();
   do_ai_move(&engine->game, &engine->result);
   t2 = clock();
   /* Resign if appropriate */
   if(engine->resign || engine->result.status == CHECKMATE) {
-    PRINT_LOG(&xboard_log, "%s", "\nAI > resign");
     print_ai_resign(engine);
     engine->engine_mode = FORCE_MODE;
     return;
@@ -253,15 +262,7 @@ static inline void ai_move(engine_s *engine)
     return;
   }
 
-  char buf[20];
-  ASSERT(engine->engine_mode < FORCE_MODE);
-  encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
-	      engine->game.check[opponent[engine->engine_mode]]);
-  print_ai_move(engine, buf);
-  PRINT_LOG(&xboard_log, "\nAI > %s", buf);
-  print_statistics(engine);
-  print_game_state(engine);
-
+  print_ai_move(engine);
   finished_move(engine);
   t1 = clock();
 }
