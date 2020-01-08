@@ -198,7 +198,7 @@ int check_force_move(engine_s *engine, pos_t from)
   return 0;
 }
 
-int check_move(engine_s *engine, pos_t from, pos_t to)
+int is_valid_move(engine_s *engine, pos_t from, pos_t to)
 {
   if(check_force_move(engine, from)) {
     return 1;
@@ -284,18 +284,14 @@ static inline int accept_move(engine_s *engine, const char *in)
   if(decode_instruction(in, &from, &to)) {
     return 2;
   }
-  /* Normal mode */
   if(is_in_normal_play(engine)) {
-    /* Check from and to */
-    if(check_move(engine, from, to)) {
-      /* Invalid move */
+    if(!is_valid_move(engine, from, to)) {
       return 1;
     } else {
-      /* If a valid move has been entered, mark the time taken */
       t2 = clock();
       /* Don't count elapsed time while waiting for first move */
       if(engine->waiting) { 
-	  t1 = t2;
+    	  t1 = t2;
       } 	  
       /* If waiting after a new game, first user move begins the game as white */
       engine->waiting = 0;
@@ -353,7 +349,7 @@ void main_loop(engine_s *engine)
     if(ai_to_move(engine)) {
       ai_move(engine);
     } else {
-      print_user_prompt(engine);
+      print_prompt(engine);
       get_user_input(engine);
     }
   }
