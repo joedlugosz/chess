@@ -226,13 +226,18 @@ static inline int ai_to_move(engine_s *engine)
   else return 1;
 }
 
+static inline void log_ai_move(move_s *move, int captured, int check) {
+#ifdef DEBUG
+#endif
+}
+
 static inline void ai_move(engine_s *engine)
 {
   /* Start move log */
   start_move_log(engine);
   /* Do AI move */
   t1 = clock();
-    do_ai_move(&engine->game, &engine->result);
+  do_ai_move(&engine->game, &engine->result);
   t2 = clock();
   /* Resign if appropriate */
   if(engine->resign || engine->result.status == CHECKMATE) {
@@ -247,19 +252,17 @@ static inline void ai_move(engine_s *engine)
     engine->resign = 1;
     return;
   }
+
   char buf[20];
   ASSERT(engine->engine_mode < FORCE_MODE);
   encode_move(buf, engine->game.from, engine->game.to, engine->game.captured,
 	      engine->game.check[opponent[engine->engine_mode]]);
-  /* Log move */
-  PRINT_LOG(&xboard_log, "\nAI > %s", buf);
-  /* Output */
   print_ai_move(engine, buf);
+  PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   print_statistics(engine);
   print_game_state(engine);
-  /* Completed a valid move */
+
   finished_move(engine);
-  /* Start timer for user move */
   t1 = clock();
 }
 
