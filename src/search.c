@@ -64,7 +64,7 @@ void set_depth(int d)
  *  Thought Printing
  */
 /* Thoughts shown by XBoard */
-void xboard_thought(FILE *f, search_s *ctx, int depth, score_t score, clock_t time, int nodes)
+void xboard_thought(FILE *f, search_context_s *ctx, int depth, score_t score, clock_t time, int nodes)
 {
   fprintf(f, "\n%2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes); 
   print_thought_moves(f, depth, ctx->search_history);
@@ -74,7 +74,8 @@ void xboard_thought(FILE *f, search_s *ctx, int depth, score_t score, clock_t ti
 # define LOG_THOUGHT(c, d, s, a, b)
 #else
 # define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
-void debug_thought(FILE *f, search_s *ctx, int depth, score_t score, score_t alpha, score_t beta)
+void debug_thought(FILE *f, search_context_s *ctx, 
+  int depth, score_t score, score_t alpha, score_t beta)
 {
   fprintf(f, "\n%2d %10d ", depth, ctx->n_searched);
   if(alpha > -100000) fprintf(f, "%7d ", alpha); 
@@ -84,7 +85,8 @@ void debug_thought(FILE *f, search_s *ctx, int depth, score_t score, score_t alp
   print_thought_moves(f, depth, ctx->search_history);
 }
 
-void log_thought(log_s *log, search_s *ctx, int depth, score_t score, score_t alpha, score_t beta)
+void log_thought(log_s *log, search_context_s *ctx, 
+  int depth, score_t score, score_t alpha, score_t beta)
 {
   if(log->logging) {
     open_log(log);
@@ -96,7 +98,8 @@ void log_thought(log_s *log, search_s *ctx, int depth, score_t score, score_t al
 
 
 /* Quiescence search */
-score_t quiesce(search_s *ctx, state_s *current_state, int depth, score_t alpha, score_t beta)
+score_t quiesce(search_context_s *ctx, state_s *current_state, 
+  int depth, score_t alpha, score_t beta)
 {
   plane_t attacks;
   score_t score, stand_pat;
@@ -165,7 +168,7 @@ score_t quiesce(search_s *ctx, state_s *current_state, int depth, score_t alpha,
   return alpha;
 }
 
-static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, score_t beta)
+static score_t search_ply(search_context_s *ctx, state_s *state, int depth, score_t alpha, score_t beta)
 {
   /* Limit for search and repeat history */
   ASSERT(depth < SEARCH_DEPTH_MAX);
@@ -193,17 +196,17 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
       continue;
     }
     /* Most of the history must be written at this point so it passes to the next recursion */
-    write_history(ctx, depth, move->from, move->to, state->to_move, 0);
+    write_move_history(ctx, depth, move->from, move->to, state->to_move, 0);
     /* Can't repeat a move, relaxed if in check */
     /* TODO: hashing */
-    if(check_repeat(ctx, depth, move->from, move->to) && !in_check(state)) {
+    if(is_repeated_move(ctx, depth, move->from, move->to) && !in_check(state)) {
       move = move->next;
       continue;
     }
     change_player(&next_state);
   /* Recurse down to search_depth - 1, then do quiescence search if necessary */
     if(depth < search_depth - 1) {
-      score = -search(ctx, &next_state, depth + 1, -beta, -alpha);
+      score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
     } else {
       score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
     }
@@ -219,9 +222,9 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
       alpha = score;
       /* Record the move if found at the top level */
       if(depth == 0) {
-        ctx->found.from = move->from;
-        ctx->found.to = move->to;
-        ctx->found.promotion = move->promotion;
+        ctx->best_move.from = move->from;
+        ctx->best_move.to = move->to;
+        ctx->best_move.promotion = move->promotion;
       }
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
@@ -231,38 +234,20 @@ static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, s
   return alpha;
 }
 
-void do_ai_move(state_s *state, ai_result_s *res)
+void do_search(state_s *state, search_result_s *res)
 {
-  search_s ctx;
-  memset(&ctx, 0, sizeof(ctx));
-  ctx.halt = 0;
-  ctx.found.from = EMPTY;  
-  res->status = NO_MOVE;
+  search_context_s search;
+  memset(&search, 0, sizeof(search));
+  search.halt = 0;
+  search.best_move.from = EMPTY;  
+  //res->status = NO_MOVE;
   //search_start_time = clock();
   //session_extreme = 0;
   //  ai_player = state->to_move;
-  res->score = search(&ctx, state, 0, -boundary, boundary);
+  res->score = search_ply(&search, state, 0, -boundary, boundary);
   //if(running) {
 
-  /* If there is only one possible move, always make it even if it leads
-     to checkmate.  from_pos and to_pos will contain the info because only
-     one move has been searched. */
-  /*
-    if (n_moves == 1 && depth == 0) {
-    found_from = from_pos;
-    found_to = to_pos;
-    }
-  */
-  if(ctx.found.from == NO_POS) {
-    if(state->check) {
-      res->status = CHECKMATE;
-    } else {
-      res->status = STALEMATE;
-    }
-  } else {
-    do_move(state, ctx.found.from, ctx.found.to, ctx.found.promotion);
-    res->status = MOVED;
-  }
-  res->n_searched = ctx.n_searched;
-  res->cutoff = (double)ctx.n_searched / (double)ctx.n_possible * 100.0f;
+  memcpy(&res->best_move, &search.best_move, sizeof(res->best_move));
+  res->n_searched = search.n_searched;
+  res->cutoff = (double)search.n_searched / (double)search.n_possible * 100.0f;
 }

@@ -123,10 +123,10 @@ static inline void print_statistics(engine_s *engine) {
   if(!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("%d : %0.2lf sec", 
-	   eval(&engine->game)/10, time);
+	    eval(&engine->game)/10, time);
     if(engine->game.to_move == engine->engine_mode) {
       printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", engine->result.n_searched,
-	     engine->result.cutoff, (double)engine->result.n_searched / (time * 1000.0));
+	      engine->result.cutoff, (double)engine->result.n_searched / (time * 1000.0));
     }
     printf("\n");
   }
@@ -241,7 +241,7 @@ void init_engine(engine_s *engine)
   reset_board(&engine->game);
   /* Game control initial values */
   engine->xboard_mode = 0;
-  engine->resign = 0;
+  engine->resign_delayed = 0;
   engine->game_n = 1;
   engine->waiting = 1;
   engine->engine_mode = ENGINE_PLAYING_AS_BLACK;
@@ -267,19 +267,29 @@ static inline void log_ai_move(move_s *move, int captured, int check) {
 static inline void ai_move(engine_s *engine)
 {
   start_move_log(engine);
-  do_ai_move(&engine->game, &engine->result);
-  /* Resign if appropriate */
-  if(engine->resign || engine->result.status == CHECKMATE) {
+  do_search(&engine->game, &engine->result);
+
+  int resign_immediate = 0; 
+ 
+  if(engine->result.best_move.from == NO_POS) {
+    if(engine->game.check) {
+      /* Checkmate */
+      resign_immediate = 1;
+    } else {
+      /* Stalemate - delay resign to see if draw is given */
+      engine->resign_delayed = 1;
+      return;
+    }
+  }
+  
+  if(engine->resign_delayed || resign_immediate) {
     print_ai_resign(engine);
     engine->engine_mode = FORCE_MODE;
     return;
   }
-  /* If no valid move was found */
-  /* Delay resign by a cycle to see if checkmate is given */
-  if(engine->result.status == STALEMATE) {
-    engine->resign = 1;
-    return;
-  }
+  
+  do_move(&engine->game, engine->result.best_move.from, 
+    engine->result.best_move.to, engine->result.best_move.promotion);
   mark_time(engine);
   print_ai_move(engine);
   finished_move(engine);

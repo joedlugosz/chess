@@ -43,7 +43,7 @@ void ui_result(engine_s *e) {
 void ui_new(engine_s *e) {
   e->game_n++;
   e->move_n = 1;
-  e->resign = 0;
+  e->resign_delayed = 0;
   e->waiting = 1;
   e->game.to_move = WHITE;
   e->engine_mode = ENGINE_PLAYING_AS_BLACK;
@@ -56,7 +56,7 @@ void ui_new(engine_s *e) {
 void ui_sd(engine_s *e) {
   int depth;
   sscanf(get_input(), "%d", &depth);
-  set_depth(depth);
+  /* TODO: depth */
 }
 void ui_level(engine_s *e) {
   get_input();

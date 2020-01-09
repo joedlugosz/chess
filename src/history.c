@@ -1,6 +1,7 @@
 #include "history.h"
 
-void write_history(search_s *ctx, int depth, pos_t from, pos_t to, player_e to_move, score_t score)
+void write_move_history(search_context_s *ctx, int depth, pos_t from, 
+  pos_t to, player_e to_move, score_t score)
 {
   ctx->search_history[depth].from = from;
   ctx->search_history[depth].to = to;
@@ -8,7 +9,7 @@ void write_history(search_s *ctx, int depth, pos_t from, pos_t to, player_e to_m
   ctx->search_history[depth].score = score;
 }
 
-int check_repeat(search_s *ctx, int depth, pos_t from, pos_t to)
+int is_repeated_move(search_context_s *ctx, int depth, pos_t from, pos_t to)
 {
   /* Super simple checking for moving back to the square you've
      just come from */

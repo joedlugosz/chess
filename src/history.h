@@ -1,6 +1,6 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 #include "search.h"
-void write_history(search_s *ctx, int depth, pos_t from, pos_t to, player_e to_move, score_t score);
-int check_repeat(search_s *ctx, int depth, pos_t from, pos_t to);
+void write_move_history(search_context_s *, int, pos_t, pos_t, player_e, score_t);
+int is_repeated_move(search_context_s *, int, pos_t, pos_t);
 #endif /* HISTORY_H */

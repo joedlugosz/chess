@@ -19,7 +19,7 @@ typedef struct engine_s_ {
   
   int xboard_mode;
   int waiting;
-  int resign;
+  int resign_delayed;
   clock_t ui_clock;
   clock_t start_time;
   clock_t elapsed_time;
@@ -30,7 +30,7 @@ typedef struct engine_s_ {
   
   state_s game;
 
-  ai_result_s result;
+  search_result_s result;
 
 } engine_s;
 
