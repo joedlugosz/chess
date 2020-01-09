@@ -240,13 +240,7 @@ void do_search(state_s *state, search_result_s *res)
   memset(&search, 0, sizeof(search));
   search.halt = 0;
   search.best_move.from = EMPTY;  
-  //res->status = NO_MOVE;
-  //search_start_time = clock();
-  //session_extreme = 0;
-  //  ai_player = state->to_move;
   res->score = search_ply(&search, state, 0, -boundary, boundary);
-  //if(running) {
-
   memcpy(&res->best_move, &search.best_move, sizeof(res->best_move));
   res->n_searched = search.n_searched;
   res->cutoff = (double)search.n_searched / (double)search.n_possible * 100.0f;
