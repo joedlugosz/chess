@@ -21,13 +21,12 @@ typedef struct notation_s_
   status_t check : 1;
 } notation_s;
 
-/* move_s holds the game state as well as info about moves */
-typedef struct move_s_ {
-  pos_t from, to;
+/* linked list */
+typedef struct movelist_s_ {
+  move_s move;
   score_t score;
-  piece_e promotion;
-  struct move_s_ *next;
-} move_s;
+  struct movelist_s_ *next;
+} movelist_s;
 
 /*
 typedef enum search_status_e_ {

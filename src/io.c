@@ -62,10 +62,10 @@ int parse_pos(const char *buf, pos_t *pos)
   return 0;
 }
 
-int parse_move(const char *buf, pos_t *from, pos_t *to)
+int parse_move(const char *buf, move_s *move)
 {
-  if(!parse_pos(buf, from)) {
-    if(!parse_pos(buf+2, to)) {
+  if(!parse_pos(buf, &move->from)) {
+    if(!parse_pos(buf+2, &move->to)) {
       return 0;
     }
   }
@@ -84,16 +84,16 @@ int format_pos(char *buf, pos_t pos)
   return 0;
 }
 
-int format_move_bare(char *buf, pos_t from, pos_t to)
+int format_move_bare(char *buf, move_s *move)
 {
-  if(format_pos(buf, from)) return 1;
-  if(format_pos(buf+2, to)) return 1;
+  if(format_pos(buf, move->from)) return 1;
+  if(format_pos(buf+2, move->to)) return 1;
   return 0;
 }
 
-int format_move(char *buf, pos_t from, pos_t to, int capture, int check)
+int format_move(char *buf, move_s *move, int capture, int check)
 {
-  if(format_move_bare(buf, from, to)) return 1;
+  if(format_move_bare(buf, move)) return 1;
   char *ptr = buf + 4;
   if(capture) *ptr++ = '+';
   if(check) *ptr++ = '#';
@@ -106,7 +106,7 @@ void print_thought_moves(FILE *f, int depth, notation_s moves[])
   char buf[6];
   int i;
   for(i = 0; i <= depth; i++) {
-    format_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
+    //format_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
     fprintf(f, "%s ", buf);
   }
 }

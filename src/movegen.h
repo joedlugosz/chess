@@ -24,7 +24,7 @@ typedef struct perft_s_ {
   unsigned long checkmates;
 } perft_s;
 
-int gen_moves(state_s *state, move_s **move_buf_head);
+int gen_moves(state_s *state, movelist_s **move_buf_head);
 void perft_total(state_s *state, int depth);
 void perft_divide(state_s *state, int depth);
 

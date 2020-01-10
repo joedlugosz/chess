@@ -119,14 +119,13 @@ static inline int is_in_normal_play(engine_s *engine) {
 /*
  *  Output
  */
-static inline void print_statistics(engine_s *engine) {
+static inline void print_statistics(engine_s *engine, search_result_s *result) {
   if(!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
-    printf("%d : %0.2lf sec", 
-	    eval(&engine->game)/10, time);
-    if(engine->game.to_move == engine->engine_mode) {
-      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", engine->result.n_searched,
-	      engine->result.cutoff, (double)engine->result.n_searched / (time * 1000.0));
+    printf("%d : %0.2lf sec", eval(&engine->game)/10, time);
+    if(ai_to_move(engine) && result) {
+      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", result->n_searched,
+	      result->cutoff, (double)result->n_searched / (time * 1000.0));
     }
     printf("\n");
   }
@@ -164,12 +163,12 @@ static inline void print_ai_resign(engine_s *engine)
   }
 }
 
-static inline void print_ai_move(engine_s *engine)
+static inline void print_ai_move(engine_s *engine, search_result_s *result)
 {
   ASSERT(is_in_normal_play(engine));
 
   char buf[20];  
-  format_move(buf, engine->game.from, engine->game.to, engine->game.captured,
+  format_move(buf, &result->best_move, engine->game.captured,
 	      engine->game.check[opponent[engine->engine_mode]]);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
@@ -179,7 +178,7 @@ static inline void print_ai_move(engine_s *engine)
   } else {
     print_prompt(engine);
     printf("%s\n", buf);
-    print_statistics(engine);
+    print_statistics(engine, result);
     print_game_state(engine);
   }
 }
@@ -214,21 +213,21 @@ int no_piece_at_pos(engine_s *engine, pos_t pos)
   return 0;
 }
 
-int move_is_illegal(engine_s *engine, pos_t from, pos_t to)
+int move_is_illegal(engine_s *engine, move_s *move)
 {
-  if(no_piece_at_pos(engine, from)) {
+  if(no_piece_at_pos(engine, move->from)) {
     return 1;
   }
-  if(from == to) {
-    print_msg(engine, "The origin %s is the same as the destination.\n", from, -1);
+  if(move->from == move->to) {
+    print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[from] & get_my_pieces(&engine->game)) == 0) {
-    print_msg(engine, "The piece at %s is not your piece.\n", from, -1);
+  if((pos2mask[move->from] & get_my_pieces(&engine->game)) == 0) {
+    print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[to] & get_moves(&engine->game, from)) == 0) { 
-    print_msg(engine, "The piece at %s cannot move to %s.\n", from, to);
+  if((pos2mask[move->to] & get_moves(&engine->game, move->from)) == 0) { 
+    print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
     return 1;
   } 
   return 0;
@@ -237,9 +236,8 @@ int move_is_illegal(engine_s *engine, pos_t from, pos_t to)
 
 void init_engine(engine_s *engine)
 {
-  /* Set up the chess board */
+  memset(engine, 0, sizeof *engine);
   reset_board(&engine->game);
-  /* Game control initial values */
   engine->xboard_mode = 0;
   engine->resign_delayed = 0;
   engine->game_n = 1;
@@ -264,17 +262,19 @@ static inline void log_ai_move(move_s *move, int captured, int check) {
 }
 
 
-static inline void ai_move(engine_s *engine)
+static inline void do_ai_move(engine_s *engine)
 {
   start_move_log(engine);
-  do_search(&engine->game, &engine->result);
 
-  int resign_immediate = 0; 
+  search_result_s result;
+  do_search(&engine->game, &result);
+
+  int resign_immediately = 0;   
  
-  if(engine->result.best_move.from == NO_POS) {
+  if(result.best_move.from == NO_POS) {
     if(engine->game.check) {
       /* Checkmate */
-      resign_immediate = 1;
+      resign_immediately = 1;
     } else {
       /* Stalemate - delay resign to see if draw is given */
       engine->resign_delayed = 1;
@@ -282,16 +282,15 @@ static inline void ai_move(engine_s *engine)
     }
   }
   
-  if(engine->resign_delayed || resign_immediate) {
+  if(engine->resign_delayed || resign_immediately) {
     print_ai_resign(engine);
     engine->engine_mode = FORCE_MODE;
     return;
   }
   
-  do_move(&engine->game, engine->result.best_move.from, 
-    engine->result.best_move.to, engine->result.best_move.promotion);
+  make_move(&engine->game, &result.best_move);
   mark_time(engine);
-  print_ai_move(engine);
+  print_ai_move(engine, &result);
   finished_move(engine);
   reset_time(engine);
 }
@@ -300,14 +299,14 @@ static inline void ai_move(engine_s *engine)
    Return:  0 - Valid move
             1 - Well formed but not valid
 	    2 - Not recognised */
-static inline int accept_move(engine_s *engine, const char *in)
+static inline int accept_move(engine_s *engine, const char *input)
 {
-  pos_t from, to;
+  move_s move;
   
-  if(parse_move(in, &from, &to)) {
+  if(parse_move(input, &move)) {
     return 2;
   }
-  if(move_is_illegal(engine, from, to)) {
+  if(move_is_illegal(engine, &move)) {
     return 1;
   }
   mark_time(engine);
@@ -317,13 +316,13 @@ static inline int accept_move(engine_s *engine, const char *in)
     engine->waiting = 0;
     reset_time(engine);
   } 	  
-  /* TODO: promotion */
-  do_move(&engine->game, from, to, 0);
+  make_move(&engine->game, &move);
   return 0;
 }
 
 static inline void get_user_input(engine_s *engine)
 {
+  print_prompt(engine);
   const char *input;
   input = get_input();
   /* No input */
@@ -342,7 +341,7 @@ static inline void get_user_input(engine_s *engine)
   /* Move */
   if(!accept_move(engine, input)) {
     if(is_in_normal_play(engine)) {
-      print_statistics(engine);
+      print_statistics(engine, 0);
     }
     print_game_state(engine);
     finished_move(engine);
@@ -359,9 +358,8 @@ void main_loop(engine_s *engine)
 {
   while(engine->engine_mode != QUIT) {
     if(ai_to_move(engine)) {
-      ai_move(engine);
+      do_ai_move(engine);
     } else {
-      print_prompt(engine);
       get_user_input(engine);
     }
   }

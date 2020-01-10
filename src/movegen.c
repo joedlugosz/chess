@@ -14,9 +14,9 @@
 
 const score_t player_fact[N_PLAYERS] = { 1, -1 };
 
-static inline void sort_compare(move_s **head, move_s *insert)
+static inline void sort_compare(movelist_s **head, movelist_s *insert)
 {
-  move_s *current;
+  movelist_s *current;
   if(!*head || (*head)->score <= insert->score) {
     insert->next = *head;
     *head = insert;
@@ -30,12 +30,12 @@ static inline void sort_compare(move_s **head, move_s *insert)
   }
 }
 
-static inline void sort_moves(move_s **head)
+static inline void sort_moves(movelist_s **head)
 {
-  move_s *sorted = 0;
-  move_s *current = *head;
+  movelist_s *sorted = 0;
+  movelist_s *current = *head;
   while(current) {
-    move_s *next = current->next;
+    movelist_s *next = current->next;
     sort_compare(&sorted, current);
     current = next;
   }
@@ -57,12 +57,12 @@ int gen_eval(state_s *state, pos_t from, pos_t to)
 }
 
 /* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
-int gen_moves(state_s *state, move_s **move_buf_head)
+int gen_moves(state_s *state, movelist_s **move_buf_head)
 {
   plane_t pieces, moves;
   pos_t from, to;
-  move_s *prev = 0;
-  move_s *move_buf = *move_buf_head;
+  movelist_s *prev = 0;
+  movelist_s *move_buf = *move_buf_head;
   //state_s *next_state;
   int i = 0;
   
@@ -88,9 +88,9 @@ int gen_moves(state_s *state, move_s **move_buf_head)
         while(--n > PAWN) {
           /* Enter the move info into the buffer */
           move_buf[i].score = gen_eval(state, from, to);
-          move_buf[i].from = from;
-          move_buf[i].to = to;
-          move_buf[i].promotion = n;
+          move_buf[i].move.from = from;
+          move_buf[i].move.to = to;
+          move_buf[i].move.promotion = n;
           move_buf[i].next = 0;
           /* Link this entry to the previous entry in the list */
           if(prev) {
@@ -103,9 +103,9 @@ int gen_moves(state_s *state, move_s **move_buf_head)
       } else {
         /* Enter the move info into the buffer */
         move_buf[i].score = gen_eval(state, from, to);
-        move_buf[i].from = from;
-        move_buf[i].to = to;
-        move_buf[i].promotion = 0;
+        move_buf[i].move.from = from;
+        move_buf[i].move.to = to;
+        move_buf[i].move.promotion = 0;
         move_buf[i].next = 0;
         /* Link this entry to the previous entry in the list */
         if(prev) {
@@ -123,8 +123,8 @@ int gen_moves(state_s *state, move_s **move_buf_head)
 
 void perft(perft_s *data, state_s *state, int depth)
 {
-  move_s move_buf[N_MOVES];
-  move_s *move, *move_buf_head = move_buf;
+  movelist_s move_buf[N_MOVES];
+  movelist_s *list_entry, *move_buf_head = move_buf;
   int i;
   state_s next_state;
   perft_s next_data;
@@ -146,16 +146,16 @@ void perft(perft_s *data, state_s *state, int depth)
     if(in_check(state)) {
       data->checks = 1;
       gen_moves(state, &move_buf_head);
-      move = move_buf_head;
+      list_entry = move_buf_head;
       i = 0;
-      while(move) {
+      while(list_entry) {
 	      copy_state(&next_state, state);
-	      do_move(&next_state, move->from, move->to, move->promotion);
+	      make_move(&next_state, &list_entry->move);
 	      /* Count moves out of check */
 	      if(!in_check(&next_state)) {
 	        i++;
 	      }
-	      move = move->next;
+	      list_entry = list_entry->next;
       }
       /* If not, checkmate */
       if(i == 0) data->checkmates = 1;
@@ -164,11 +164,11 @@ void perft(perft_s *data, state_s *state, int depth)
   }
 
   gen_moves(state, &move_buf_head);
-  move = move_buf_head;
+  list_entry = move_buf_head;
   i = 0;
-  while(move) {
+  while(list_entry) {
     copy_state(&next_state, state);
-    do_move(&next_state, move->from, move->to, move->promotion);
+    make_move(&next_state, &list_entry->move);
     /* Can't move into check */
     if(!in_check(&next_state)) {
       change_player(&next_state);
@@ -182,41 +182,33 @@ void perft(perft_s *data, state_s *state, int depth)
       data->ep_captures += next_data.ep_captures;
       i++;
     }
-    move = move->next;
+    list_entry = list_entry->next;
   }
 }
 
 void perft_divide(state_s *state, int depth)
 {
-  move_s move_buf[N_MOVES];
-  move_s *move, *move_buf_head = move_buf;
+  movelist_s move_buf[N_MOVES];
+  movelist_s *list_entry, *move_buf_head = move_buf;
   state_s next_state;
   perft_s next_data;
   char buf[6];
 
   gen_moves(state, &move_buf_head);
-  move = move_buf_head;
-  while(move) {
+  list_entry = move_buf_head;
+  while(list_entry) {
     copy_state(&next_state, state);
-    do_move(&next_state, move->from, move->to, move->promotion);
+    make_move(&next_state, &list_entry->move);
     /* Can't move into check */
     if(!in_check(&next_state)) {
       change_player(&next_state);
       perft(&next_data, &next_state, depth - 1);
-      format_move_bare(buf, move->from, move->to);
+      format_move_bare(buf, &list_entry->move);
       printf("%s: %lld\n", buf, next_data.moves);
-  /*    data->captures += next_data.captures;
-      data->promotions += next_data.promotions;
-      data->castles += next_data.castles;
-      data->checks += next_data.checks;
-      data->checkmates += next_data.checkmates;
-      data->ep_captures += next_data.ep_captures;*/
     }
-    move = move->next;
+    list_entry = list_entry->next;
   }
 }
-  //printf("%4d %20s %12lld\n", depth, buf, p);
-  //printf("Perft: %lld\n", perft(&(e->game), depth));
 
 void perft_total(state_s *state, int depth) 
 {
