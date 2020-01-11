@@ -484,52 +484,51 @@ void make_move(state_s *state, move_s *move)
   ASSERT(is_valid_pos(move->to));
   ASSERT(move->from != move->to);
   
-  int move_piece, take_piece;
-  player_e player;
-  plane_t a_from, a_to;
+  int moving_piece, victim_piece;
+  plane_t bb_from, bb_to;
   
   state->ep_captured = 0;
   state->captured = 0;
   state->castled = 0;
 
-  a_to = pos2mask[move->to];
-  take_piece = state->piece_at[move->to];
-  if(take_piece != EMPTY) {
+  bb_to = pos2mask[move->to];
+  victim_piece = state->piece_at[move->to];
+  if(victim_piece != EMPTY) {
     /* If the king is being taken, check testing has failed */
     ASSERT(piece_type[take_piece] != KING);
-    player_e take_player = piece_player[take_piece];
+    player_e victim_player = piece_player[victim_piece];
     /* If the player is trying to take one of their own pieces, something has gone wrong */
-    ASSERT(take_player != state->to_move);
+    ASSERT(victim_player != state->to_move);
     state->piece_pos[(int)state->index_at[move->to]] = EMPTY;
-    clear(state, move->to, take_piece, take_player);
+    clear(state, move->to, victim_piece, victim_player);
     state->captured = 1;
     /* If a rook has been captured, set moved flag to prevent castling */
-    if(piece_type[take_piece] == ROOK) {
-      state->moved |= a_to;
+    if(piece_type[victim_piece] == ROOK) {
+      state->moved |= bb_to;
     }
   }
 
-  move_piece = state->piece_at[move->from];
-  player_e move_player = piece_player[move_piece];
-  /* Check player is trying to move own piece */
-  ASSERT(move_player == state->to_move);
+  moving_piece = state->piece_at[move->from];
+  player_e moving_player = piece_player[moving_piece];
+  ASSERT(moving_player == state->to_move);
+
   /* Change position of moving piece */
   state->piece_pos[(int)state->index_at[move->from]] = move->to;
   /* Set bits for "to" position */
-  set(state, move->to, move_piece, move_player);
+  set(state, move->to, moving_piece, moving_player);
   /* Clear bits for "from" position */
-  clear(state, move->from, move_piece, move_player);
-  a_from = pos2mask[move->from];
+  clear(state, move->from, moving_piece, moving_player);
+  bb_from = pos2mask[move->from];
   /* Set "to" to "from" */
   state->piece_at[move->to] = state->piece_at[move->from];
   state->index_at[move->to] = state->index_at[move->from];
   /* Set "from" to empty */
   state->piece_at[move->from] = EMPTY;
   state->index_at[move->from] = EMPTY;
-  state->hash ^= hash_values[move->from * move_piece];
+  state->hash ^= hash_values[move->from * moving_piece];
 
   /* Castling, pawn promotion and other special stuff */
-  switch(piece_type[move_piece]) {
+  switch(piece_type[moving_piece]) {
   case KING:
     /* If this is a castling move (2 spaces each direction) */
     /* Treat moving the rook as a separate move and recurse */
@@ -543,26 +542,26 @@ void make_move(state_s *state, move_s *move)
       state->castled = 1;
     }
     /* Register that the king has moved to prevent castling */
-    state->moved |= a_from;
+    state->moved |= bb_from;
     break;
   case ROOK:
     /* Register that the rook has moved to prevent castling*/
-    state->moved |= a_from;
+    state->moved |= bb_from;
     break;
   case PAWN:
     /* If pawn has been promoted */
-    if(a_to & (0xffull << 56 | 0xffull)) {
+    if(bb_to & (0xffull << 56 | 0xffull)) {
       ASSERT(move->promotion > PAWN);
       /* Clear pawn bits for "to" position */
-      clear(state, move->to, move_piece, move_player);
+      clear(state, move->to, moving_piece, moving_player);
       /* Set queen bits for "to" position */
-      set(state, move->to, move_piece + move->promotion - PAWN, move_player);
+      set(state, move->to, moving_piece + move->promotion - PAWN, moving_player);
       /* Change the piece type */
       state->piece_at[move->to] += move->promotion - PAWN;
       state->promoted = 1;
     }
     /* If pawn has taken en-passant */
-    if(a_to & state->en_passant) {
+    if(bb_to & state->en_passant) {
       pos_t target_pos = move->to;
       if(state->to_move == WHITE) target_pos -= 8;
       else target_pos += 8;
@@ -585,7 +584,7 @@ void make_move(state_s *state, move_s *move)
   /* Clear previous en passant state */
   state->en_passant = 0;
   /* If pawn has jumped, set en passant square */
-  if(piece_type[move_piece] == PAWN) {
+  if(piece_type[moving_piece] == PAWN) {
     if(move->from - move->to == 16) {
       state->en_passant = pos2mask[move->from - 8];
     }
@@ -598,7 +597,7 @@ void make_move(state_s *state, move_s *move)
   calculate_moves(state);
   
   /* Check testing */
-  for(player = 0; player < N_PLAYERS; player++) {
+  for(player_e player = 0; player < N_PLAYERS; player++) {
     int king_pos = mask2pos(state->a[KING + player * N_PIECE_T]);
     ASSERT(is_valid_pos(king_pos));
     if(get_attacks(state, king_pos, opponent[player])) {
