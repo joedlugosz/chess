@@ -61,7 +61,7 @@ set_test 1
 
 #set_test 100
 test_perft starting 5
-test_perft position2 4
+test_perft position2 5
 test_perft position3 5
-test_perft position4 2
+test_perft position4 3
 cleanup

@@ -128,4 +128,11 @@ static inline void change_player(state_s *state) {
 static inline int is_valid_pos(pos_t pos) {
   return (pos >= 0 && pos < N_POS);
 }
+static inline int is_promotion_move(state_s *state, pos_t from, plane_t to_mask) {
+  if((to_mask & 0xff000000000000ffull) 
+    && piece_type[(int)state->piece_at[from]] == PAWN) {
+      return 1;
+  }
+  return 0;
+}
 #endif /* BOARD_H */

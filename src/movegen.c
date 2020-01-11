@@ -83,9 +83,8 @@ int gen_moves(state_s *state, movelist_s **move_buf_head)
       ASSERT(is_valid_pos(to));
       int n;
       /* Promotion */
-      if((to_mask & 0xff000000000000ffull) && piece_type[(int)state->piece_at[from]] == PAWN) {
-        n = KING;
-        while(--n > PAWN) {
+      if(is_promotion_move(state, from, to_mask)) {
+        for(n = QUEEN; n > PAWN; n--) {
           /* Enter the move info into the buffer */
           move_buf[i].score = gen_eval(state, from, to);
           move_buf[i].move.from = from;
