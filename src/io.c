@@ -26,7 +26,7 @@ const char piece_text_ascii[N_PLANES][6] = {
   "p ", "R ", "N ", "B ", "Q ", "K ",
   "p*", "R*", "N*", "B*", "Q*", "K*"
 };
-static const char piece_letter[N_PLANES] = "prnbq";
+static const char piece_letter[] = "prnbq";
 
 #if(TERM_UNICODE)
 const char piece_text_unicode[N_PLANES][6] = {
@@ -66,8 +66,15 @@ int parse_pos(const char *buf, pos_t *pos)
 
 int parse_move(const char *buf, move_s *move)
 {
-  if(!parse_pos(buf, &move->from)) {
-    if(!parse_pos(buf+2, &move->to)) {
+  if(parse_pos(buf, &move->from)) return 1;
+  if(parse_pos(buf+2, &move->to)) return 1;
+  if(buf[4] == 0) {
+    move->promotion = 0;
+    return 0;
+  }
+  for(piece_e piece = ROOK; piece <= QUEEN; piece++) {
+    if(tolower(buf[4]) == piece_letter[piece]) {
+      move->promotion = piece;
       return 0;
     }
   }
