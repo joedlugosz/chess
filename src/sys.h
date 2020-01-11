@@ -35,6 +35,8 @@ int accept_command(engine_s *e, const char *in);
 
 int no_piece_at_pos(engine_s *, pos_t);
 int move_is_illegal(engine_s *, move_s *);
+
+enum { MOVE_BUF_SIZE = 10 };
 int parse_pos(const char *, pos_t *);
 int parse_move(const char *, move_s *);
 int format_pos(char *, pos_t);

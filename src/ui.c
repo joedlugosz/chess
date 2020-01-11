@@ -55,7 +55,7 @@ void start_move_log(engine_s *e)
 #if (LOGGING == YES)
   char buf[20];
   snprintf(buf, sizeof(buf), "g%02d-%c%02d", 
-    e->game_n, (e->engine_mode == ENGINE_PLAYING_AS_WHITE) ? 'w' : 'b', e->move_n);
+    e->game_n, (e->mode == ENGINE_PLAYING_AS_WHITE) ? 'w' : 'b', e->move_n);
   START_LOG(&think_log, NE_MOVE, "%s", buf);
   START_LOG(&xboard_log, NE_MOVE, "%s-xboard", buf);
 #endif
