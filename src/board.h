@@ -77,8 +77,8 @@ typedef struct state_s_ {
   pos_t to;                  /* Ditto */
   status_t captured : 1;     /* Whether the last move captured */
   status_t ep_captured : 1;  /* Whether the last move capture was en passant */
-  status_t castled : 1;      /* Whether the last move castled */
   status_t promoted : 1;     /* Whether the last move promoted */
+  status_t castled : 1;      /* Whether the last move castled */
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   plane_t moved;             /* Flags for pieces which have moved */
