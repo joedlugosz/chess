@@ -144,7 +144,8 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
     /* Copy into next_state and do the move */
     copy_state(&next_state, current_state);
     /* TODO: what about taking and promoting? */
-    do_move(&next_state, from, to, 0);    
+    move_s move = { from, to, 0 };
+    make_move(&next_state, &move);    
     /* Can't move into check */
     if(in_check(&next_state))
       continue;
@@ -175,36 +176,32 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
   /* ctx->halt breaks out of a search */
   if(ctx->halt) return 0;
   state_s next_state;
-  /* Buffer to be used by gen_moves */
-  move_s move_buf[N_MOVES];
-  /* Generate moves */
-  //  move_s *move = gen_moves(ctx, state, move_buf, depth);  
-  move_s *move = move_buf;
 
-  ctx->n_possible += gen_moves(state, &move);  
-  while(move) {
-    /* Evaluation score */
+  movelist_s move_buf[N_MOVES];
+  movelist_s *list_entry = move_buf;
+  ctx->n_possible += gen_moves(state, &list_entry);
+
+  while(list_entry) {
     score_t score;
+    move_s *move = &list_entry->move;
     ctx->n_searched++;
-    //    printf("%d %d\n", ctx->n_nodes, depth);
-    /* Copy and do the move so the result is in next_state */
     copy_state(&next_state, state);
-    do_move(&next_state, move->from, move->to, move->promotion);
+    make_move(&next_state, move);
     /* Can't move into check */ 
     if(in_check(&next_state)) {
-      move = move->next;
+      list_entry = list_entry->next;
       continue;
     }
     /* Most of the history must be written at this point so it passes to the next recursion */
-    write_move_history(ctx, depth, move->from, move->to, state->to_move, 0);
+    write_move_history(ctx, depth, move, state->to_move, 0);
     /* Can't repeat a move, relaxed if in check */
     /* TODO: hashing */
-    if(is_repeated_move(ctx, depth, move->from, move->to) && !in_check(state)) {
-      move = move->next;
+    if(is_repeated_move(ctx, depth, move) && !in_check(state)) {
+      list_entry = list_entry->next;
       continue;
     }
     change_player(&next_state);
-  /* Recurse down to search_depth - 1, then do quiescence search if necessary */
+    /* Recurse down to search_depth - 1, then do quiescence search if necessary */
     if(depth < search_depth - 1) {
       score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
     } else {
@@ -222,14 +219,12 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       alpha = score;
       /* Record the move if found at the top level */
       if(depth == 0) {
-        ctx->best_move.from = move->from;
-        ctx->best_move.to = move->to;
-        ctx->best_move.promotion = move->promotion;
+        memcpy(&ctx->best_move, move, sizeof(ctx->best_move));
       }
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
     /* Next move in the list */
-    move = move->next;
+    list_entry = list_entry->next;
   }
   return alpha;
 }

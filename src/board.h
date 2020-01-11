@@ -77,8 +77,8 @@ typedef struct state_s_ {
   pos_t to;                  /* Ditto */
   status_t captured : 1;     /* Whether the last move captured */
   status_t ep_captured : 1;  /* Whether the last move capture was en passant */
-  status_t castled : 1;      /* Whether the last move castled */
   status_t promoted : 1;     /* Whether the last move promoted */
+  status_t castled : 1;      /* Whether the last move castled */
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   plane_t moved;             /* Flags for pieces which have moved */
@@ -86,12 +86,18 @@ typedef struct state_s_ {
   hash_t hash;
 } state_s;
 
+/* move_s holds the game state as well as info about moves */
+typedef struct move_s_ {
+  pos_t from, to;
+  piece_e promotion;
+} move_s;
+
 void init_board(void);
 void reset_board(state_s *state);
 void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved);
 //void random_state(state_s *s);
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
-void do_move(state_s *state, pos_t from, pos_t to, piece_e promotion_piece);
+void make_move(state_s *state, move_s *move);
 
 extern plane_t pos2mask[N_POS];
 extern const piece_e piece_type[N_PLANES];

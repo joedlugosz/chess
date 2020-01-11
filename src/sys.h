@@ -30,8 +30,6 @@ typedef struct engine_s_ {
   
   state_s game;
 
-  search_result_s result;
-
 } engine_s;
 
 /* command.c*/
@@ -39,12 +37,12 @@ typedef void (*ui_fn)(engine_s *);
 int accept_command(engine_s *e, const char *in);
 
 int no_piece_at_pos(engine_s *, pos_t);
-int move_is_illegal(engine_s *, pos_t, pos_t);
-int parse_pos(const char *instr, pos_t *pos);
-int parse_move(const char *instr, pos_t *from, pos_t *to);
-int format_pos(char *instr, pos_t pos);
-int format_move(char *instr, pos_t from, pos_t to, int check, int capture);
-int format_move_bare(char *instr, pos_t from, pos_t to);
+int move_is_illegal(engine_s *, move_s *);
+int parse_pos(const char *, pos_t *);
+int parse_move(const char *, move_s *);
+int format_pos(char *, pos_t);
+int format_move(char *, move_s *, int, int);
+int format_move_bare(char *, move_s *);
 
 void list_features(void);
 void feature_accepted(const char *name);
