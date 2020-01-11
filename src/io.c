@@ -26,6 +26,8 @@ const char piece_text_ascii[N_PLANES][6] = {
   "p ", "R ", "N ", "B ", "Q ", "K ",
   "p*", "R*", "N*", "B*", "Q*", "K*"
 };
+static const char piece_letter[] = "prnbq";
+
 #if(TERM_UNICODE)
 const char piece_text_unicode[N_PLANES][6] = {
   "\u265f ", "\u265c ", "\u265e ", "\u265d ", "\u265b ", "\u265a ",
@@ -64,8 +66,15 @@ int parse_pos(const char *buf, pos_t *pos)
 
 int parse_move(const char *buf, move_s *move)
 {
-  if(!parse_pos(buf, &move->from)) {
-    if(!parse_pos(buf+2, &move->to)) {
+  if(parse_pos(buf, &move->from)) return 1;
+  if(parse_pos(buf+2, &move->to)) return 1;
+  if(buf[4] == 0) {
+    move->promotion = 0;
+    return 0;
+  }
+  for(piece_e piece = ROOK; piece <= QUEEN; piece++) {
+    if(tolower(buf[4]) == piece_letter[piece]) {
+      move->promotion = piece;
       return 0;
     }
   }
@@ -84,17 +93,23 @@ int format_pos(char *buf, pos_t pos)
   return 0;
 }
 
-int format_move_bare(char *buf, move_s *move)
+int format_move_bare(char *buf, move_s *move, int *length)
 {
   if(format_pos(buf, move->from)) return 1;
   if(format_pos(buf+2, move->to)) return 1;
+  char *ptr = buf + 4;
+  if(move->promotion > PAWN) {
+    *ptr++ = piece_letter[move->promotion];
+  }
+  *length = ptr - buf;
   return 0;
 }
 
 int format_move(char *buf, move_s *move, int capture, int check)
 {
-  if(format_move_bare(buf, move)) return 1;
-  char *ptr = buf + 4;
+  int length;
+  if(format_move_bare(buf, move, &length)) return 1;
+  char *ptr = buf + length;
   if(capture) *ptr++ = '+';
   if(check) *ptr++ = '#';
   *ptr = 0;

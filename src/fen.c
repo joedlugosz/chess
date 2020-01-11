@@ -11,7 +11,7 @@
  */
 
 /* FEN piece letters */
-const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
+static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
 enum { N_CASTLE_RIGHTS_MASKS = 4,
        CASTLE_RIGHTS_ALL = 0x9100000000000091ull

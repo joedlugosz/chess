@@ -495,7 +495,7 @@ void make_move(state_s *state, move_s *move)
   victim_piece = state->piece_at[move->to];
   if(victim_piece != EMPTY) {
     /* If the king is being taken, check testing has failed */
-    ASSERT(piece_type[take_piece] != KING);
+    ASSERT(piece_type[victim_piece] != KING);
     player_e victim_player = piece_player[victim_piece];
     /* If the player is trying to take one of their own pieces, something has gone wrong */
     ASSERT(victim_player != state->to_move);
