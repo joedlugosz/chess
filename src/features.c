@@ -10,13 +10,13 @@ enum {
   N_MODULES = 4,
 };
 
-extern const options_s ui_opts;
+extern const options_s engine_options;
 extern const options_s search_opts;
 extern const options_s eval_opts;
 extern const options_s log_opts;
 
 const options_s *const module_opts[N_MODULES] = {
-  &search_opts, &eval_opts, &ui_opts, &log_opts
+  &search_opts, &eval_opts, &engine_options, &log_opts
 };
 
 /* See chess.h - option_type_e */

@@ -15,12 +15,9 @@ typedef struct engine_s_ {
     ENGINE_QUIT
   } mode;
 
-  player_e side_to_move;
-  
   int xboard_mode;
   int waiting;
   int resign_delayed;
-  clock_t ui_clock;
   clock_t start_time;
   clock_t elapsed_time;
   

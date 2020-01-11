@@ -34,11 +34,11 @@
 log_s xboard_log = { .new_every = NE_SESSION };
 log_s error_log = { .new_every = NE_SESSION };
 
-const option_s _engine_options[] = {
+static const option_s options[] = {
   { "New XBoard log",   COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo },
 };
 const options_s engine_options = { 
-  sizeof(_engine_options)/sizeof(_engine_options[0]), _engine_options 
+  sizeof(options)/sizeof(options[0]), options 
 };
 
 /*
