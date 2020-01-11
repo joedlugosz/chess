@@ -159,6 +159,7 @@ int get_fen(const state_s *state, char *out, size_t outsize)
       }
     }
   }
+  if(file_count > 0) *ptr++ = (char)file_count + '0';
   
   *ptr++ = ' ';
   *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
