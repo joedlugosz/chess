@@ -10,10 +10,10 @@ typedef struct engine_s_ {
   enum {
     ENGINE_PLAYING_AS_WHITE = WHITE,
     ENGINE_PLAYING_AS_BLACK = BLACK,
-    FORCE_MODE,
-    ANALYSE_MODE,
-    QUIT
-  } engine_mode;
+    ENGINE_FORCE_MODE,
+    ENGINE_ANALYSE_MODE,
+    ENGINE_QUIT
+  } mode;
 
   player_e side_to_move;
   

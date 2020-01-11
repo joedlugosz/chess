@@ -31,41 +31,15 @@
 #include <stdlib.h>
 #include <signal.h>
 
+log_s xboard_log = { .new_every = NE_SESSION };
+log_s error_log = { .new_every = NE_SESSION };
 
-enum {
-  ERR_MOVING   = 0,
-  ERR_NOPIECE  = ERR_MOVING + 0,
-  ERR_CANTMOVETOSQUARE = ERR_MOVING + 1,
-  N_ERR 
-};
-
-const char err_msg[N_ERR][80] = {
-};
-
-//engine_s engine;
-
-/* XBoard comms log */
-log_s xboard_log = {
-  .new_every = NE_SESSION
-};
-/* Fatal error log */
-log_s error_log = {
-  .new_every = NE_SESSION
-};
-
-
-/*
- *  Options
- */ 
-
-enum {
-  N_UI_OPTS = 1
-};
-
-const option_s _ui_opts[N_UI_OPTS] = {
+const option_s _engine_options[] = {
   { "New XBoard log",   COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo },
 };
-const options_s ui_opts = { N_UI_OPTS, _ui_opts };
+const options_s engine_options = { 
+  sizeof(_engine_options)/sizeof(_engine_options[0]), _engine_options 
+};
 
 /*
  *  Logging
@@ -106,12 +80,12 @@ static inline clock_t get_time(engine_s *engine)
 
 static inline int ai_to_move(engine_s *engine)
 {
-  if(engine->game.to_move != engine->engine_mode) return 0;
+  if(engine->game.to_move != engine->mode) return 0;
   else return 1;
 }
 
 static inline int is_in_normal_play(engine_s *engine) {
-  if(engine->engine_mode >= FORCE_MODE) return 0;
+  if(engine->mode >= ENGINE_FORCE_MODE) return 0;
   else return 1;
 }
 
@@ -144,9 +118,9 @@ static inline void print_game_state(engine_s *engine)
 static inline void print_prompt(engine_s *engine)
 {
   if(!engine->xboard_mode) {
-    if(engine->engine_mode != FORCE_MODE) {
+    if(engine->mode != ENGINE_FORCE_MODE) {
       printf("%s %s> ", player_text[engine->game.to_move],
-	     engine->game.to_move == engine->engine_mode ? "(AI) " : "");
+	     engine->game.to_move == engine->mode ? "(AI) " : "");
     } else {
       printf("FORCE > ");
     }
@@ -169,7 +143,7 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
 
   char buf[20];  
   format_move(buf, &result->best_move, engine->game.captured,
-	      engine->game.check[opponent[engine->engine_mode]]);
+	      engine->game.check[opponent[engine->mode]]);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   
@@ -242,7 +216,7 @@ void init_engine(engine_s *engine)
   engine->resign_delayed = 0;
   engine->game_n = 1;
   engine->waiting = 1;
-  engine->engine_mode = ENGINE_PLAYING_AS_BLACK;
+  engine->mode = ENGINE_PLAYING_AS_BLACK;
 }
 
 void finished_move(engine_s *engine)
@@ -269,12 +243,14 @@ static inline void do_ai_move(engine_s *engine)
   search_result_s result;
   do_search(&engine->game, &result);
 
-  int resign_immediately = 0;   
- 
-  if(result.best_move.from == NO_POS) {
+  int resign = 0;   
+
+  if(engine->resign_delayed) {
+    resign = 1;
+  } else if(result.best_move.from == NO_POS) {
     if(engine->game.check) {
       /* Checkmate */
-      resign_immediately = 1;
+      resign = 1;
     } else {
       /* Stalemate - delay resign to see if draw is given */
       engine->resign_delayed = 1;
@@ -282,9 +258,10 @@ static inline void do_ai_move(engine_s *engine)
     }
   }
   
-  if(engine->resign_delayed || resign_immediately) {
+  if(resign) {
+    mark_time(engine);
     print_ai_resign(engine);
-    engine->engine_mode = FORCE_MODE;
+    engine->mode = ENGINE_FORCE_MODE;
     return;
   }
   
@@ -317,7 +294,21 @@ static inline int accept_move(engine_s *engine, const char *input)
     reset_time(engine);
   } 	  
   make_move(&engine->game, &move);
+  if(is_in_normal_play(engine)) {
+    print_statistics(engine, 0);
+  }
+  print_game_state(engine);
+  finished_move(engine);
   return 0;
+}
+
+static inline int accept_message(const char *input)
+{
+  if(input[0] == '{') {
+    PRINT_LOG(&xboard_log, "Msg : %s", input+1);
+    return 0;
+  }
+  return 1;
 }
 
 static inline void get_user_input(engine_s *engine)
@@ -325,29 +316,10 @@ static inline void get_user_input(engine_s *engine)
   print_prompt(engine);
   const char *input;
   input = get_input();
-  /* No input */
-  if(input[0] == 0) {
-    return;
-  }
-  /* Message from server etc. */
-  if(input[0] == '{') {
-    PRINT_LOG(&xboard_log, "Msg : %s", input+1);
-    return;
-  }
-  /* Command */
-  if(!accept_command(engine, input)) {
-    return;
-  }
-  /* Move */
-  if(!accept_move(engine, input)) {
-    if(is_in_normal_play(engine)) {
-      print_statistics(engine, 0);
-    }
-    print_game_state(engine);
-    finished_move(engine);
-    return;
-  }
-  /* Not a command or a move */
+  if(input[0] == 0) return; 
+  if(!accept_message(input)) return;
+  if(!accept_command(engine, input)) return;
+  if(!accept_move(engine, input)) return;
   print_msg(engine, "Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
 }
 
@@ -356,7 +328,7 @@ static inline void get_user_input(engine_s *engine)
  */
 void main_loop(engine_s *engine) 
 {
-  while(engine->engine_mode != QUIT) {
+  while(engine->mode != ENGINE_QUIT) {
     if(ai_to_move(engine)) {
       do_ai_move(engine);
     } else {
