@@ -136,34 +136,34 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
   /* Get all the pieces which can attack the piece that has just been
      moved */
   attacks = get_attacks(current_state, to, attacking);
-  /* For each piece */
   while(attacks) {
     /* Get from-position of the attacking piece */
     from = mask2pos(next_bit_from(&attacks));
     ASSERT(from != to);
-    /* Copy into next_state and do the move */
     copy_state(&next_state, current_state);
-    /* TODO: what about taking and promoting? */
-    move_s move = { from, to, 0 };
-    make_move(&next_state, &move);    
-    /* Can't move into check */
-    if(in_check(&next_state))
-      continue;
-    /* This is a valid move, increment nodes */
-    ctx->n_searched++;
-    /* Recurse as opponent */
-    change_player(&next_state);
-    score = -quiesce(ctx, &next_state, depth + 1, -alpha, -beta);
-    /* Beta cutoff */
-    if(score >= beta) {
+    move_s move = { from, to, is_promotion_move(current_state, from, pos2mask[to])
+      ? QUEEN : PAWN };
+    do {
+      make_move(&next_state, &move);    
+      /* Can't move into check */
+      if(in_check(&next_state))
+        break;
+      /* This is a valid move, increment nodes */
+      ctx->n_searched++;
+      /* Recurse as opponent */
+      change_player(&next_state);
+      score = -quiesce(ctx, &next_state, depth + 1, -alpha, -beta);
+      /* Beta cutoff */
+      if(score >= beta) {
+        LOG_THOUGHT(ctx, depth, score, alpha, beta);
+        return beta;
+      }
+      /* Alpha update */
+      if(score > alpha) {
+        alpha = score;
+      }
       LOG_THOUGHT(ctx, depth, score, alpha, beta);
-      return beta;
-    }
-    /* Alpha update */
-    if(score > alpha) {
-      alpha = score;
-    }
-    LOG_THOUGHT(ctx, depth, score, alpha, beta);
+    } while(--move.promotion > PAWN);
   }
   /* alpha holds the score of the best possible outcome of the search */
   return alpha;

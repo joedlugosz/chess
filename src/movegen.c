@@ -75,12 +75,8 @@ int gen_moves(state_s *state, movelist_s **move_buf_head)
       plane_t to_mask = next_bit_from(&moves);
       to = mask2pos(to_mask);
       ASSERT(is_valid_pos(to));
-      piece_e promotion;
-      if(is_promotion_move(state, from, to_mask)) {
-        promotion = QUEEN;
-      } else {
-        promotion = PAWN;
-      }
+      piece_e promotion = (is_promotion_move(state, from, to_mask))
+        ? QUEEN : PAWN;
       do {
         /* Enter the move info into the buffer */
         move_buf[i].score = gen_eval(state, from, to);
