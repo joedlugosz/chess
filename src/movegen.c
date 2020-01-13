@@ -59,53 +59,28 @@ int gen_eval(state_s *state, pos_t from, pos_t to)
 /* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
 int gen_moves(state_s *state, movelist_s **move_buf_head)
 {
-  plane_t pieces, moves;
-  pos_t from, to;
   movelist_s *prev = 0;
   movelist_s *move_buf = *move_buf_head;
-  //state_s *next_state;
   int i = 0;
   
-  /* Get set of pieces this player can move */
-  pieces = get_my_pieces(state);
-  /* For each piece */
+  plane_t pieces = get_my_pieces(state);
   while(pieces) {
-    /* Get from-position and its valid moves, from the piece */
-    from = mask2pos(next_bit_from(&pieces));
+    pos_t from = mask2pos(next_bit_from(&pieces));
     ASSERT(is_valid_pos(from));
-    moves = get_moves(state, from);
-    /* For each move */
+    plane_t moves = get_moves(state, from);
     while(moves) {
       ASSERT(i < N_MOVES);
-      /* Get to-position from the valid moves */
       plane_t to_mask = next_bit_from(&moves);
-      to = mask2pos(to_mask);
+      pos_t to = mask2pos(to_mask);
       ASSERT(is_valid_pos(to));
-      int n;
-      /* Promotion */
-      if((to_mask & 0xff000000000000ffull) && piece_type[(int)state->piece_at[from]] == PAWN) {
-        n = KING;
-        while(--n > PAWN) {
-          /* Enter the move info into the buffer */
-          move_buf[i].score = gen_eval(state, from, to);
-          move_buf[i].move.from = from;
-          move_buf[i].move.to = to;
-          move_buf[i].move.promotion = n;
-          move_buf[i].next = 0;
-          /* Link this entry to the previous entry in the list */
-          if(prev) {
-            prev->next = &move_buf[i];
-          }
-          prev = &move_buf[i];
-          /* Next move in buffer */
-          i++;
-        }
-      } else {
+      piece_e promotion = (is_promotion_move(state, from, to_mask))
+        ? QUEEN : PAWN;
+      do {
         /* Enter the move info into the buffer */
         move_buf[i].score = gen_eval(state, from, to);
         move_buf[i].move.from = from;
         move_buf[i].move.to = to;
-        move_buf[i].move.promotion = 0;
+        move_buf[i].move.promotion = promotion;
         move_buf[i].next = 0;
         /* Link this entry to the previous entry in the list */
         if(prev) {
@@ -114,7 +89,7 @@ int gen_moves(state_s *state, movelist_s **move_buf_head)
         prev = &move_buf[i];
         /* Next move in buffer */
         i++;
-      }
+      } while(--promotion > PAWN);
     }
   }
   if(i) sort_moves(move_buf_head);
