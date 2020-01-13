@@ -203,12 +203,6 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
     }
     ctx->search_history[depth].score = score;
-    /* Beta cutoff */
-    if(score >= beta) {
-      LOG_THOUGHT(ctx, depth, score, alpha, beta);
-      ctx->n_beta++;
-      return beta;
-    }
     /* Alpha update - best move found */
     if(score > alpha) {
       alpha = score;
@@ -216,6 +210,12 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       if(depth == 0) {
         memcpy(ctx->best_move, move, sizeof(*ctx->best_move));
       }
+    }
+    /* Beta cutoff */
+    if(score >= beta) {
+      LOG_THOUGHT(ctx, depth, score, alpha, beta);
+      ctx->n_beta++;
+      return beta;
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
     /* Next move in the list */
