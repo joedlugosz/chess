@@ -36,6 +36,7 @@ log_s error_log = { .new_every = NE_SESSION };
 
 static const option_s options[] = {
   { "New XBoard log",   COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo },
+//  { "Search depth",   SPIN_OPT,  &search_depth, 0, SEARCH_DEPTH_MAX, 0 },
 };
 const options_s engine_options = { 
   sizeof(options)/sizeof(options[0]), options 
@@ -217,6 +218,7 @@ void init_engine(engine_s *engine)
   engine->game_n = 1;
   engine->waiting = 1;
   engine->mode = ENGINE_PLAYING_AS_BLACK;
+  engine->depth = 8;
 }
 
 void finished_move(engine_s *engine)
@@ -241,7 +243,7 @@ static inline void do_ai_move(engine_s *engine)
   start_move_log(engine);
 
   search_result_s result;
-  do_search(&engine->game, &result);
+  do_search(engine->depth, &engine->game, &result);
 
   int resign = 0;   
 

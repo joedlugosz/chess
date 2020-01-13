@@ -33,13 +33,14 @@ enum {
 const score_t player_factor[N_PLAYERS] = { 1, -1 };
 
 /* Options */
-const option_s _search_opts[N_SEARCH_OPTS] = {
-  { "Search depth",   SPIN_OPT,  &search_depth, 0, SEARCH_DEPTH_MAX, 0 },
+static const option_s options[] = {
   { "Boundary score", INT_OPT,   &boundary,     0, 2000000,          0 },
   { "Show thinking",  BOOL_OPT,  &show,         0, 0,                0 },
   { "New Thinking log every", COMBO_OPT, &(think_log.new_every), 0, 0, &newevery_combo },
 };
-const options_s search_opts = { N_SEARCH_OPTS, _search_opts };
+const options_s search_opts = { 
+  sizeof(options)/sizeof(options[0]), options 
+};
 
 //clock_t search_start_time;
 //int search_nodes;
@@ -213,7 +214,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       alpha = score;
       /* Record the move if found at the top level */
       if(depth == 0) {
-        memcpy(&ctx->best_move, move, sizeof(ctx->best_move));
+        memcpy(ctx->best_move, move, sizeof(*ctx->best_move));
       }
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
@@ -223,14 +224,14 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
   return alpha;
 }
 
-void do_search(state_s *state, search_result_s *res)
+void do_search(int depth, state_s *state, search_result_s *res)
 {
   search_context_s search;
   memset(&search, 0, sizeof(search));
-  search.halt = 0;
-  search.best_move.from = EMPTY;  
+  search.horizon_depth = depth;
+  search.best_move = &res->best_move;
   res->score = search_ply(&search, state, 0, -boundary, boundary);
-  memcpy(&res->best_move, &search.best_move, sizeof(res->best_move));
+  //memcpy(&res->best_move, &search.best_move, sizeof(res->best_move));
   res->n_searched = search.n_searched;
   res->cutoff = (double)search.n_searched / (double)search.n_possible * 100.0f;
 }

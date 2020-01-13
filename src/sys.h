@@ -27,6 +27,8 @@ typedef struct engine_s_ {
   
   state_s game;
 
+  int depth;
+
 } engine_s;
 
 /* command.c*/
