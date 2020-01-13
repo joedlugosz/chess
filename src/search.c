@@ -99,47 +99,42 @@ void log_thought(log_s *log, search_context_s *ctx,
 
 /* Quiescence search */
 score_t quiesce(search_context_s *ctx, state_s *current_state, 
-  int depth, score_t alpha, score_t beta)
+    int depth, score_t alpha, score_t beta)
 {
-  plane_t attacks;
-  score_t score, stand_pat;
-  state_s next_state;
-  pos_t from, to;
-  /* to_move has already changed as a result of previous move */
-  player_e attacking = current_state->to_move;
-  /* Limit for search and repeat history */
-  ASSERT(depth < SEARCH_DEPTH_MAX);
-  //ASSERT(piece_player[(int)current_state->piece_at[current_state->to]] != current_state->to_move);
-  /* TODO: ctx->running will be used to break out of a search */
   if(ctx->halt) {
     return 0;
   }
+
+  ASSERT(depth < SEARCH_DEPTH_MAX);
+  /*ASSERT(piece_player[(int)current_state->piece_at[current_state->to]]
+   != current_state->to_move);*/
+
+  /* to_move has already changed as a result of previous move */
+  player_e attacking = current_state->to_move;
   /* Evaluate taking no action - i.e. not making any possible capture
      moves, this could be better than the consequences of taking the
      piece. */
-  stand_pat = eval(current_state) * player_factor[attacking];  // ???
+  score_t stand_pat = eval(current_state) * player_factor[attacking];
   /* If this is better than the opponent's beta, it causes a cutoff. */
   if(stand_pat >= beta) {
     return beta;
   }
-  /* Doing nothing may be better than the supplied alpha.  If there
+  /* Doing nothing may also be better than the supplied alpha.  If there
      are no possible captures, this is equivalent to calling eval() from
-     search().
-     TODO: Can this logic be moved to search() so the call is avoided 
-   */
+     search(). */
   if(stand_pat > alpha) {
     alpha = stand_pat;
   }
 
-  to = current_state->to;
+  pos_t to = current_state->to;
   
   /* Get all the pieces which can attack the piece that has just been
      moved */
-  attacks = get_attacks(current_state, to, attacking);
+  plane_t attacks = get_attacks(current_state, to, attacking);
   while(attacks) {
-    /* Get from-position of the attacking piece */
-    from = mask2pos(next_bit_from(&attacks));
+    pos_t from = mask2pos(next_bit_from(&attacks));
     ASSERT(from != to);
+    state_s next_state;
     copy_state(&next_state, current_state);
     move_s move = { from, to, is_promotion_move(current_state, from, pos2mask[to])
       ? QUEEN : PAWN };
@@ -152,7 +147,7 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
       ctx->n_searched++;
       /* Recurse as opponent */
       change_player(&next_state);
-      score = -quiesce(ctx, &next_state, depth + 1, -alpha, -beta);
+      score_t score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
       /* Beta cutoff */
       if(score >= beta) {
         LOG_THOUGHT(ctx, depth, score, alpha, beta);
@@ -171,20 +166,18 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
 
 static score_t search_ply(search_context_s *ctx, state_s *state, int depth, score_t alpha, score_t beta)
 {
-  /* Limit for search and repeat history */
-  ASSERT(depth < SEARCH_DEPTH_MAX);
-  /* ctx->halt breaks out of a search */
   if(ctx->halt) return 0;
-  state_s next_state;
+
+  ASSERT(depth < SEARCH_DEPTH_MAX);
 
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
   ctx->n_possible += gen_moves(state, &list_entry);
 
   while(list_entry) {
-    score_t score;
-    move_s *move = &list_entry->move;
     ctx->n_searched++;
+    move_s *move = &list_entry->move;
+    state_s next_state;
     copy_state(&next_state, state);
     make_move(&next_state, move);
     /* Can't move into check */ 
@@ -202,6 +195,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     }
     change_player(&next_state);
     /* Recurse down to search_depth - 1, then do quiescence search if necessary */
+    score_t score;
     if(depth < search_depth - 1) {
       score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
     } else {
