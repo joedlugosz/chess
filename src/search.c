@@ -134,11 +134,11 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
   while(attacks) {
     pos_t from = mask2pos(next_bit_from(&attacks));
     ASSERT(from != to);
-    state_s next_state;
-    copy_state(&next_state, current_state);
     move_s move = { from, to, is_promotion_move(current_state, from, pos2mask[to])
       ? QUEEN : PAWN };
     do {
+      state_s next_state;
+      copy_state(&next_state, current_state);
       make_move(&next_state, &move);    
       /* Can't move into check */
       if(in_check(&next_state))
