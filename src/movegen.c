@@ -59,21 +59,19 @@ int gen_eval(state_s *state, pos_t from, pos_t to)
 /* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
 int gen_moves(state_s *state, movelist_s **move_buf_head)
 {
-  plane_t pieces, moves;
-  pos_t from, to;
   movelist_s *prev = 0;
   movelist_s *move_buf = *move_buf_head;
   int i = 0;
   
-  pieces = get_my_pieces(state);
+  plane_t pieces = get_my_pieces(state);
   while(pieces) {
-    from = mask2pos(next_bit_from(&pieces));
+    pos_t from = mask2pos(next_bit_from(&pieces));
     ASSERT(is_valid_pos(from));
-    moves = get_moves(state, from);
+    plane_t moves = get_moves(state, from);
     while(moves) {
       ASSERT(i < N_MOVES);
       plane_t to_mask = next_bit_from(&moves);
-      to = mask2pos(to_mask);
+      pos_t to = mask2pos(to_mask);
       ASSERT(is_valid_pos(to));
       piece_e promotion = (is_promotion_move(state, from, to_mask))
         ? QUEEN : PAWN;
