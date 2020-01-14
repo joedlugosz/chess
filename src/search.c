@@ -102,36 +102,30 @@ void log_thought(log_s *log, search_context_s *ctx,
 score_t quiesce(search_context_s *ctx, state_s *current_state, 
     int depth, score_t alpha, score_t beta)
 {
-  if(ctx->halt) {
-    return 0;
-  }
+  if(ctx->halt) return 0;
 
   ASSERT(depth < SEARCH_DEPTH_MAX);
   /*ASSERT(piece_player[(int)current_state->piece_at[current_state->to]]
    != current_state->to_move);*/
 
   /* to_move has already changed as a result of previous move */
-  player_e attacking = current_state->to_move;
+  player_e attacker = current_state->to_move;
+  
   /* Evaluate taking no action - i.e. not making any possible capture
      moves, this could be better than the consequences of taking the
-     piece. */
-  score_t stand_pat = eval(current_state) * player_factor[attacking];
-  /* If this is better than the opponent's beta, it causes a cutoff. */
-  if(stand_pat >= beta) {
-    return beta;
-  }
-  /* Doing nothing may also be better than the supplied alpha.  If there
-     are no possible captures, this is equivalent to calling eval() from
-     search(). */
-  if(stand_pat > alpha) {
-    alpha = stand_pat;
-  }
-
+     piece.  If this is better than the opponent's beta, it causes a 
+     cutoff.  Doing nothing may also be better than the supplied alpha.
+     If there are no possible captures, this is equivalent to calling 
+     eval() from search().*/
+  score_t stand_pat = eval(current_state) * player_factor[attacker];
+  if(stand_pat >= beta) return beta;
+  if(stand_pat > alpha) alpha = stand_pat;
+  
   pos_t to = current_state->to;
   
   /* Get all the pieces which can attack the piece that has just been
      moved */
-  plane_t attacks = get_attacks(current_state, to, attacking);
+  plane_t attacks = get_attacks(current_state, to, attacker);
   while(attacks) {
     pos_t from = mask2pos(next_bit_from(&attacks));
     ASSERT(from != to);
