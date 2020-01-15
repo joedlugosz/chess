@@ -167,7 +167,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
 
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
-  ctx->n_possible += gen_moves(state, &list_entry);
+  ctx->n_possible += generate_search_movelist(state, &list_entry);
 
   while(list_entry) {
     ctx->n_searched++;
