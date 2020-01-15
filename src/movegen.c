@@ -77,7 +77,6 @@ static inline void add_movelist_entries(state_s *state, pos_t from, pos_t to,
     *prev = current;
     (*index)++;
   } while(--promotion > PAWN);
-  (void)*index;
 }
 
 /* Move generation - generates a linked list of moves within move_buf, sorted (or not) */

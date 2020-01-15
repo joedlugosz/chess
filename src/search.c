@@ -120,40 +120,35 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
   score_t stand_pat = eval(current_state) * player_factor[attacker];
   if(stand_pat >= beta) return beta;
   if(stand_pat > alpha) alpha = stand_pat;
+
+  movelist_s move_buf[N_MOVES];
+  movelist_s *list_entry = move_buf;
+  ctx->n_possible += generate_quiescence_movelist(current_state, &list_entry);
   
-  pos_t to = current_state->to;
-  
-  /* Get all the pieces which can attack the piece that has just been
-     moved */
-  plane_t attacks = get_attacks(current_state, to, attacker);
-  while(attacks) {
-    pos_t from = mask2pos(next_bit_from(&attacks));
-    ASSERT(from != to);
-    move_s move = { from, to, is_promotion_move(current_state, from, pos2mask[to])
-      ? QUEEN : PAWN };
-    do {
-      state_s next_state;
-      copy_state(&next_state, current_state);
-      make_move(&next_state, &move);    
-      /* Can't move into check */
-      if(in_check(&next_state))
-        break;
-      /* This is a valid move, increment nodes */
-      ctx->n_searched++;
-      /* Recurse as opponent */
-      change_player(&next_state);
-      score_t score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
-      /* Beta cutoff */
-      if(score >= beta) {
-        LOG_THOUGHT(ctx, depth, score, alpha, beta);
-        return beta;
-      }
-      /* Alpha update */
-      if(score > alpha) {
-        alpha = score;
-      }
+  while(list_entry) {
+    move_s *move = &list_entry->move;
+    list_entry = list_entry->next;
+    state_s next_state;
+    copy_state(&next_state, current_state);
+    make_move(&next_state, move);    
+    /* Can't move into check */
+    if(in_check(&next_state)) {
+      continue;
+    }
+    ctx->n_searched++;
+    /* Recurse as opponent */
+    change_player(&next_state);
+    score_t score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
+    /* Beta cutoff */
+    if(score >= beta) {
       LOG_THOUGHT(ctx, depth, score, alpha, beta);
-    } while(--move.promotion > PAWN);
+      return beta;
+    }
+    /* Alpha update */
+    if(score > alpha) {
+      alpha = score;
+    }
+    LOG_THOUGHT(ctx, depth, score, alpha, beta);
   }
   /* alpha holds the score of the best possible outcome of the search */
   return alpha;
@@ -170,23 +165,22 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
   ctx->n_possible += generate_search_movelist(state, &list_entry);
 
   while(list_entry) {
-    ctx->n_searched++;
     move_s *move = &list_entry->move;
+    list_entry = list_entry->next;
     state_s next_state;
     copy_state(&next_state, state);
     make_move(&next_state, move);
     /* Can't move into check */ 
     if(in_check(&next_state)) {
-      list_entry = list_entry->next;
       continue;
     }
+    ctx->n_searched++;
     /* Most of the history must be written at this point so it passes to the next recursion */
     write_move_history(ctx, depth, move, state->to_move, 0);
     /* Can't repeat a move, relaxed if in check */
     /* TODO: hashing */
     if(is_repeated_move(ctx, depth, move) && !in_check(state)) {
-      list_entry = list_entry->next;
-      continue;
+     // continue;
     }
     change_player(&next_state);
     /* Recurse down to search_depth - 1, then do quiescence search if necessary */
@@ -212,8 +206,6 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       return beta;
     }
     LOG_THOUGHT(ctx, depth, score, alpha, beta);
-    /* Next move in the list */
-    list_entry = list_entry->next;
   }
   return alpha;
 }
@@ -225,7 +217,6 @@ void do_search(int depth, state_s *state, search_result_s *res)
   search.horizon_depth = depth;
   search.best_move = &res->best_move;
   res->score = search_ply(&search, state, 0, -boundary, boundary);
-  //memcpy(&res->best_move, &search.best_move, sizeof(res->best_move));
   res->n_searched = search.n_searched;
   res->cutoff = (double)search.n_searched / (double)search.n_possible * 100.0f;
 }
