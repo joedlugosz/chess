@@ -42,25 +42,6 @@ const options_s search_opts = {
   sizeof(options)/sizeof(options[0]), options 
 };
 
-//clock_t search_start_time;
-//int search_nodes;
-//int session_extreme;
-//player_e ai_player;
-//int n_ai_moves;
-//static volatile int running = 0;
-
-
-/* implemented in log.c */
-//void log_thought(log_s *log, search_s *ctx, int depth, score_t score, score_t alpha, score_t beta);
-/* in this file */
-//static score_t search(search_s *ctx, state_s *state, int depth, score_t alpha, score_t beta);
-
-
-void set_depth(int d)
-{
-  search_depth = d;
-}
-
 /*
  *  Thought Printing
  */
@@ -96,7 +77,6 @@ void log_thought(log_s *log, search_context_s *ctx,
   }
 }
 #endif
-
 
 /* Quiescence search */
 score_t quiesce(search_context_s *ctx, state_s *current_state, 
