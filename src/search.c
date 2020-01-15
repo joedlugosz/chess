@@ -97,9 +97,10 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
      cutoff.  Doing nothing may also be better than the supplied alpha.
      If there are no possible captures, this is equivalent to calling 
      eval() from search().*/
-  score_t stand_pat = eval(current_state) * player_factor[attacker];
-  if(stand_pat >= beta) return beta;
-  if(stand_pat > alpha) alpha = stand_pat;
+  score_t standing_pat = 
+    eval(current_state) * player_factor[current_state->to_move];
+  if(standing_pat >= beta) return beta;
+  if(standing_pat > alpha) alpha = standing_pat;
 
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
