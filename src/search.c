@@ -87,9 +87,6 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
   ASSERT(depth < SEARCH_DEPTH_MAX);
   /*ASSERT(piece_player[(int)current_state->piece_at[current_state->to]]
    != current_state->to_move);*/
-
-  /* to_move has already changed as a result of previous move */
-  player_e attacker = current_state->to_move;
   
   /* Evaluate taking no action - i.e. not making any possible capture
      moves, this could be better than the consequences of taking the
@@ -140,11 +137,27 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
   if(ctx->halt) return 0;
 
   ASSERT(depth < SEARCH_DEPTH_MAX);
-
+  if(depth > search_depth) {
+    /* Evaluate taking no action - i.e. not making any possible capture
+      moves, this could be better than the consequences of taking the
+      piece.  If this is better than the opponent's beta, it causes a 
+      cutoff.  Doing nothing may also be better than the supplied alpha.
+      If there are no possible captures, this is equivalent to calling 
+      eval() from search().*/
+    score_t standing_pat = eval(state) * player_factor[state->to_move];
+    if(standing_pat >= beta) return beta;
+    if(standing_pat > alpha) alpha = standing_pat;
+  }
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
-  ctx->n_possible += generate_search_movelist(state, &list_entry);
-
+  int n_moves;
+  if(depth < search_depth) {
+    n_moves = generate_search_movelist(state, &list_entry);
+  } else {
+    n_moves = generate_quiescence_movelist(state, &list_entry);
+    if(n_moves == 0) return eval(state) * player_factor[state->to_move];
+  }
+  ctx->n_possible += n_moves;
   while(list_entry) {
     move_s *move = &list_entry->move;
     list_entry = list_entry->next;
@@ -165,12 +178,13 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     }
     change_player(&next_state);
     /* Recurse down to search_depth - 1, then do quiescence search if necessary */
-    score_t score;
+    score_t score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
+    /*
     if(depth < search_depth - 1) {
       score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
     } else {
       score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
-    }
+    }*/
     ctx->search_history[depth].score = score;
     /* Alpha update - best move found */
     if(score > alpha) {
