@@ -76,59 +76,6 @@ void log_thought(log_s *log, search_context_s *ctx,
 }
 #endif
 
-/* Quiescence search */
-score_t quiesce(search_context_s *ctx, state_s *current_state, 
-    int depth, score_t alpha, score_t beta)
-{
-  if(ctx->halt) return 0;
-
-  ASSERT(depth < SEARCH_DEPTH_MAX);
-  /*ASSERT(piece_player[(int)current_state->piece_at[current_state->to]]
-   != current_state->to_move);*/
-  
-  /* Evaluate taking no action - i.e. not making any possible capture
-     moves, this could be better than the consequences of taking the
-     piece.  If this is better than the opponent's beta, it causes a 
-     cutoff.  Doing nothing may also be better than the supplied alpha.
-     If there are no possible captures, this is equivalent to calling 
-     eval() from search().*/
-  score_t standing_pat = evaluate(current_state);
-  if(standing_pat >= beta) return beta;
-  if(standing_pat > alpha) alpha = standing_pat;
-
-  movelist_s move_buf[N_MOVES];
-  movelist_s *list_entry = move_buf;
-  ctx->n_possible += generate_quiescence_movelist(current_state, &list_entry);
-  
-  while(list_entry) {
-    move_s *move = &list_entry->move;
-    list_entry = list_entry->next;
-    state_s next_state;
-    copy_state(&next_state, current_state);
-    make_move(&next_state, move);    
-    /* Can't move into check */
-    if(in_check(&next_state)) {
-      continue;
-    }
-    ctx->n_searched++;
-    /* Recurse as opponent */
-    change_player(&next_state);
-    score_t score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
-    /* Beta cutoff */
-    if(score >= beta) {
-      LOG_THOUGHT(ctx, depth, score, alpha, beta);
-      return beta;
-    }
-    /* Alpha update */
-    if(score > alpha) {
-      alpha = score;
-    }
-    LOG_THOUGHT(ctx, depth, score, alpha, beta);
-  }
-  /* alpha holds the score of the best possible outcome of the search */
-  return alpha;
-}
-
 static score_t search_ply(search_context_s *ctx, state_s *state, int depth, score_t alpha, score_t beta)
 {
   if(ctx->halt) return 0;
@@ -170,20 +117,9 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     ctx->n_searched++;
     /* Most of the history must be written at this point so it passes to the next recursion */
     write_move_history(ctx, depth, move, state->to_move, 0);
-    /* Can't repeat a move, relaxed if in check */
-    /* TODO: hashing */
-    if(is_repeated_move(ctx, depth, move) && !in_check(state)) {
-     // continue;
-    }
     change_player(&next_state);
     /* Recurse down to search_depth - 1, then do quiescence search if necessary */
     score_t score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
-    /*
-    if(depth < search_depth - 1) {
-      score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
-    } else {
-      score = -quiesce(ctx, &next_state, depth + 1, -beta, -alpha);
-    }*/
     ctx->search_history[depth].score = score;
     /* Alpha update - best move found */
     if(score > alpha) {
