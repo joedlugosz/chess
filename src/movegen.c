@@ -42,16 +42,19 @@ static inline void sort_moves(movelist_s **head)
   *head = sorted;
 }
 
-static int search_eval(state_s *state, pos_t from, pos_t to)
+static int sort_evaluate(state_s *state, move_s *move)
 {
   int score = 0;
-  piece_e moving_type = piece_type[(int)state->piece_at[from]];
+  piece_e moving_type = piece_type[(int)state->piece_at[move->from]];
 
-  if(state->piece_at[to] == EMPTY) {
-    score = moving_type;
+  if(move->promotion > PAWN) {
+    score += 20 + move->promotion - PAWN;
+  }
+  if(state->piece_at[move->to] == EMPTY) {
+    score += moving_type;
   } else {
     /* Moves which take get a bonus of 10 + difference between piece values */
-    score += 10 - moving_type + piece_type[(int)state->piece_at[to]];
+    score += 10 - moving_type + piece_type[(int)state->piece_at[move->to]];
   }
   return score;
 }
@@ -61,17 +64,16 @@ static int search_eval(state_s *state, pos_t from, pos_t to)
 static inline void add_movelist_entries(state_s *state, pos_t from, pos_t to, 
   plane_t to_mask, movelist_s **prev, movelist_s *move_buf, int *index)
 {
-  score_t score = search_eval(state, from, to);
   piece_e promotion = (is_promotion_move(state, from, to_mask))
     ? QUEEN : PAWN;
   do {
     ASSERT(*index < N_MOVES);
     movelist_s *current = &move_buf[*index];
     ASSERT(current != *prev);
-    current->score = score;
     current->move.from = from;
     current->move.to = to;
     current->move.promotion = promotion;
+    current->score = sort_evaluate(state, &current->move);
     current->next = 0;
     if(*prev) (*prev)->next = current;
     *prev = current;

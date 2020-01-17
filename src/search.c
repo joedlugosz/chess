@@ -115,12 +115,9 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       continue;
     }
     ctx->n_searched++;
-    /* Most of the history must be written at this point so it passes to the next recursion */
-    write_move_history(ctx, depth, move, state->to_move, 0);
     change_player(&next_state);
-    /* Recurse down to search_depth - 1, then do quiescence search if necessary */
     score_t score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
-    ctx->search_history[depth].score = score;
+    write_move_history(ctx, depth, move, state->to_move, score);
     /* Alpha update - best move found */
     if(score > alpha) {
       alpha = score;
