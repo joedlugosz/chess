@@ -161,7 +161,7 @@ void ui_moves(engine_s *e) {
 }
 
 void ui_eval(engine_s *e) {
-  printf("%d\n", eval(&(e->game)));
+  printf("%d\n", evaluate(&(e->game)));
 }
 
 void ui_perft(engine_s *e) {

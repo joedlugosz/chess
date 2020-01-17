@@ -6,6 +6,6 @@
 /* Evaluation score */
 typedef int score_t;
 struct state_s_;
-int eval(struct state_s_ *state);
+score_t evaluate(struct state_s_ *);
 
 #endif /* EVAL_H */

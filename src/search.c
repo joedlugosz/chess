@@ -30,8 +30,6 @@ enum {
   N_SEARCH_OPTS = 4
 };
 
-const score_t player_factor[N_PLAYERS] = { 1, -1 };
-
 /* Options */
 static const option_s options[] = {
   { "Boundary score", INT_OPT,   &boundary,     0, 2000000,          0 },
@@ -94,8 +92,7 @@ score_t quiesce(search_context_s *ctx, state_s *current_state,
      cutoff.  Doing nothing may also be better than the supplied alpha.
      If there are no possible captures, this is equivalent to calling 
      eval() from search().*/
-  score_t standing_pat = 
-    eval(current_state) * player_factor[current_state->to_move];
+  score_t standing_pat = evaluate(current_state);
   if(standing_pat >= beta) return beta;
   if(standing_pat > alpha) alpha = standing_pat;
 
@@ -144,7 +141,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       cutoff.  Doing nothing may also be better than the supplied alpha.
       If there are no possible captures, this is equivalent to calling 
       eval() from search().*/
-    score_t standing_pat = eval(state) * player_factor[state->to_move];
+    score_t standing_pat = evaluate(state);
     if(standing_pat >= beta) return beta;
     if(standing_pat > alpha) alpha = standing_pat;
   }
@@ -155,7 +152,9 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     n_moves = generate_search_movelist(state, &list_entry);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
-    if(n_moves == 0) return eval(state) * player_factor[state->to_move];
+    /* Quiet node at depth */
+    if(n_moves == 0) 
+      return evaluate(state);
   }
   ctx->n_possible += n_moves;
   while(list_entry) {
