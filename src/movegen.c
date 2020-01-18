@@ -202,7 +202,7 @@ void perft_divide(state_s *state, int depth)
     if(!in_check(&next_state)) {
       change_player(&next_state);
       perft(&next_data, &next_state, depth - 1, list_entry->move.result);
-      format_move_bare(buf, &list_entry->move);
+      format_move(buf, &list_entry->move, 1);
       printf("%s: %lld\n", buf, next_data.moves);
     }
     list_entry = list_entry->next;

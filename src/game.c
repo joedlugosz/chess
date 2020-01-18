@@ -568,12 +568,14 @@ void make_move(state_s *state, move_s *move)
   /* Check testing */
   for(player_e player = 0; player < N_PLAYERS; player++) {
     int king_pos = mask2pos(state->a[KING + player * N_PIECE_T]);
-    ASSERT(is_valid_pos(king_pos));
     if(get_attacks(state, king_pos, opponent[player])) {
       state->check[player] = 1;
     } else {
       state->check[player] = 0;
     }
+  }
+  if(state->check[state->to_move]) {
+    move->result |= CHECK;
   }
 }
 
