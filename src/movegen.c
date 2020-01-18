@@ -42,58 +42,86 @@ static inline void sort_moves(movelist_s **head)
   *head = sorted;
 }
 
-int gen_eval(state_s *state, pos_t from, pos_t to)
+static int sort_evaluate(state_s *state, move_s *move)
 {
   int score = 0;
-  piece_e moving_type = piece_type[(int)state->piece_at[from]];
+  piece_e moving_type = piece_type[(int)state->piece_at[move->from]];
 
-  if(state->piece_at[to] == EMPTY) {
-    score = moving_type;
+  if(move->promotion > PAWN) {
+    score += 20 + move->promotion - PAWN;
+  }
+  if(state->piece_at[move->to] == EMPTY) {
+    score += moving_type;
   } else {
     /* Moves which take get a bonus of 10 + difference between piece values */
-    score += 10 - moving_type + piece_type[(int)state->piece_at[to]];
+    score += 10 - moving_type + piece_type[(int)state->piece_at[move->to]];
   }
   return score;
 }
 
+/* Add movelist entries for a given from and to position.  Add promotion
+   moves if necessary */
+static inline void add_movelist_entries(state_s *state, pos_t from, pos_t to, 
+  plane_t to_mask, movelist_s **prev, movelist_s *move_buf, int *index)
+{
+  piece_e promotion = (is_promotion_move(state, from, to_mask))
+    ? QUEEN : PAWN;
+  do {
+    ASSERT(*index < N_MOVES);
+    movelist_s *current = &move_buf[*index];
+    ASSERT(current != *prev);
+    current->move.from = from;
+    current->move.to = to;
+    current->move.promotion = promotion;
+    current->score = sort_evaluate(state, &current->move);
+    current->next = 0;
+    if(*prev) (*prev)->next = current;
+    *prev = current;
+    (*index)++;
+  } while(--promotion > PAWN);
+}
+
 /* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
-int gen_moves(state_s *state, movelist_s **move_buf_head)
+int generate_search_movelist(state_s *state, movelist_s **move_buf)
 {
   movelist_s *prev = 0;
-  movelist_s *move_buf = *move_buf_head;
-  int i = 0;
-  
+  int count = 0; 
   plane_t pieces = get_my_pieces(state);
   while(pieces) {
     pos_t from = mask2pos(next_bit_from(&pieces));
     ASSERT(is_valid_pos(from));
     plane_t moves = get_moves(state, from);
     while(moves) {
-      ASSERT(i < N_MOVES);
       plane_t to_mask = next_bit_from(&moves);
       pos_t to = mask2pos(to_mask);
       ASSERT(is_valid_pos(to));
-      piece_e promotion = (is_promotion_move(state, from, to_mask))
-        ? QUEEN : PAWN;
-      do {
-        /* Enter the move info into the buffer */
-        move_buf[i].score = gen_eval(state, from, to);
-        move_buf[i].move.from = from;
-        move_buf[i].move.to = to;
-        move_buf[i].move.promotion = promotion;
-        move_buf[i].next = 0;
-        /* Link this entry to the previous entry in the list */
-        if(prev) {
-          prev->next = &move_buf[i];
-        }
-        prev = &move_buf[i];
-        /* Next move in buffer */
-        i++;
-      } while(--promotion > PAWN);
+      add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
     }
   }
-  if(i) sort_moves(move_buf_head);
-  return i;
+  if(count) sort_moves(move_buf);
+  return count;
+}
+
+/* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
+int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
+{
+  movelist_s *prev = 0;
+  int count = 0;
+  plane_t victims = state->claim[state->to_move] & get_opponents_pieces(state);
+  while(victims) {
+    plane_t to_mask = next_bit_from(&victims);
+    pos_t to = mask2pos(to_mask);
+    ASSERT(is_valid_pos(to));
+    plane_t attackers = get_attacks(state, to, state->to_move);
+    while(attackers) {
+      plane_t from_mask = next_bit_from(&attackers);
+      pos_t from = mask2pos(from_mask);
+      ASSERT(is_valid_pos(from));
+      add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
+    }
+  }
+  if(count) sort_moves(move_buf);
+  return count;
 }
 
 void perft(perft_s *data, state_s *state, int depth)
@@ -120,7 +148,7 @@ void perft(perft_s *data, state_s *state, int depth)
     /* If in check, see if there are any valid moves out of check */
     if(in_check(state)) {
       data->checks = 1;
-      gen_moves(state, &move_buf_head);
+      generate_search_movelist(state, &move_buf_head);
       list_entry = move_buf_head;
       i = 0;
       while(list_entry) {
@@ -138,7 +166,7 @@ void perft(perft_s *data, state_s *state, int depth)
     return;
   }
 
-  gen_moves(state, &move_buf_head);
+  generate_search_movelist(state, &move_buf_head);
   list_entry = move_buf_head;
   i = 0;
   while(list_entry) {
@@ -169,7 +197,7 @@ void perft_divide(state_s *state, int depth)
   perft_s next_data;
   char buf[6];
 
-  gen_moves(state, &move_buf_head);
+  generate_search_movelist(state, &move_buf_head);
   list_entry = move_buf_head;
   while(list_entry) {
     copy_state(&next_state, state);

@@ -105,6 +105,7 @@ extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
 
 static inline pos_t mask2pos(plane_t mask) {
+  ASSERT(is_valid_pos((pos_t)ctz(mask)));
   return (pos_t)ctz(mask);
 }
 static inline void clear_state(state_s *state) {
@@ -117,6 +118,9 @@ static inline plane_t get_moves(state_s *state, pos_t pos) {
   return state->moves[(int)state->index_at[pos]];
 }
 static inline plane_t get_my_pieces(state_s *state) {
+  return state->occ_a[state->to_move];
+}
+static inline plane_t get_opponents_pieces(state_s *state) {
   return state->occ_a[state->to_move];
 }
 static inline int in_check(state_s *state) {

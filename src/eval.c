@@ -8,7 +8,10 @@
 /*
  *   4.1 MSVC compatibility (a & -a)
  *   4.4 Changes to inlines, tidy up, comments
+ *   5.2 player_factor
  */
+
+const score_t player_factor[N_PLAYERS] = { 1, -1 };
 
 /* Options */
 /* Shannon's weights * 10 */
@@ -38,7 +41,7 @@ const option_s _eval_opts[N_EVAL_OPTS] = {
 const options_s eval_opts = { N_EVAL_OPTS, _eval_opts };
 
 /* Evaluate one player's pieces */
-static inline score_t eval_player(state_s *state, player_e player)
+static inline score_t evaluate_player(state_s *state, player_e player)
 {
   int score = 0;
   int pt_first;
@@ -80,9 +83,10 @@ static inline score_t eval_player(state_s *state, player_e player)
 }
 
 /* Evalate the board position */
-score_t eval(state_s *state)
+score_t evaluate(state_s *state)
 {
-  return eval_player(state, WHITE) - eval_player(state, BLACK);
+  return (evaluate_player(state, WHITE) - evaluate_player(state, BLACK)) 
+    * player_factor[state->to_move];
 }
 
 /* Unit tests */
