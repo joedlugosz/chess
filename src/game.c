@@ -481,10 +481,8 @@ void make_move(state_s *state, move_s *move)
   ASSERT(is_valid_pos(move->from));
   ASSERT(is_valid_pos(move->to));
   ASSERT(move->from != move->to);
-    
-  state->ep_captured = 0;
-  state->captured = 0;
-  state->castled = 0;
+
+  move->result = 0;
 
   /* Taking */
   plane_t bb_to = pos2mask[move->to];
@@ -493,7 +491,7 @@ void make_move(state_s *state, move_s *move)
     ASSERT(piece_type[victim_piece] != KING);
     ASSERT(piece_player[victim_piece] != state->to_move);
     remove_piece(state, move->to);
-    state->captured = 1;
+    move->result |= CAPTURED;
     /* If a rook has been captured, set moved flag to prevent castling */
     if(piece_type[victim_piece] == ROOK) {
       state->moved |= bb_to;
@@ -516,11 +514,11 @@ void make_move(state_s *state, move_s *move)
     if(move->from == move->to + 2) {
       move_s rook_move = { move->to - 2, move->to + 1, 0 };
       make_move(state, &rook_move);
-      state->castled = 1;
+      move->result |= CASTLED;
     } else if(move->from == move->to - 2) {
       move_s rook_move = { move->to + 1, move->to - 1, 0 };
       make_move(state, &rook_move);
-      state->castled = 1;
+      move->result |= CASTLED;
     }
     /* Register that the king has moved to prevent castling */
     state->moved |= bb_from;
@@ -536,7 +534,7 @@ void make_move(state_s *state, move_s *move)
       remove_piece(state, move->to);
       add_piece(state, move->to, moving_piece + move->promotion - PAWN,
         moving_index);
-      state->promoted = 1;
+      move->result |= PROMOTED;
     }
     /* If pawn has been taken en-passant */
     if(bb_to & state->en_passant) {
@@ -546,8 +544,7 @@ void make_move(state_s *state, move_s *move)
       ASSERT(state->piece_at[target_pos] != EMPTY);
       ASSERT(piece_player[state->piece_at[target_pos]] != state->to_move);
       remove_piece(state, target_pos);
-      state->ep_captured = 1;
-      state->captured = 1;
+      move->result |= EN_PASSANT | CAPTURED;
     }
     break;
   default:
@@ -578,9 +575,6 @@ void make_move(state_s *state, move_s *move)
       state->check[player] = 0;
     }
   }
-  /* Do we still need this? */
-  state->from = move->from;
-  state->to = move->to;    
 }
 
 /* Uses infomration in pieces to generate the board state.

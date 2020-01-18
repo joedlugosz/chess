@@ -120,7 +120,7 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
   return count;
 }
 
-void perft(perft_s *data, state_s *state, int depth)
+void perft(perft_s *data, state_s *state, int depth, moveresult_t result)
 {
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry, *move_buf_head = move_buf;
@@ -132,15 +132,15 @@ void perft(perft_s *data, state_s *state, int depth)
   
   if(depth == 0) {
     data->moves = 1;
-    if(state->captured) {
+    if(result & CAPTURED) {
       data->captures = 1;
     }
-      if(state->ep_captured) {
+      if(result & EN_PASSANT) {
 	      data->ep_captures = 1;
       }
     
-    if(state->castled) data->castles = 1;
-    if(state->promoted) data->promotions = 1;
+    if(result & CASTLED) data->castles = 1;
+    if(result & PROMOTED) data->promotions = 1;
     /* If in check, see if there are any valid moves out of check */
     if(in_check(state)) {
       data->checks = 1;
@@ -171,7 +171,7 @@ void perft(perft_s *data, state_s *state, int depth)
     /* Can't move into check */
     if(!in_check(&next_state)) {
       change_player(&next_state);
-      perft(&next_data, &next_state, depth - 1);
+      perft(&next_data, &next_state, depth - 1, list_entry->move.result);
       data->moves += next_data.moves;
       data->captures += next_data.captures;
       data->promotions += next_data.promotions;
@@ -201,7 +201,7 @@ void perft_divide(state_s *state, int depth)
     /* Can't move into check */
     if(!in_check(&next_state)) {
       change_player(&next_state);
-      perft(&next_data, &next_state, depth - 1);
+      perft(&next_data, &next_state, depth - 1, list_entry->move.result);
       format_move_bare(buf, &list_entry->move);
       printf("%s: %lld\n", buf, next_data.moves);
     }
@@ -216,7 +216,7 @@ void perft_total(state_s *state, int depth)
     "Double Chx", "Checkmates");
   for(int i = 1; i <= depth; i++) {
     perft_s data;
-    perft(&data, state, i);
+    perft(&data, state, i, 0);
     printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", 
       i, data.moves, data.captures, data.ep_captures, data.castles, 
       data.promotions, data.checks, 

@@ -16,6 +16,7 @@
 #include "chess.h"
 #include "lowlevel.h"
 #include "board.h"
+#include "log.h"
 #include <stdint.h>
 //typedef int pos_t;
 typedef enum {
@@ -72,13 +73,6 @@ typedef struct state_s_ {
   int8_t piece_at[N_POS];  /* Piece index at board position */
   int8_t index_at[N_POS];  /* Piece index at board position */
 
-  /* Other info */
-  pos_t from;                /* Position moved from to get to this state */
-  pos_t to;                  /* Ditto */
-  status_t captured : 1;     /* Whether the last move captured */
-  status_t ep_captured : 1;  /* Whether the last move capture was en passant */
-  status_t promoted : 1;     /* Whether the last move promoted */
-  status_t castled : 1;      /* Whether the last move castled */
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   plane_t moved;             /* Flags for pieces which have moved */
@@ -87,9 +81,19 @@ typedef struct state_s_ {
 } state_s;
 
 /* move_s holds the game state as well as info about moves */
+typedef uint8_t moveresult_t;
+enum { CAPTURED = 1<<0,
+        EN_PASSANT = 1<<1,
+        CHECK = 1<<2,
+        MATE = 1<<3, 
+        SELF_CHECK = 1<<4,
+        CASTLED = 1<<5,
+        PROMOTED = 1<<6, 
+      };
 typedef struct move_s_ {
   pos_t from, to;
   piece_e promotion;
+  moveresult_t result;
 } move_s;
 
 void init_board(void);

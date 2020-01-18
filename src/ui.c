@@ -143,7 +143,7 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
   ASSERT(is_in_normal_play(engine));
 
   char buf[20];  
-  format_move(buf, &result->best_move, engine->game.captured,
+  format_move(buf, &result->best_move, result->best_move.result & CAPTURED,
 	      engine->game.check[opponent[engine->mode]]);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
