@@ -89,12 +89,10 @@ int generate_search_movelist(state_s *state, movelist_s **move_buf)
   plane_t pieces = get_my_pieces(state);
   while(pieces) {
     pos_t from = mask2pos(next_bit_from(&pieces));
-    ASSERT(is_valid_pos(from));
     plane_t moves = get_moves(state, from);
     while(moves) {
       plane_t to_mask = next_bit_from(&moves);
       pos_t to = mask2pos(to_mask);
-      ASSERT(is_valid_pos(to));
       add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
     }
   }
@@ -111,12 +109,10 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
   while(victims) {
     plane_t to_mask = next_bit_from(&victims);
     pos_t to = mask2pos(to_mask);
-    ASSERT(is_valid_pos(to));
     plane_t attackers = get_attacks(state, to, state->to_move);
     while(attackers) {
       plane_t from_mask = next_bit_from(&attackers);
       pos_t from = mask2pos(from_mask);
-      ASSERT(is_valid_pos(from));
       add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
     }
   }

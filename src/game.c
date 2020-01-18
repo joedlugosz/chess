@@ -332,13 +332,6 @@ plane_t get_attacks(state_s *state, pos_t target, player_e attacking)
     plane_t attacker = next_bit_from(&sliders);
     if(target_mask & state->moves[(int)state->index_at[mask2pos(attacker)]]) attacks |= attacker;
   }
-  /*
-  if(target_mask & state->moves[attacking * 24]) attacks |= pos2mask[state->piece_pos[attacking * 24]]; 
-  if(target_mask & state->moves[attacking * 24 + 2]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 2]]; 
-  if(target_mask & state->moves[attacking * 24 + 3]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 3]]; 
-  if(target_mask & state->moves[attacking * 24 + 5]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 5]]; 
-  if(target_mask & state->moves[attacking * 24 + 7]) attacks |= pos2mask[state->piece_pos[attacking * 24 + 7]]; 
-  */  
   return attacks;
 }
 
