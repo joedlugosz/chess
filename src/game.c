@@ -431,14 +431,13 @@ static void calculate_moves(state_s *state)
   }
 }
 
-static inline void set(state_s *state, pos_t pos, piece_e piece, player_e player)
+static inline void add_piece(state_s *state, pos_t pos, piece_e piece, int index)
 {
-  plane_t a_mask, b_mask, c_mask, d_mask;
-  /* Masks in the planes */
-  a_mask = pos2mask[pos];
-  b_mask = pos2mask[pos_a2b[pos]];
-  c_mask = pos2mask[pos_a2c[pos]];
-  d_mask = pos2mask[pos_a2d[pos]];
+  piece_e player = piece_player[piece];
+  plane_t a_mask = pos2mask[pos];
+  plane_t b_mask = pos2mask[pos_a2b[pos]];
+  plane_t c_mask = pos2mask[pos_a2c[pos]];
+  plane_t d_mask = pos2mask[pos_a2d[pos]];
   state->a[piece] |= a_mask;
   state->b[piece] |= b_mask;
   state->c[piece] |= c_mask;
@@ -451,17 +450,20 @@ static inline void set(state_s *state, pos_t pos, piece_e piece, player_e player
   state->total_b |= b_mask;
   state->total_c |= c_mask;
   state->total_d |= d_mask;
+  state->piece_pos[(int)index] = pos;
+  state->piece_at[pos] = piece;
+  state->index_at[pos] = index;
   state->hash ^= hash_values[pos * piece];
 }
 
-static inline void clear(state_s *state, pos_t pos, piece_e piece, player_e player)
+static inline void remove_piece(state_s *state, pos_t pos)
 {
-  plane_t a_mask, b_mask, c_mask, d_mask;
-  /* Masks in the planes */
-  a_mask = pos2mask[pos];
-  b_mask = pos2mask[pos_a2b[pos]];
-  c_mask = pos2mask[pos_a2c[pos]];
-  d_mask = pos2mask[pos_a2d[pos]];
+  int8_t piece = state->piece_at[pos];
+  piece_e player = piece_player[piece];
+  plane_t a_mask = pos2mask[pos];
+  plane_t b_mask = pos2mask[pos_a2b[pos]];
+  plane_t c_mask = pos2mask[pos_a2c[pos]];
+  plane_t d_mask = pos2mask[pos_a2d[pos]];
   state->a[piece] &= ~a_mask;
   state->b[piece] &= ~b_mask;
   state->c[piece] &= ~c_mask;
@@ -474,6 +476,9 @@ static inline void clear(state_s *state, pos_t pos, piece_e piece, player_e play
   state->total_b &= ~b_mask;
   state->total_c &= ~c_mask;
   state->total_d &= ~d_mask;
+  state->piece_pos[(int)state->index_at[pos]] = NO_POS;
+  state->piece_at[pos] = EMPTY;
+  state->index_at[pos] = EMPTY;
   state->hash ^= hash_values[pos * piece];
 }
 
@@ -483,24 +488,18 @@ void make_move(state_s *state, move_s *move)
   ASSERT(is_valid_pos(move->from));
   ASSERT(is_valid_pos(move->to));
   ASSERT(move->from != move->to);
-  
-  int moving_piece, victim_piece;
-  plane_t bb_from, bb_to;
-  
+    
   state->ep_captured = 0;
   state->captured = 0;
   state->castled = 0;
 
-  bb_to = pos2mask[move->to];
-  victim_piece = state->piece_at[move->to];
+  /* Taking */
+  plane_t bb_to = pos2mask[move->to];
+  int8_t victim_piece = state->piece_at[move->to];
   if(victim_piece != EMPTY) {
-    /* If the king is being taken, check testing has failed */
     ASSERT(piece_type[victim_piece] != KING);
-    player_e victim_player = piece_player[victim_piece];
-    /* If the player is trying to take one of their own pieces, something has gone wrong */
-    ASSERT(victim_player != state->to_move);
-    state->piece_pos[(int)state->index_at[move->to]] = EMPTY;
-    clear(state, move->to, victim_piece, victim_player);
+    ASSERT(piece_player[victim_piece] != state->to_move);
+    remove_piece(state, move->to);
     state->captured = 1;
     /* If a rook has been captured, set moved flag to prevent castling */
     if(piece_type[victim_piece] == ROOK) {
@@ -508,24 +507,13 @@ void make_move(state_s *state, move_s *move)
     }
   }
 
-  moving_piece = state->piece_at[move->from];
-  player_e moving_player = piece_player[moving_piece];
-  ASSERT(moving_player == state->to_move);
-
-  /* Change position of moving piece */
-  state->piece_pos[(int)state->index_at[move->from]] = move->to;
-  /* Set bits for "to" position */
-  set(state, move->to, moving_piece, moving_player);
-  /* Clear bits for "from" position */
-  clear(state, move->from, moving_piece, moving_player);
-  bb_from = pos2mask[move->from];
-  /* Set "to" to "from" */
-  state->piece_at[move->to] = state->piece_at[move->from];
-  state->index_at[move->to] = state->index_at[move->from];
-  /* Set "from" to empty */
-  state->piece_at[move->from] = EMPTY;
-  state->index_at[move->from] = EMPTY;
-  state->hash ^= hash_values[move->from * moving_piece];
+  /* Moving */
+  plane_t bb_from = pos2mask[move->from];
+  uint8_t moving_piece = state->piece_at[move->from];
+  ASSERT(piece_player[moving_piece] == state->to_move);
+  int8_t moving_index = state->index_at[move->from];
+  remove_piece(state, move->from);
+  add_piece(state, move->to, moving_piece, moving_index);
 
   /* Castling, pawn promotion and other special stuff */
   switch(piece_type[moving_piece]) {
@@ -552,28 +540,19 @@ void make_move(state_s *state, move_s *move)
     /* If pawn has been promoted */
     if(bb_to & (0xffull << 56 | 0xffull)) {
       ASSERT(move->promotion > PAWN);
-      /* Clear pawn bits for "to" position */
-      clear(state, move->to, moving_piece, moving_player);
-      /* Set queen bits for "to" position */
-      set(state, move->to, moving_piece + move->promotion - PAWN, moving_player);
-      /* Change the piece type */
-      state->piece_at[move->to] += move->promotion - PAWN;
+      remove_piece(state, move->to);
+      add_piece(state, move->to, moving_piece + move->promotion - PAWN,
+        moving_index);
       state->promoted = 1;
     }
-    /* If pawn has taken en-passant */
+    /* If pawn has been taken en-passant */
     if(bb_to & state->en_passant) {
       pos_t target_pos = move->to;
       if(state->to_move == WHITE) target_pos -= 8;
       else target_pos += 8;
-      uint8_t target_piece = state->piece_at[target_pos];
-      player_e target_player = piece_player[target_piece];
-      ASSERT(target_piece != EMPTY);
-      ASSERT(target_player != state->to_move);
-      clear(state, target_pos, target_piece, target_player);
-      /* Set piece position to empty */
-      state->piece_pos[(int)state->index_at[target_pos]] = NO_POS;
-      state->piece_at[target_pos] = EMPTY;
-      state->index_at[target_pos] = EMPTY;
+      ASSERT(state->piece_at[target_pos] != EMPTY);
+      ASSERT(piece_player[state->piece_at[target_pos]] != state->to_move);
+      remove_piece(state, target_pos);
       state->ep_captured = 1;
       state->captured = 1;
     }
@@ -615,32 +594,27 @@ void make_move(state_s *state, move_s *move)
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved)
 {
-  /* Zero the whole thing */
   memset(state, 0, sizeof(*state));
-  int index = 0;
-  state->hash = 0;
+  state->to_move = to_move;
   state->moved = pieces_moved;
 
   for(int i = 0; i < N_PIECES; i++) {
     state->piece_pos[i] = NO_POS;
   }
-
+  for(pos_t pos = 0; pos < N_POS; pos++) {
+    state->index_at[pos] = EMPTY;      
+    state->piece_at[pos] = EMPTY;      
+  }
+  
   /* Iterate through positions */
-  for(pos_t a_pos = 0; a_pos < N_POS; a_pos++) {
-    int piece = pieces[a_pos];
-    state->piece_at[a_pos] = (char)piece;
+  int index = 0;
+  for(pos_t pos = 0; pos < N_POS; pos++) {
+    int piece = pieces[pos];
     if(piece != EMPTY) {
-      state->index_at[a_pos] = (char)index;
-      state->piece_pos[index] = a_pos;
-      player_e player = piece_player[piece];
-      set(state, a_pos, piece, player);
+      add_piece(state, pos, piece, index);
       index++;
-    } else {
-      state->index_at[a_pos] = EMPTY;      
     }
   }  
-  state->to_move = to_move;
-  state->moved = pieces_moved;
   /* Generate moves */
   calculate_moves(state);
 }
