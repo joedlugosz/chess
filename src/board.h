@@ -105,6 +105,7 @@ extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
 
 static inline pos_t mask2pos(plane_t mask) {
+  ASSERT(is_valid_pos((pos_t)ctz(mask)));
   return (pos_t)ctz(mask);
 }
 static inline void clear_state(state_s *state) {
