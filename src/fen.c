@@ -128,8 +128,19 @@ int load_fen( state_s *state,
     printf("FEN: No castling flags found\n");
     goto error;
   }
+
+  ptr = en_passant_text;
+  pos_t en_passant;
+  if(*ptr == '-') {
+    en_passant = NO_POS;
+  } else {
+    if(parse_pos(en_passant_text, &en_passant)) {
+      printf("FEN: Invalid en-passant input\n");
+      goto error;
+    }
+  }
   /* Success - write the new positions to state */
-  setup_board(state, board, to_move, castling_rights);
+  setup_board(state, board, to_move, castling_rights, en_passant);
   return 0;
  error:
   printf("\nFEN input: %s", error_text);
@@ -166,10 +177,8 @@ int get_fen(const state_s *state, char *out, size_t outsize)
       }
     }
   }
-  //if(empty_file_count > 0) 
-    //*ptr++ = (char)empty_file_count + '0';
-  
   *ptr++ = ' ';
+  /* Moving player */
   *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
   /* Castling rights */
@@ -178,12 +187,15 @@ int get_fen(const state_s *state, char *out, size_t outsize)
       *ptr++ = castling_rights_letter[i].c;
     }
   }
-  /* No castling rights */
   if(!state->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
-  //encode_position(ptr, mask2pos(state->en_passant));
-  //ptr += 2;
-  *ptr++ = '-'; /* Placeholder for en passant */
+  /* En passant */
+  if(state->en_passant == NO_POS) {
+    *ptr++ = '-';
+  } else {
+    format_pos(ptr, state->en_passant);
+    ptr += 2;
+  }
   //*ptr++ = ' ';
   //*ptr++ = '0';
   //*ptr++ = ' ';

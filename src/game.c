@@ -493,7 +493,6 @@ void make_move(state_s *state, move_s *move)
   move->result = 0;
 
   /* Taking */
-  plane_t bb_to = pos2mask[move->to];
   int8_t victim_piece = state->piece_at[move->to];
   if(victim_piece != EMPTY) {
     ASSERT(piece_type[victim_piece] != KING);
@@ -531,19 +530,15 @@ void make_move(state_s *state, move_s *move)
     clear_rook_castling_rights(state, move->from, state->to_move);
     break;
   case PAWN:
-    /* If pawn has been promoted */
-    //  printf("%d %d %d", move->from, move->to, state->piece_at[move->from]);
     if(is_promotion_move(state, move->from, move->to)) {
-     // printf(" promo");
       ASSERT(move->promotion > PAWN);
       remove_piece(state, move->to);
       add_piece(state, move->to, moving_piece + move->promotion - PAWN,
         moving_index);
       move->result |= PROMOTED;
     }
-    //printf("\n");
     /* If pawn has been taken en-passant */
-    if(bb_to & state->en_passant) {
+    if(move->to == state->en_passant) {
       pos_t target_pos = move->to;
       if(state->to_move == WHITE) target_pos -= 8;
       else target_pos += 8;
@@ -557,14 +552,14 @@ void make_move(state_s *state, move_s *move)
     break;
   }
   /* Clear previous en passant state */
-  state->en_passant = 0;
+  state->en_passant = NO_POS;
   /* If pawn has jumped, set en passant square */
   if(piece_type[moving_piece] == PAWN) {
     if(move->from - move->to == 16) {
-      state->en_passant = pos2mask[move->from - 8];
+      state->en_passant = move->from - 8;
     }
     if(move->from - move->to == -16) {
-      state->en_passant = pos2mask[move->from + 8];
+      state->en_passant = move->from + 8;
     }
   }
 
@@ -588,11 +583,12 @@ void make_move(state_s *state, move_s *move)
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const int *pieces, 
-  player_e to_move, castle_rights_t castling_rights)
+  player_e to_move, castle_rights_t castling_rights, pos_t en_passant)
 {
   memset(state, 0, sizeof(*state));
   state->to_move = to_move;
   state->castling_rights = castling_rights;
+  state->en_passant = en_passant;
 
   for(int i = 0; i < N_PIECES; i++) {
     state->piece_pos[i] = NO_POS;
@@ -618,7 +614,7 @@ void setup_board(state_s *state, const int *pieces,
 /* Resets the board to the starting position */
 void reset_board(state_s *state)
 {
-  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS);
+  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, NO_POS);
 }
 
 /* Initialises the module */
