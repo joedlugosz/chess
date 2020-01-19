@@ -125,6 +125,11 @@ const plane_t king_castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cu
 const plane_t rook_castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
 const plane_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 const plane_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
+const castle_rights_t castle_rights[N_PLAYERS][N_BOARDSIDE] = {
+  { WHITE_QUEENSIDE, WHITE_KINGSIDE, WHITE_BOTHSIDES },
+  { BLACK_QUEENSIDE, BLACK_KINGSIDE, BLACK_BOTHSIDES }
+};
+
 
 /* Starting positions encoded as A-stack */
 const plane_t starting_a[N_PLANES] = {
@@ -148,13 +153,6 @@ const char start_indexes[N_POS] = {
 const char king_index[N_PLAYERS] = {
   4, 28
 };
-/*
-const int piece_plane[N_PIECES] = { 
-  ROOK,           KNIGHT,           BISHOP,           QUEEN,           KING,           BISHOP,           KNIGHT,           ROOK,
-  PAWN,           PAWN,             PAWN,             PAWN,            PAWN,           PAWN,             PAWN,             PAWN,
-  PAWN+N_PIECE_T, PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,  PAWN+N_PIECE_T, PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,
-  ROOK+N_PIECE_T, KNIGHT+N_PIECE_T, BISHOP+N_PIECE_T, QUEEN+N_PIECE_T, KING+N_PIECE_T, BISHOP+N_PIECE_T, KNIGHT+N_PIECE_T, ROOK+N_PIECE_T };
-*/
 const piece_e piece_type[N_PIECE_T * N_PLAYERS] = {
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING,
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING  
@@ -168,14 +166,9 @@ const piece_e start_pieces[N_POS] = {
   EMPTY, EMPTY,  EMPTY,  EMPTY, EMPTY, EMPTY,  EMPTY,  EMPTY,
   EMPTY, EMPTY,  EMPTY,  EMPTY, EMPTY, EMPTY,  EMPTY,  EMPTY,
   PAWN+N_PIECE_T,  PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,  PAWN+N_PIECE_T,  PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,
-  ROOK+N_PIECE_T,  KNIGHT+N_PIECE_T, BISHOP+N_PIECE_T, QUEEN+N_PIECE_T, KING+N_PIECE_T,  BISHOP+N_PIECE_T, KNIGHT+N_PIECE_T, ROOK+N_PIECE_T };
-/*
-const player_e piece_colour[N_PIECES] = { 
-  WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
-  WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
-  BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK,
-  BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK };
-*/
+  ROOK+N_PIECE_T,  KNIGHT+N_PIECE_T, BISHOP+N_PIECE_T, QUEEN+N_PIECE_T, KING+N_PIECE_T,  BISHOP+N_PIECE_T, KNIGHT+N_PIECE_T, ROOK+N_PIECE_T 
+};
+
 const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
   WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
   BLACK, BLACK, BLACK, BLACK, BLACK, BLACK
@@ -475,6 +468,30 @@ static inline void remove_piece(state_s *state, pos_t pos)
   state->hash ^= hash_values[pos * piece];
 }
 
+static inline void clear_rook_castling_rights(state_s *state, pos_t pos)
+{
+  player_e victim_player = piece_player[state->piece_at[pos]];
+  for(int side = 0; side < 2; side++) {
+    if(pos == rook_start_pos[victim_player][side]) {
+      state->castle_rights &= ~castle_rights[victim_player][side];
+    }
+  }
+}
+
+static inline void clear_king_castling_rights(state_s *state, player_e player)
+{
+  state->castle_rights &= ~castle_rights[player][BOTHSIDES];
+}
+
+static inline void do_rook_castling_move(state_s *state, 
+  pos_t king_pos, pos_t from_offset, pos_t to_offset)
+{
+  uint8_t rook_piece = state->piece_at[king_pos + from_offset];
+  int8_t rook_index = state->index_at[king_pos + from_offset];
+  remove_piece(state, king_pos + from_offset);
+  add_piece(state, king_pos + to_offset, rook_piece, rook_index);
+}
+
 /* Alters the game state to effect a move.  There is no validity checking. */
 void make_move(state_s *state, move_s *move)
 {
@@ -494,12 +511,11 @@ void make_move(state_s *state, move_s *move)
     move->result |= CAPTURED;
     /* If a rook has been captured, set moved flag to prevent castling */
     if(piece_type[victim_piece] == ROOK) {
-      state->moved |= bb_to;
+      clear_rook_castling_rights(state, move->to);
     }
   }
 
   /* Moving */
-  plane_t bb_from = pos2mask[move->from];
   uint8_t moving_piece = state->piece_at[move->from];
   ASSERT(piece_player[moving_piece] == state->to_move);
   int8_t moving_index = state->index_at[move->from];
@@ -510,22 +526,17 @@ void make_move(state_s *state, move_s *move)
   switch(piece_type[moving_piece]) {
   case KING:
     /* If this is a castling move (2 spaces each direction) */
-    /* Treat moving the rook as a separate move and recurse */
     if(move->from == move->to + 2) {
-      move_s rook_move = { move->to - 2, move->to + 1, 0 };
-      make_move(state, &rook_move);
+      do_rook_castling_move(state, move->to, -2, +1);
       move->result |= CASTLED;
     } else if(move->from == move->to - 2) {
-      move_s rook_move = { move->to + 1, move->to - 1, 0 };
-      make_move(state, &rook_move);
+      do_rook_castling_move(state, move->to, +1, -1);
       move->result |= CASTLED;
     }
-    /* Register that the king has moved to prevent castling */
-    state->moved |= bb_from;
+    clear_king_castling_rights(state, piece_player[moving_piece]);
     break;
   case ROOK:
-    /* Register that the rook has moved to prevent castling*/
-    state->moved |= bb_from;
+    clear_rook_castling_rights(state, move->from);
     break;
   case PAWN:
     /* If pawn has been promoted */
@@ -581,11 +592,12 @@ void make_move(state_s *state, move_s *move)
 
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
-void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved)
+void setup_board(state_s *state, const int *pieces, 
+  player_e to_move, castle_rights_t castle_rights)
 {
   memset(state, 0, sizeof(*state));
   state->to_move = to_move;
-  state->moved = pieces_moved;
+  state->castle_rights = castle_rights;
 
   for(int i = 0; i < N_PIECES; i++) {
     state->piece_pos[i] = NO_POS;
@@ -611,7 +623,7 @@ void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pi
 /* Resets the board to the starting position */
 void reset_board(state_s *state)
 {
-  setup_board(state, start_pieces, WHITE, 0);
+  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS);
 }
 
 /* Initialises the module */
