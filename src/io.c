@@ -93,26 +93,22 @@ int format_pos(char *buf, pos_t pos)
   return 0;
 }
 
-int format_move_bare(char *buf, move_s *move, int *length)
+int format_move(char *buf, move_s *move, int bare)
 {
-  if(format_pos(buf, move->from)) return 1;
-  if(format_pos(buf+2, move->to)) return 1;
-  char *ptr = buf + 4;
+  char *ptr = buf;
+  if(format_pos(ptr, move->from)) return 1;
+  ptr += 2;
+  if(!bare && (move->result & CAPTURED))
+    *ptr++ = 'x';
+  if(format_pos(ptr, move->to)) return 1;
+  ptr += 2;
   if(move->promotion > PAWN) {
     *ptr++ = piece_letter[move->promotion];
   }
-  *length = ptr - buf;
-  return 0;
-}
-
-int format_move(char *buf, move_s *move, int capture, int check)
-{
-  int length;
-  if(format_move_bare(buf, move, &length)) return 1;
-  char *ptr = buf + length;
-  if(capture) *ptr++ = '+';
-  if(check) *ptr++ = '#';
-  *ptr = 0;
+  if(!bare) {
+    if(move->result & CHECK) *ptr++ = '+';
+    if(move->result & MATE) *ptr++ = '#';
+  }
   return 0;
 }
 

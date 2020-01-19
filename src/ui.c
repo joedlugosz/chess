@@ -54,7 +54,7 @@ void start_session_log(void)
 void start_move_log(engine_s *e)
 {
 #if (LOGGING == YES)
-  char buf[20];
+  char buf[100];
   snprintf(buf, sizeof(buf), "g%02d-%c%02d", 
     e->game_n, (e->mode == ENGINE_PLAYING_AS_WHITE) ? 'w' : 'b', e->move_n);
   START_LOG(&think_log, NE_MOVE, "%s", buf);
@@ -142,9 +142,8 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
 {
   ASSERT(is_in_normal_play(engine));
 
-  char buf[20];  
-  format_move(buf, &result->best_move, engine->game.captured,
-	      engine->game.check[opponent[engine->mode]]);
+  char buf[MOVE_BUF_SIZE];  
+  format_move(buf, &result->best_move, engine->xboard_mode);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   
@@ -161,10 +160,10 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
 static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
   if(!engine->xboard_mode) {
     if(from >= 0) {
-      char from_buf[10];
+      char from_buf[POS_BUF_SIZE];
       format_pos(from_buf, from);
       if(to >= 0) {
-        char to_buf[10];
+        char to_buf[POS_BUF_SIZE];
         format_pos(to_buf, to);
         printf(fmt, from_buf, to_buf);
       } else {

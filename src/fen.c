@@ -13,8 +13,7 @@
 /* FEN piece letters */
 static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
-enum { N_CASTLE_RIGHTS_MASKS = 4,
-       CASTLE_RIGHTS_ALL = 0x9100000000000091ull
+enum { N_CASTLE_RIGHTS_MASKS = 4
 };
 
 struct castle_rights_entry {
@@ -22,11 +21,12 @@ struct castle_rights_entry {
   plane_t mask;
 };
 
-struct castle_rights_entry castle_rights[N_CASTLE_RIGHTS_MASKS] = {
-  { 'K', 0x9000000000000000ull },
-  { 'Q', 0x1100000000000000ull },
-  { 'k', 0x0000000000000090ull },
-  { 'q', 0x0000000000000011ull }  
+static const struct castle_rights_entry 
+  castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {
+  { 'K', WHITE_KINGSIDE },
+  { 'Q', WHITE_QUEENSIDE },
+  { 'k', BLACK_KINGSIDE },  
+  { 'q', BLACK_QUEENSIDE }
 };
 
 /* Loads a board state given in FEN, into state */
@@ -115,20 +115,32 @@ int load_fen( state_s *state,
   
   ptr = castling_text;
   error_text = castling_text;
-  plane_t castling = 0;
-  for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if(*ptr == castle_rights[i].c) {
-      castling |= castle_rights[i].mask;
-      ptr++;
+  plane_t castling_rights = 0;
+  while(*ptr) {
+    for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
+      if(*ptr == castling_rights_letter[i].c) {
+        castling_rights |= castling_rights_letter[i].mask;
+      }
     }
+    ptr++;
   }
-  if(castling == 0 && *ptr++ != '-') {
+  if(castling_rights == 0 && *castling_text != '-') {
     printf("FEN: No castling flags found\n");
     goto error;
   }
-  
+
+  ptr = en_passant_text;
+  pos_t en_passant;
+  if(*ptr == '-') {
+    en_passant = NO_POS;
+  } else {
+    if(parse_pos(en_passant_text, &en_passant)) {
+      printf("FEN: Invalid en-passant input\n");
+      goto error;
+    }
+  }
   /* Success - write the new positions to state */
-  setup_board(state, board, to_move, ~castling & 0x9100000000000091ull);
+  setup_board(state, board, to_move, castling_rights, en_passant);
   return 0;
  error:
   printf("\nFEN input: %s", error_text);
@@ -138,46 +150,52 @@ int load_fen( state_s *state,
 
 int get_fen(const state_s *state, char *out, size_t outsize)
 {
-  int file_count = 0;
+  int empty_file_count = 0;
   char *ptr = out;
   for(int rank = 7; rank >= 0; rank--) {
     for(int file = 0; file < 8; file++) {
       int piece = state->piece_at[rank*8+file];
       if(piece == EMPTY) {
-        file_count++;
+        empty_file_count++;
       } else {
         /* Piece */
-        if(file_count > 0) *ptr++ = (char)file_count + '0';
+        if(empty_file_count > 0) {
+          *ptr++ = (char)empty_file_count + '0';
+          empty_file_count = 0;
+        }
         *ptr++ = piece_letter[piece];
-        file_count = 0;
       }
       /* End of rank */
-      if(file == 7 && rank > 0) {
-        if(file_count > 0) *ptr++ = (char)file_count + '0';
-        *ptr++ = '/';
-        file_count = 0;
+      if(file == 7) {
+        if(empty_file_count > 0) {
+          *ptr++ = (char)empty_file_count + '0';
+          empty_file_count = 0;
+        }
+        if(rank > 0) {
+          *ptr++ = '/';
+        }
       }
     }
   }
-  if(file_count > 0) *ptr++ = (char)file_count + '0';
-  
   *ptr++ = ' ';
+  /* Moving player */
   *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
   /* Castling rights */
-  int cr = 0;
   for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if(~state->moved & castle_rights[i].mask) {
-      *ptr++ = castle_rights[i].c;
-      cr = 1;
+    if(state->castling_rights & castling_rights_letter[i].mask) {
+      *ptr++ = castling_rights_letter[i].c;
+    }
   }
-  }
-  /* No castling rights */
-  if(!cr) *ptr++ = '-';
+  if(!state->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
-  //encode_position(ptr, mask2pos(state->en_passant));
-  //ptr += 2;
-  *ptr++ = '-'; /* Placeholder for en passant */
+  /* En passant */
+  if(state->en_passant == NO_POS) {
+    *ptr++ = '-';
+  } else {
+    format_pos(ptr, state->en_passant);
+    ptr += 2;
+  }
   //*ptr++ = ' ';
   //*ptr++ = '0';
   //*ptr++ = ' ';

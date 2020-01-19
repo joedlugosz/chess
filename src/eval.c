@@ -95,6 +95,6 @@ int test_eval(void)
   state_s state;
   reset_board(&state);
   /* Starting positions should sum to zero */
-  ASSERT(eval(&state) == 0);
+  ASSERT(evaluate(&state) == 0);
   return 0;
 }

@@ -16,6 +16,7 @@
 #include "chess.h"
 #include "lowlevel.h"
 #include "board.h"
+#include "log.h"
 #include <stdint.h>
 //typedef int pos_t;
 typedef enum {
@@ -49,6 +50,21 @@ enum {
   N_PIECES = 32,
 };
 
+typedef enum boardside_e {
+  QUEENSIDE = 0, KINGSIDE, BOTHSIDES, N_BOARDSIDE
+} boardside_e;
+
+typedef uint8_t castle_rights_t;
+enum { 
+  WHITE_QUEENSIDE =   0x01,
+  WHITE_KINGSIDE =    0x02,
+  WHITE_BOTHSIDES =   0x03,
+  BLACK_QUEENSIDE =   0x04,
+  BLACK_KINGSIDE =    0x08,
+  BLACK_BOTHSIDES =   0x0c,
+  ALL_CASTLE_RIGHTS = 0x0f       
+};
+
 /* Four stacks are used to represent the same information with different bit 
    orders, with the squares indexed according to horizontal, vertical and 
    diagonal schemes. */
@@ -72,30 +88,33 @@ typedef struct state_s_ {
   int8_t piece_at[N_POS];  /* Piece index at board position */
   int8_t index_at[N_POS];  /* Piece index at board position */
 
-  /* Other info */
-  pos_t from;                /* Position moved from to get to this state */
-  pos_t to;                  /* Ditto */
-  status_t captured : 1;     /* Whether the last move captured */
-  status_t ep_captured : 1;  /* Whether the last move capture was en passant */
-  status_t promoted : 1;     /* Whether the last move promoted */
-  status_t castled : 1;      /* Whether the last move castled */
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
-  plane_t moved;             /* Flags for pieces which have moved */
-  plane_t en_passant;        /* En-passant squares */
+  castle_rights_t castling_rights;
+  pos_t en_passant;        /* En-passant squares */
   hash_t hash;
 } state_s;
 
 /* move_s holds the game state as well as info about moves */
+typedef uint8_t moveresult_t;
+enum { CAPTURED = 1<<0,
+        EN_PASSANT = 1<<1,
+        CHECK = 1<<2,
+        MATE = 1<<3, 
+        SELF_CHECK = 1<<4,
+        CASTLED = 1<<5,
+        PROMOTED = 1<<6, 
+      };
 typedef struct move_s_ {
   pos_t from, to;
   piece_e promotion;
+  moveresult_t result;
 } move_s;
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *state, const int *pieces, player_e to_move, plane_t pieces_moved);
-//void random_state(state_s *s);
+void setup_board(state_s *, const int *, player_e, castle_rights_t, pos_t);
+
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void make_move(state_s *state, move_s *move);
 
@@ -104,6 +123,9 @@ extern const piece_e piece_type[N_PLANES];
 extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
 
+static inline int is_valid_pos(pos_t pos) {
+  return (pos >= 0 && pos < N_POS);
+}
 static inline pos_t mask2pos(plane_t mask) {
   ASSERT(is_valid_pos((pos_t)ctz(mask)));
   return (pos_t)ctz(mask);
@@ -129,12 +151,10 @@ static inline int in_check(state_s *state) {
 static inline void change_player(state_s *state) {
   state->to_move = opponent[state->to_move];
 }
-static inline int is_valid_pos(pos_t pos) {
-  return (pos >= 0 && pos < N_POS);
-}
-static inline int is_promotion_move(state_s *state, pos_t from, plane_t to_mask) {
-  if((to_mask & 0xff000000000000ffull) 
-    && piece_type[(int)state->piece_at[from]] == PAWN) {
+static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
+  if(pos2mask[to] & 0xff000000000000ffull) 
+   // && piece_type[(int)state->piece_at[from]] == PAWN) 
+   {
       return 1;
   }
   return 0;
