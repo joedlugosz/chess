@@ -174,12 +174,12 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   *ptr++ = ' ';
   /* Castling rights */
   for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if(state->castle_rights & castling_rights_letter[i].mask) {
+    if(state->castling_rights & castling_rights_letter[i].mask) {
       *ptr++ = castling_rights_letter[i].c;
     }
   }
   /* No castling rights */
-  if(!state->castle_rights) *ptr++ = '-';
+  if(!state->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
   //encode_position(ptr, mask2pos(state->en_passant));
   //ptr += 2;

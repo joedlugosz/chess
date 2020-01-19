@@ -151,9 +151,10 @@ static inline int in_check(state_s *state) {
 static inline void change_player(state_s *state) {
   state->to_move = opponent[state->to_move];
 }
-static inline int is_promotion_move(state_s *state, pos_t from, plane_t to_mask) {
-  if((to_mask & 0xff000000000000ffull) 
-    && piece_type[(int)state->piece_at[from]] == PAWN) {
+static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
+  if(pos2mask[to] & 0xff000000000000ffull) 
+   // && piece_type[(int)state->piece_at[from]] == PAWN) 
+   {
       return 1;
   }
   return 0;

@@ -61,11 +61,12 @@ static int sort_evaluate(state_s *state, move_s *move)
 
 /* Add movelist entries for a given from and to position.  Add promotion
    moves if necessary */
-static inline void add_movelist_entries(state_s *state, pos_t from, pos_t to, 
-  plane_t to_mask, movelist_s **prev, movelist_s *move_buf, int *index)
+static inline void add_movelist_entries(
+  state_s *state, pos_t from, pos_t to, movelist_s *move_buf, /* in */ 
+  movelist_s **prev, int *index) /* in, out */
 {
-  piece_e promotion = (is_promotion_move(state, from, to_mask))
-    ? QUEEN : PAWN;
+  piece_e promotion = (piece_type[state->piece_at[from]] == PAWN 
+    && is_promotion_move(state, from, to)) ? QUEEN : PAWN;
   do {
     ASSERT(*index < N_MOVES);
     movelist_s *current = &move_buf[*index];
@@ -93,7 +94,7 @@ int generate_search_movelist(state_s *state, movelist_s **move_buf)
     while(moves) {
       plane_t to_mask = next_bit_from(&moves);
       pos_t to = mask2pos(to_mask);
-      add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
+      add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }
   if(count) sort_moves(move_buf);
@@ -113,7 +114,7 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
     while(attackers) {
       plane_t from_mask = next_bit_from(&attackers);
       pos_t from = mask2pos(from_mask);
-      add_movelist_entries(state, from, to, to_mask, &prev, *move_buf, &count);
+      add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }
   if(count) sort_moves(move_buf);
