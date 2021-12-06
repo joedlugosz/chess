@@ -16,6 +16,13 @@
 #include <stdint.h>
 #include <string.h>
 
+
+typedef enum player_e_ {
+  WHITE = 0, BLACK, N_PLAYERS
+} player_e;
+
+extern const char player_text[N_PLAYERS][6];
+
 typedef unsigned char status_t;
 
 /* Bitboard */
