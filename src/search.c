@@ -79,33 +79,35 @@ static inline int search_null(struct search_job *job, struct pv *pv,
 /* Search a single move - call search_position after making the move. Return 1
    for a beta cutoff, and 0 in all other cases including self-check. */
 static inline int search_move(struct search_job *job, struct pv *parent_pv,
-                              struct pv *pv,
-                              const struct position *from_position, int depth,
-                              score_t *best_score, /* in/out */
-                              score_t *alpha,      /* in/out */
+                              struct pv *pv, struct position *position,
+                              int depth, score_t *best_score, /* in/out */
+                              score_t *alpha,                 /* in/out */
                               score_t beta, struct move *move,
                               struct move **best_move,  /* in/out */
                               enum tt_entry_type *type, /* in/out */
                               int *n_legal_moves,       /* in/out */
                               int is_late_move) {
-  struct position position;
+  enum piece moving_piece = position->piece_at[move->from];
+  enum piece victim_piece = position->piece_at[move->to];
+  hash_t from_hash = position->hash;
 
-  /* Copy and move */
-  copy_position(&position, from_position);
-  make_move(&position, move);
+  struct unmake unmake;
+  make_move(position, move, &unmake);
 
   /* Return early if moving into self-check. All other moves are legal. */
-  if (in_check(&position)) {
+  if (in_check(position)) {
     job->result.n_check_moves++;
+    unmake_move(position, move, &unmake);
     return 0;
   }
-  //  ASSERT(!in_check(&position));
+  //  ASSERT(!in_check(position));
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
   /* Move history is hashed against the position being moved from */
-  history_push(job->history, from_position->hash, move);
-  change_player(&position);
+  history_push(job->history, from_hash, move);
+
+  change_player(position);
 
   /* Record whether this move puts the opponent in check */
   if (in_check(&position)) move->result |= CHECK;
@@ -114,29 +116,29 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
      Reduce the search depth for late moves unless they are tactical. Extend
      the depth for pawn moves to try to find a promotion. */
   int extend_reduce;
-  if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
-      depth < job->depth - 1)
+  if (OPT_PAWN_EXTENSION && moving_piece == PAWN && depth < job->depth - 1)
     extend_reduce = 1;
-  else if (OPT_LMR && is_late_move && !in_check(from_position) &&
-           !in_check(&position) && from_position->piece_at[move->to] == EMPTY &&
-           move->promotion == PAWN)
+  else if (OPT_LMR && is_late_move && !in_check(&position) &&
+           victim_piece == EMPTY && move->promotion == PAWN)
     extend_reduce = -R_LATE;
   else
     extend_reduce = 0;
 
   /* Recurse into search_position */
-  score = -search_position(job, pv, &position, depth + extend_reduce - 1, -beta,
+  score = -search_position(job, pv, position, depth + extend_reduce - 1, -beta,
                            -*alpha, 1);
 
   /* If a reduced search produces a score which will cause an update,
      re-search at full depth in case it turns out to be not so good */
   if (extend_reduce < 0 && score > *alpha) {
-    score = -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+    score = -search_position(job, pv, position, depth - 1, -beta, -*alpha, 1);
   }
 
   if (job->halt) return 1;
 
   history_pop(job->history);
+  change_player(position);
+  unmake_move(position, move, &unmake);
 
   if (score > *best_score) {
     *best_score = score;
