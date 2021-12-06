@@ -18,6 +18,7 @@
  *                  Specify logging directory, file error messages
  */
 
+#include "compiler.h"
 #include "chess.h"
 #include "os.h"
 #include "options.h"

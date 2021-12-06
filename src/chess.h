@@ -4,8 +4,8 @@
  */
 #ifndef CHESS_H
 #define CHESS_H
-#include "language.h"
-
+//#include "compiler.h"
+//#include "compiler.h"
 /* Configuration */
 #define YES 1
 #define NO 0

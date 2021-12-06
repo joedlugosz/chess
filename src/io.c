@@ -2,7 +2,7 @@
  *   4.1 Windows supported
  */
 
-#include "language.h"
+#include "compiler.h"
 #include "board.h"
 #include "search.h"
 #include "os.h"

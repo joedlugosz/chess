@@ -1,6 +1,6 @@
 
-#ifndef LANGUAGE_H
-# define LANGUAGE_H
+#ifndef COMPILER_H
+# define COMPILER_H
 
 # define GCC 0
 # define MSVC 1
@@ -18,4 +18,4 @@
 # else
 #  define _XOPEN_SOURCE 500
 # endif /* __STDC_VERSION__ */
-#endif /* LANGUGAGE_H */
+#endif /* COMPILER_H */
