@@ -164,6 +164,14 @@ enum {
   N_MOVE_ERR
 };
 
+struct unmake {
+  int8_t victim_piece;
+  int8_t victim_index;
+  square_e en_passant;
+  castle_rights_t castling_rights;
+  status_t check[N_PLAYERS];
+};
+
 extern bitboard_t *square2bit;
 extern const enum piece piece_type[N_PLANES];
 extern const enum player piece_player[N_PLANES];
@@ -176,7 +184,10 @@ void setup_board(struct position *, const enum piece *, enum player,
 
 bitboard_t get_attacks(const struct position *position, enum square target,
                        enum player attacking);
-void make_move(struct position *position, struct move *move);
+void make_move(struct position *position, struct move *move,
+               struct unmake *unmake);
+void unmake_move(struct position *position, struct move *move,
+                 struct unmake *unmake);
 void change_player(struct position *position);
 int check_legality(const struct position *position, const struct move *move);
 
