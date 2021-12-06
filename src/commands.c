@@ -1,13 +1,16 @@
 /*
- *   4.1 18/02/2018 Added 'help' command
- *   5.0 24/02/2019 Added 'perft' command
+ *  UI commands
  */
+
 #include "chess.h"
 #include "log.h"
 #include "search.h"
 #include "sys.h"
 #include "movegen.h"
 #include "io.h"
+
+typedef void (*ui_fn)(engine_s *);
+
 /*
  *  Commands
  */ 
