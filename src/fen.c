@@ -1,6 +1,6 @@
 
 /*
- *   Routines for FEN input and output
+ *   Forsyth-Edwards Notation input and output
  */
 
 #include "state.h"

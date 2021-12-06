@@ -1,3 +1,7 @@
+/*
+ *  Program entry point and user interface.
+ */
+
 #ifndef UI_H
 #define UI_H
 

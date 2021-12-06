@@ -1,3 +1,7 @@
+/*
+ *   Forsyth-Edwards Notation input and output
+ */
+
 #ifndef FEN_H
 #define FEN_H
 
