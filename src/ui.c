@@ -4,10 +4,10 @@
 
 #include "commands.h"
 #include "engine.h"
-#include "search.h"
-#include "os.h"
-#include "io.h"
 #include "log.h"
+#include "os.h"
+#include "search.h"
+#include "io.h"
 
 #include <time.h>
 #include <ctype.h>

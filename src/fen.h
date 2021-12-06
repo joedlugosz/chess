@@ -1,7 +1,7 @@
 #ifndef FEN_H
 #define FEN_H
 
-#include "board.h"
+#include "state.h"
 #include "io.h"
 
 int get_fen(const state_s *state, char *out, size_t outsize);

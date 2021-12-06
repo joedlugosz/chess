@@ -6,7 +6,7 @@
 #define BOARD_H
 
 #include "lowlevel.h"
-#include "board.h"
+#include "state.h"
 #include "log.h"
 
 #include <stdint.h>

@@ -4,7 +4,7 @@
  *  Definition of the game state and FIDE rules.
  */
 
-#include "board.h"
+#include "state.h"
 #include "log.h"
 
 void init_moves(void);

@@ -1,7 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "board.h"
+#include "state.h"
 
 #include <time.h>
 

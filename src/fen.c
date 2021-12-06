@@ -3,7 +3,7 @@
  *   Routines for FEN input and output
  */
 
-#include "board.h"
+#include "state.h"
 #include "io.h"
 
 /* FEN piece letters */

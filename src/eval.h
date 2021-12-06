@@ -1,7 +1,7 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#include "board.h"
+#include "state.h"
 
 /* Evaluation score */
 typedef int score_t;

@@ -1,4 +1,4 @@
-#include "board.h"
+#include "state.h"
 #include "log.h"
 #include "eval.h"
 #include <stdlib.h>

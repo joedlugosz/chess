@@ -1,16 +1,3 @@
-#
-# Makefile
-#	
-# J Dlugosz March 2016
-# 	   1.0
-# 27/01/17 1.1  Added eval, game, sys dirs
-# 12/02/18 2.4  Multiple targets
-# 14/02/18 3.0  Build and release configurations
-# 18/02/18 4.1  Windows supported
-#	   4.4  gprof configuration
-# 15/02/19 5.0  Simplified - only one search module and one source dir
-#               movegen
-
 # Project output name
 PROJNAME	= 5.0-movegen
 
@@ -25,7 +12,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-MODULES		= build commands eval fen game history io log moves movegen options search ui
+MODULES		= build commands eval fen history io log moves movegen options search state ui
 
 #	Build tools
 TOOLCHAIN	= 

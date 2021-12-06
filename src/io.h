@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include "board.h"
+#include "state.h"
 
 struct notation_s_;
 

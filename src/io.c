@@ -3,7 +3,7 @@
  */
 
 #include "compiler.h"
-#include "board.h"
+#include "state.h"
 #include "search.h"
 #include "os.h"
 #include "log.h"
