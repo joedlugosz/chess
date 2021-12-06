@@ -9,6 +9,7 @@
 
 #include "movegen.h"
 #include "history.h"
+#include "io.h"
 #include "sys.h"
 #include "board.h"
 

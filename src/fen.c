@@ -1,20 +1,18 @@
 
-#include "chess.h"
-#include "board.h"
-#include "sys.h"
-
 /*
  *   Routines for FEN input and output
- *
- *   4.3 24/02/18 - Created 
- *   5.1 24/02/19 - Fixes
  */
+
+#include "chess.h"
+#include "board.h"
+#include "io.h"
+#include "sys.h"
+
 
 /* FEN piece letters */
 static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
-enum { N_CASTLE_RIGHTS_MASKS = 4
-};
+enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
 struct castle_rights_entry {
   char c;

@@ -1,7 +1,8 @@
-#include "chess.h"
-
 #ifndef LOWLEVEL_H
 #define LOWLEVEL_H
+
+#include "chess.h"
+#include "defs.h"
 
 #if (COMP==GCC)
 static inline int ctz(plane_t mask) {
