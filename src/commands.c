@@ -8,6 +8,7 @@
 #include "sys.h"
 #include "movegen.h"
 #include "io.h"
+#include "ui.h"
 
 typedef void (*ui_fn)(engine_s *);
 

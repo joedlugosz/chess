@@ -19,6 +19,7 @@
  */
 
 //#include "language.h"
+#include "commands.h"
 #include "chess.h"
 #include "search.h"
 #include "sys.h"
