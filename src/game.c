@@ -2,21 +2,6 @@
  *  game.c
  *
  *  Definition of the game state and FIDE rules.
- *
- *  Limitations:
- *   * No en passant taking
- *   * No under-promotion
- *
- *  Revisions:
- *   0.1  09/04/16  Started
- *   4.0            Pre-computed values, changed piece_at from piece type to index
- *   4.4  28/02/18  Changed most piece_index stuff back to piece_type, parallel piece_at and index_at arrays
- *                  Fixed bug preventing castling
- *   5.0            Added assertion for attack check on own pieces
- *                  Fixed attack checking during castling
- *   5.1            En passant, underpromotion, 
- *                  Changed searching for slider attacks,
- *                  Replaced moved pieces plane with castling rights flags
  */
 
 #include "chess.h"
