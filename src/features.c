@@ -3,6 +3,7 @@
 #include "sys.h"
 #include "log.h"
 #include "search.h"
+#include "commands.h"
 
 #include <ctype.h>
 #include <stdint.h>

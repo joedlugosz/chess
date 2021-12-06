@@ -32,7 +32,6 @@ typedef struct engine_s_ {
 } engine_s;
 
 /* command.c*/
-typedef void (*ui_fn)(engine_s *);
 int accept_command(engine_s *e, const char *in);
 
 int no_piece_at_pos(engine_s *, pos_t);
