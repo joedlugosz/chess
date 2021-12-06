@@ -8,8 +8,5 @@ typedef unsigned long long plane_t;
 typedef unsigned char rank_t;
 /* Position index on the board */
 typedef signed char pos_t;
-/* Evaluation score */
-typedef int score_t;
-
 
 #endif /* DEFS_H */
