@@ -3,11 +3,6 @@
  *
  *  Definition of the game state and FIDE rules.
  *
- *  Limitations:
- *   * No under-promotion
- *
- *  Revisions:
- *   5.1            En passant, underpromotion
  */
 
 #ifndef BOARD_H
@@ -153,9 +148,8 @@ static inline void change_player(state_s *state) {
 }
 static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
   if(pos2mask[to] & 0xff000000000000ffull) 
-   // && piece_type[(int)state->piece_at[from]] == PAWN) 
-   {
-      return 1;
+  {
+    return 1;
   }
   return 0;
 }
