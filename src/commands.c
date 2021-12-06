@@ -3,6 +3,7 @@
  */
 
 #include "chess.h"
+#include "fen.h"
 #include "log.h"
 #include "search.h"
 #include "sys.h"
