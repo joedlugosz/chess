@@ -49,17 +49,6 @@ void feature_accepted(const char *name);
 void list_options(void);
 int set_option(engine_s *e, const char *name);
 
-/* io.c */
-const char *get_input(void);
-const char *get_delim(char delim);
-
-/* ui.c */
-/*
-*/
-void print_thought_moves(FILE *f, int depth, notation_s moves[]);
-
-/* build.c */
-
 int get_fen(const state_s *state, char *out, size_t outsize);
 int load_fen(state_s *state, const char *placement, const char *active,
              const char *castling, const char *en_passant);

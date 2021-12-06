@@ -15,6 +15,7 @@
 #include "search.h"
 #include "movegen.h"
 #include "history.h"
+#include "io.h"
 #include "sys.h"
 
 int search_depth = 6;

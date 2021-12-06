@@ -10,6 +10,7 @@
 
 #include "eval.h"
 #include "log.h"
+
 typedef struct notation_s_
 {
   pos_t from;

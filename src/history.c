@@ -1,4 +1,5 @@
 #include "history.h"
+#include "search.h"
 
 void write_move_history(search_context_s *ctx, int depth, move_s *move,
   player_e to_move, score_t score)
