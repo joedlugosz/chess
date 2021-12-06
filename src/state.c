@@ -2,11 +2,11 @@
  *  Game state
  */
 
+#include "moves.h"
 #include "state.h"
 #include "log.h"
 
 void init_moves(void);
-void calculate_moves(state_s *state);
 
 /* 
  *  Lookup tables
