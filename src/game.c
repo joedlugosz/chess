@@ -26,12 +26,6 @@
 void init_moves(void);
 void calculate_moves(state_s *state);
 
-enum {
-  N_HASH_VALUES = N_PIECE_T * N_POS  
-};
-
-hash_t hash_values[N_HASH_VALUES];
-
 /* 
  *  Lookup tables
  */
@@ -130,7 +124,6 @@ static inline void add_piece(state_s *state, pos_t pos, piece_e piece, int index
   state->piece_pos[(int)index] = pos;
   state->piece_at[pos] = piece;
   state->index_at[pos] = index;
-  state->hash ^= hash_values[pos * piece];
 }
 
 static inline void remove_piece(state_s *state, pos_t pos)
@@ -157,7 +150,6 @@ static inline void remove_piece(state_s *state, pos_t pos)
   state->piece_pos[(int)state->index_at[pos]] = NO_POS;
   state->piece_at[pos] = EMPTY;
   state->index_at[pos] = EMPTY;
-  state->hash ^= hash_values[pos * piece];
 }
 
 static inline void clear_rook_castling_rights(state_s *state, pos_t pos, player_e player)
@@ -326,6 +318,4 @@ void init_board(void)
     pos_a2d[pos] = pos_a2c[(pos / 8) * 8 + (7 - pos % 8)];
   }
   init_moves();
-
-//  init_hash(hash, N_HASH_VALUES);
 }

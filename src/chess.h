@@ -34,8 +34,8 @@ extern const char player_text[N_PLAYERS][6];
 //};
 
 /* */
-typedef unsigned long long hash_t;
-typedef unsigned char status_t;
+//typedef unsigned long long hash_t;
+//typedef unsigned char status_t;
 //typedef int score_t;
 
 //#include "lowlevel.h"

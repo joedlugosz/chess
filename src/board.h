@@ -93,7 +93,6 @@ typedef struct state_s_ {
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
   pos_t en_passant;        /* En-passant squares */
-  hash_t hash;
 } state_s;
 
 /* move_s holds the game state as well as info about moves */
