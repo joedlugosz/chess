@@ -1,6 +1,5 @@
 /*
- *  Searching - Negamax Alpha-Beta
- *              Quiescence search
+ *  Searching
  */
 
 #include "movegen.h"

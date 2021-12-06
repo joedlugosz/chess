@@ -1,8 +1,5 @@
 /*
- *  Common Search Functions
- *
- *  4.3    - Created, taken from individual search files
- *  5.0    - Split header files
+ *  Searching
  */
 
 #ifndef SEARCH_H
@@ -29,15 +26,6 @@ typedef struct movelist_s_ {
   struct movelist_s_ *next;
 } movelist_s;
 
-/*
-typedef enum search_status_e_ {
-  NO_MOVE = 0,
-  MOVED,
-  STALEMATE,
-  CHECKMATE
-} search_status_e;
-*/
-
 typedef struct search_result_s_ {
   score_t score;
   int n_searched;
@@ -45,7 +33,6 @@ typedef struct search_result_s_ {
   double cutoff;
   move_s best_move;
 } search_result_s;
-
 
 enum {
   SEARCH_DEPTH_MAX = 30,
@@ -70,10 +57,5 @@ typedef struct search_context_s_ {
 } search_context_s;
 
 void do_search(int, state_s *, search_result_s *);
-//void set_depth(int d);
-/*
-void stop_search(void);
-extern int search_depth;
-*/
 
 #endif // SEARCH_H
