@@ -25,9 +25,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-
-MODULES		= build commands eval fen game history io log moves movegen options search ui 
-HEADERS		= chess
+MODULES		= build commands eval fen game history io log moves movegen options search ui
 
 #	Build tools
 TOOLCHAIN	= 
@@ -120,15 +118,15 @@ $(DBGOBJDIR) $(RELOBJDIR) $(PRFOBJDIR) $(OUTDIR):
 # Build rules
 $(RELOUTPATH): $(RELOBJPATHS) 
 	$(LD) -o $@ $(RELOBJPATHS) $(RELLFLAGS)
-$(RELOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(RELOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -o $@ $<
 # Output
 $(DBGOUTPATH): $(DBGOBJPATHS) 
 	$(LD) -o $@ $(DBGOBJPATHS) $(DBGLFLAGS)
-$(DBGOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(DBGOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(DBGCFLAGS) $(BUILDFLAGS) -o $@ $<
 # Output
 $(PRFOUTPATH): $(PRFOBJPATHS) 
 	$(LD) -o $@ $(PRFOBJPATHS) $(PRFLFLAGS)
-$(PRFOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(PRFOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(PRFCFLAGS) $(BUILDFLAGS) -o $@ $< >> $(@:.o=.lst)

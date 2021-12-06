@@ -1,21 +1,16 @@
 /*
- *  board.h
- *
  *  Definition of the game state and FIDE rules.
- *
  */
 
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "chess.h"
 #include "lowlevel.h"
 #include "board.h"
 #include "log.h"
 
 #include <stdint.h>
 #include <string.h>
-
 
 typedef enum player_e_ {
   WHITE = 0, BLACK, N_PLAYERS

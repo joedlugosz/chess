@@ -4,7 +4,6 @@
  *  Definition of the game state and FIDE rules.
  */
 
-#include "chess.h"
 #include "board.h"
 #include "log.h"
 

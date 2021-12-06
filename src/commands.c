@@ -2,7 +2,6 @@
  *  UI commands
  */
 
-#include "chess.h"
 #include "engine.h"
 #include "fen.h"
 #include "log.h"

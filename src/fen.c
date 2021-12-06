@@ -3,10 +3,8 @@
  *   Routines for FEN input and output
  */
 
-#include "chess.h"
 #include "board.h"
 #include "io.h"
-
 
 /* FEN piece letters */
 static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";

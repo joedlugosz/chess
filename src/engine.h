@@ -1,7 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "chess.h"
 #include "board.h"
 
 #include <time.h>

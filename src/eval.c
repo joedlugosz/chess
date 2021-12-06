@@ -1,4 +1,3 @@
-#include "chess.h"
 #include "board.h"
 #include "log.h"
 #include "eval.h"

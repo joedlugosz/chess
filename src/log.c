@@ -1,25 +1,8 @@
 /*
- *  log.c
- *
  *  Debug logging functions
- *
- *  Features:
- *   * Multiple independent log files
- *   * New log files created on per-session, -game, or -move basis by option
- *
- *  Limitations:
- *   * Files are written as open-append-close, there is no option to hold files
- *     open for increased speed.
- *
- *  Revisions:
- *   1.0  09/04/16  Current
- *   4.4  27/02/18  Changes to assert_fail
- *   5.0  17/02/19  Split header files
- *                  Specify logging directory, file error messages
  */
 
 #include "compiler.h"
-#include "chess.h"
 #include "os.h"
 #include "options.h"
 #include "log.h"

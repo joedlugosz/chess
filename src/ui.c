@@ -1,12 +1,8 @@
 /*
- *  ui.c
- *
  *  Program entry point and user interface.
- *
  */
 
 #include "commands.h"
-#include "chess.h"
 #include "engine.h"
 #include "search.h"
 #include "os.h"
