@@ -55,14 +55,10 @@ const char *get_delim(char delim);
 
 /* ui.c */
 /*
-void print_board(FILE *f, state_s *state, plane_t hl1, plane_t hl2);
-void print_plane(FILE *f, plane_t plane, plane_t indicator);
-void print_plane_rank(FILE *f, unsigned char rank, unsigned char indicator);
 */
 void print_thought_moves(FILE *f, int depth, notation_s moves[]);
 
 /* build.c */
-void print_program_info();
 
 int get_fen(const state_s *state, char *out, size_t outsize);
 int load_fen(state_s *state, const char *placement, const char *active,
