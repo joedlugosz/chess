@@ -23,6 +23,7 @@
 #include "search.h"
 #include "sys.h"
 #include "os.h"
+#include "io.h"
 #include "log.h"
 
 #include <time.h>

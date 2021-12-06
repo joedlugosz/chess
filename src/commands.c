@@ -3,11 +3,11 @@
  *   5.0 24/02/2019 Added 'perft' command
  */
 #include "chess.h"
-#include "sys.h"
 #include "log.h"
 #include "search.h"
+#include "sys.h"
 #include "movegen.h"
-
+#include "io.h"
 /*
  *  Commands
  */ 
