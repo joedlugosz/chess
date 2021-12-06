@@ -16,6 +16,12 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef unsigned char status_t;
+
+/* Bitboard */
+typedef unsigned long long plane_t;
+
+/* Board position */
 typedef enum {
   NO_POS = -1,
   A1 = 0,
@@ -29,8 +35,6 @@ typedef enum {
   A8, B8, C8, D8, E8, F8, G8, H8,
   N_POS
 } pos_t;
-
-typedef unsigned char status_t;
 
 /* Piece types */
 typedef enum piece_e_ {

@@ -7,10 +7,10 @@
 //#include "compiler.h"
 //#include "compiler.h"
 /* Configuration */
-#define YES 1
-#define NO 0
-#define CPU_64BIT 0
-#define ORDER_BINARY 0
+//#define YES 1
+//#define NO 0
+//#define CPU_64BIT 0
+//#define ORDER_BINARY 0
 
 /* Includes */
 //#include <stdio.h>
@@ -34,7 +34,6 @@ extern const char player_text[N_PLAYERS][6];
 //};
 
 /* */
-typedef unsigned long long plane_t;
 typedef unsigned long long hash_t;
 typedef unsigned char status_t;
 //typedef int score_t;
