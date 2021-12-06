@@ -3,10 +3,10 @@
  */
 
 #include "chess.h"
+#include "engine.h"
 #include "fen.h"
 #include "log.h"
 #include "search.h"
-#include "sys.h"
 #include "movegen.h"
 #include "io.h"
 #include "ui.h"

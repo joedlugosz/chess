@@ -18,7 +18,7 @@
 #include "board.h"
 #include "log.h"
 #include <stdint.h>
-//typedef int pos_t;
+
 typedef enum {
   NO_POS = -1,
   A1 = 0,

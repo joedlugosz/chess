@@ -26,7 +26,7 @@ ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
 
-MODULES		= eval game search moves movegen history features io log ui commands build fen
+MODULES		= build commands eval fen game history io log moves movegen options search ui 
 HEADERS		= chess
 
 #	Build tools

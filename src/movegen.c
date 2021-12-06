@@ -10,7 +10,6 @@
 #include "movegen.h"
 #include "history.h"
 #include "io.h"
-#include "sys.h"
 #include "board.h"
 
 const score_t player_fact[N_PLAYERS] = { 1, -1 };

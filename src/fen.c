@@ -6,7 +6,6 @@
 #include "chess.h"
 #include "board.h"
 #include "io.h"
-#include "sys.h"
 
 
 /* FEN piece letters */

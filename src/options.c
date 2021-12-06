@@ -1,6 +1,6 @@
 #include "chess.h"
+#include "engine.h"
 #include "io.h"
-#include "sys.h"
 #include "log.h"
 #include "search.h"
 #include "commands.h"

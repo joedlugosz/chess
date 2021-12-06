@@ -3,26 +3,12 @@
  *
  *  Program entry point and user interface.
  *
- *  Features:
- *   * Console game mode
- *   * XBoard mode supporting most of v2 protocol
- *   * Extra debugging commands
- *
- *  Limitations:
- *   * SIGINT and SIGTERM are ignored
- *
- *  Revisions:
- *   0.1  09/04/16  Current
- *   4.1  18/02/18  Minor changes due to Windows support
- *   4.2  19/02/18  Refactoring
- *   5.0  17/02/19  Simplified file structure
  */
 
-//#include "language.h"
 #include "commands.h"
 #include "chess.h"
+#include "engine.h"
 #include "search.h"
-#include "sys.h"
 #include "os.h"
 #include "io.h"
 #include "log.h"
@@ -33,12 +19,14 @@
 #include <stdlib.h>
 #include <signal.h>
 
+enum { POS_BUF_SIZE = 3, 
+       MOVE_BUF_SIZE = 10 };
+
 log_s xboard_log = { .new_every = NE_SESSION };
 log_s error_log = { .new_every = NE_SESSION };
 
 static const option_s options[] = {
   { "New XBoard log",   COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo },
-//  { "Search depth",   SPIN_OPT,  &search_depth, 0, SEARCH_DEPTH_MAX, 0 },
 };
 const options_s engine_options = { 
   sizeof(options)/sizeof(options[0]), options 
