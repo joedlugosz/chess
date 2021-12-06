@@ -12,7 +12,9 @@
 #include "lowlevel.h"
 #include "board.h"
 #include "log.h"
+
 #include <stdint.h>
+#include <string.h>
 
 typedef enum {
   NO_POS = -1,

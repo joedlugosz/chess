@@ -4,6 +4,8 @@
 #include "chess.h"
 #include "board.h"
 
+#include <time.h>
+
 typedef struct engine_s_ {
   enum {
     ENGINE_PLAYING_AS_WHITE = WHITE,

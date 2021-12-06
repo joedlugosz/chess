@@ -13,9 +13,9 @@
 #define ORDER_BINARY 0
 
 /* Includes */
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
+//#include <stdio.h>
+//#include <time.h>
+//#include <string.h>
 
 /* 
  *  Basic definitions 
@@ -25,50 +25,23 @@ typedef enum player_e_ {
   WHITE = 0, BLACK, N_PLAYERS
 } player_e;
 
-typedef unsigned long long plane_t;
+extern const char player_text[N_PLAYERS][6];
 
 
-enum {
+//enum {
   /* TODO: Is there a rule about this? */
-  GAME_MOVES_MAX = 200,
-};
+//  GAME_MOVES_MAX = 200,
+//};
 
 /* */
+typedef unsigned long long plane_t;
 typedef unsigned long long hash_t;
-/* Game status */
 typedef unsigned char status_t;
 //typedef int score_t;
 
 //#include "lowlevel.h"
+/* Game status */
 
-
-
-/* Game */
-
-
-/* Evaluation */
-
-/* Searching */
-/*
-
-*/
-
-/*
- * Functions 
- */
-
-/* game.c */
-//pos_t random_pos(void);
-
-/* search.c */
-/* eval.c */
-
-/* log.c */
-
-extern const char player_text[N_PLAYERS][6];
-
-//void xboard_thought(FILE *f, int depth, score_t score, clock_t time, int nodes);
-//void debug_thought(FILE *f, search_s *ctx, int depth, score_t score, score_t alpha, score_t beta);
 
 
 #endif /* CHESS_H */

@@ -23,13 +23,15 @@
 #include "os.h"
 #include "options.h"
 #include "log.h"
-#include <sys/types.h>
-//#include <unistd.h>
+
+#include <errno.h>
 #include <inttypes.h>
-#include <time.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
+#include <time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifndef LOG_DIR
 # define LOG_DIR ""

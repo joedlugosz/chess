@@ -1,21 +1,14 @@
 /*
- *
  *  Searching - Negamax Alpha-Beta
- *  Quiescence search
- *
- *  3.x           - Originals
- *  4.2           - Search entry point no longer changes to_move, handled by ui.c
- *  4.3           - Rationalised search functions
- *  4.4           - Common functions moved to search.c
- *  5.0  02/2019  - Moved back into one file, other search techniqes superseded
- *                  Cutoff stats
- *                  Changed default search depth
+ *              Quiescence search
  */
 
-#include "search.h"
 #include "movegen.h"
 #include "history.h"
 #include "io.h"
+#include "search.h"
+
+#include <time.h>
 
 int search_depth = 6;
 int search_best = 5;
@@ -26,11 +19,10 @@ log_s think_log = {
   .new_every = NE_MOVE
 };
 
+/* Options */
 enum {
   N_SEARCH_OPTS = 4
 };
-
-/* Options */
 static const option_s options[] = {
   { "Boundary score", INT_OPT,   &boundary,     0, 2000000,          0 },
   { "Show thinking",  BOOL_OPT,  &show,         0, 0,                0 },
@@ -87,7 +79,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
       piece.  If this is better than the opponent's beta, it causes a 
       cutoff.  Doing nothing may also be better than the supplied alpha.
       If there are no possible captures, this is equivalent to calling 
-      eval() from search().*/
+      evaluate() from search().*/
     score_t standing_pat = evaluate(state);
     if(standing_pat >= beta) return beta;
     if(standing_pat > alpha) alpha = standing_pat;
