@@ -44,6 +44,9 @@ const option_s _eval_opts[N_EVAL_OPTS] = {
 };
 const options_s eval_opts = { N_EVAL_OPTS, _eval_opts };
 
+/*
+ *  Functions
+ */
 
 /* Evaluate one player's pieces */
 static inline score_t evaluate_player(state_s *state, player_e player)

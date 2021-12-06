@@ -1,5 +1,5 @@
 /*
- *  Debug logging functions
+ *  Debug logging
  */
 
 #include "compiler.h"

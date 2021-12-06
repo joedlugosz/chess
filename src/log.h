@@ -1,3 +1,7 @@
+/*
+ *  Debug logging
+ */
+
 #ifndef LOG_H
 #define LOG_H
 

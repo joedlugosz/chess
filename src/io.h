@@ -1,3 +1,7 @@
+/*
+ *   Text IO formatting and parsing
+ */
+
 #ifndef IO_H
 #define IO_H
 

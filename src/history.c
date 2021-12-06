@@ -1,3 +1,7 @@
+/*
+ *   Move history
+ */
+
 #include "history.h"
 #include "search.h"
 

@@ -1,7 +1,5 @@
 /*
- *  game.c
- *
- *  Definition of the game state and FIDE rules.
+ *  Game state
  */
 
 #include "state.h"

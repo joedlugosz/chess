@@ -24,7 +24,7 @@ static const struct castle_rights_entry
   { 'q', BLACK_QUEENSIDE }
 };
 
-/* Loads a board state given in FEN, into state */
+/* Load a board state given in FEN, into state */
 int load_fen( state_s *state, 
               const char *placement_text, 
               const char *active_player_text,
@@ -72,7 +72,6 @@ int load_fen( state_s *state,
           break;
         }
       }
-      /* Unrecognised characters */
       if(piece == N_PLANES) {
 	      printf("FEN: Unrecognised piece\n");
 	      goto error;
@@ -84,14 +83,12 @@ int load_fen( state_s *state,
       }
     }
   
-    /* Too much input */
     if(file > 8 || rank < 0) {
       printf("FEN: Too much board input\n");
 	    goto error;
 	  }
     ptr++;
   }
-  /* Not enough input */
   if(rank > 0) {
     printf("FEN: Not enough board input\n");
     goto error;

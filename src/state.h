@@ -1,12 +1,11 @@
 /*
- *  Definition of the game state and FIDE rules.
+ *  Game state
  */
 
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef STATE_H
+#define STATE_H
 
 #include "lowlevel.h"
-#include "state.h"
 #include "log.h"
 
 #include <stdint.h>
@@ -160,4 +159,4 @@ static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
   }
   return 0;
 }
-#endif /* BOARD_H */
+#endif /* STATE_H */

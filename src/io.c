@@ -1,5 +1,5 @@
 /*
- *   4.1 Windows supported
+ *   Text IO formatting and parsing
  */
 
 #include "compiler.h"

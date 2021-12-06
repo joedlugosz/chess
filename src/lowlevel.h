@@ -1,3 +1,7 @@
+/*
+ *   Low-level bit functions
+ */
+
 #ifndef LOWLEVEL_H
 #define LOWLEVEL_H
 

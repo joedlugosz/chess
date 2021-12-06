@@ -1,10 +1,5 @@
 /*
- *   movegen.c
- *
- *   Move generation, sorting, and perft
- *
- *   5.0              Original
- *   5.1   24/02/2019 En passant
+ *   Move list generation, sorting, and perft
  */
 
 #include "movegen.h"

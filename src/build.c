@@ -1,5 +1,5 @@
 /*
- * 4.1  18/02/18  New 
+ *  Build information
  */
 
 #include "compiler.h"
