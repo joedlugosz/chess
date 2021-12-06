@@ -319,6 +319,70 @@ int check_legality(const struct position *position, const struct move *move) {
   return 0;
 }
 
+void unmake_move(struct position *position, struct move *move,
+                 struct unmake *unmake) {
+  ASSERT(is_valid_pos(move->from));
+  ASSERT(is_valid_pos(move->to));
+  ASSERT(move->from != move->to);
+
+  position->castling_rights = unmake->castling_rights;
+  position->en_passant = unmake->en_passant;
+
+  uint8_t moving_piece = position->piece_at[move->to];
+  ASSERT(piece_player[moving_piece] == position->turn);
+  int8_t moving_index = position->index_at[move->to];
+
+  /* Promotion */
+  if (move->promotion > PAWN) {
+    remove_piece(position, move->to);
+    moving_piece -= moving_piece - move->promotion + PAWN;
+    add_piece(position, move->to, moving_piece, moving_index);
+  }
+
+  /* Moving */
+  remove_piece(position, move->to);
+  add_piece(position, move->from, moving_piece, moving_index);
+
+  /* Taking */
+  if (unmake->victim_piece != EMPTY) {
+    if (move->to == unmake->en_passant) {
+      if (position->turn == WHITE) {
+        add_piece(position, move->to + 8, unmake->victim_piece,
+                  unmake->victim_index);
+      } else {
+        add_piece(position, move->to - 8, unmake->victim_piece,
+                  unmake->victim_index);
+      }
+    } else {
+      add_piece(position, move->to, unmake->victim_piece, unmake->victim_index);
+    }
+  }
+
+  /* Castling */
+  if (piece_type[moving_piece] == KING) {
+    if (move->from == move->to - 2) {
+      do_rook_castling_move(position, move->to - 1, move->to + 1);
+    } else if (move->from == move->to + 2) {
+      do_rook_castling_move(position, move->to + 1, move->to - 2);
+    }
+  }
+
+  position->check[WHITE] = unmake->check[WHITE];
+  position->check[BLACK] = unmake->check[BLACK];
+  /* Calculate moves for all pieces */
+  calculate_moves(position);
+
+  /* Check testing - TODO */
+  for (enum player player = 0; player < N_PLAYERS; player++) {
+    int king_pos = mask2pos(position->a[KING + player * N_PIECE_T]);
+    if (get_attacks(position, king_pos, opponent[player])) {
+      position->check[player] = 1;
+    } else {
+      position->check[player] = 0;
+    }
+  }
+}
+
 /* Setup `position` using the supplied information.  This is used by
  * `reset_board` and `load_fen` */
 void setup_board(struct position *position, const enum piece *pieces,
