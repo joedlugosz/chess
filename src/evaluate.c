@@ -4,7 +4,7 @@
 
 #include "state.h"
 #include "log.h"
-#include "eval.h"
+#include "evaluate.h"
 
 #include <stdlib.h>
 #include <limits.h>

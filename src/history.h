@@ -5,7 +5,7 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
-#include "eval.h"
+#include "evaluate.h"
 
 struct search_context_s_;
 

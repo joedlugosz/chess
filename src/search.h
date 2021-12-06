@@ -8,7 +8,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include "eval.h"
+#include "evaluate.h"
 #include "log.h"
 
 typedef struct notation_s_

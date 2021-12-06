@@ -12,7 +12,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-MODULES		= build commands eval fen history io log moves movegen options search state ui
+MODULES		= build commands evaluate fen history io log moves movegen options search state ui
 
 #	Build tools
 TOOLCHAIN	= 
