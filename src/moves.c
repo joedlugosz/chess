@@ -4,6 +4,7 @@
 
 #include "state.h"
 #include "log.h"
+#include "io.h"
 
 typedef unsigned char rank_t;
 
@@ -204,8 +205,10 @@ plane_t get_attacks(state_s *state, pos_t target, player_e attacking)
   plane_t attacks = 0;
   plane_t target_mask = pos2mask[target];
   int base = attacking * N_PIECE_T;
-  /* Check not trying to attack own piece */
-  ASSERT(piece_player[(int)state->piece_at[target]] != attacking);
+  /* Check player is not trying to attack own piece (checking an empty square is ok because
+   * it needs to be done for castling) */
+  ASSERT(state->piece_at[target] == EMPTY ||
+    piece_player[(int)state->piece_at[target]] != attacking);
   /* Note - viewed as if the non-attacking player is attacking */
   attacks = pawn_takes[opponent[attacking]][target] & state->a[base + PAWN];
   attacks |= knight_moves[target] & state->a[base + KNIGHT];
