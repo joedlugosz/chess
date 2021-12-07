@@ -129,7 +129,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   return alpha;
 }
 
-void do_search(int depth, state_s *state, search_result_s *res)
+void search(int depth, state_s *state, search_result_s *res)
 {
   search_job_s job;
   memset(&job, 0, sizeof(job));
