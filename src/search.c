@@ -35,41 +35,41 @@ const options_s search_opts = {
  *  Thought Printing
  */
 /* Thoughts shown by XBoard */
-void xboard_thought(FILE *f, search_context_s *ctx, int depth, score_t score, clock_t time, int nodes)
+void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes)
 {
   fprintf(f, "\n%2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes); 
-  print_thought_moves(f, depth, ctx->search_history);
+  print_thought_moves(f, depth, job->search_history);
 }
 /* Thought logging stuff */
 #ifndef LOGGING
 # define LOG_THOUGHT(c, d, s, a, b)
 #else
 # define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
-void debug_thought(FILE *f, search_context_s *ctx, 
+void debug_thought(FILE *f, search_job_s *job,
   int depth, score_t score, score_t alpha, score_t beta)
 {
-  fprintf(f, "\n%2d %10d ", depth, ctx->n_searched);
+  fprintf(f, "\n%2d %10d ", depth, job->result.n_searched);
   if(alpha > -100000) fprintf(f, "%7d ", alpha); 
   else                fprintf(f, "     -B "); 
   if(beta  <  100000) fprintf(f, "%7d ", beta); 
   else                fprintf(f, "     +B "); 
-  print_thought_moves(f, depth, ctx->search_history);
+  print_thought_moves(f, depth, job->search_history);
 }
 
-void log_thought(log_s *log, search_context_s *ctx, 
+void log_thought(log_s *log, search_job_s *job, 
   int depth, score_t score, score_t alpha, score_t beta)
 {
   if(log->logging) {
     open_log(log);
-    debug_thought(log->file, ctx, depth, score/10, alpha/10, beta/10);
+    debug_thought(log->file, job, depth, score/10, alpha/10, beta/10);
     close_log(log);
   }
 }
 #endif
 
-static score_t search_ply(search_context_s *ctx, state_s *state, int depth, score_t alpha, score_t beta)
+static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha, score_t beta)
 {
-  if(ctx->halt) return 0;
+  if(job->halt) return 0;
 
   ASSERT(depth < SEARCH_DEPTH_MAX);
   if(depth > search_depth) {
@@ -94,7 +94,7 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     if(n_moves == 0) 
       return evaluate(state);
   }
-  ctx->n_possible += n_moves;
+  job->result.n_possible += n_moves;
   while(list_entry) {
     move_s *move = &list_entry->move;
     list_entry = list_entry->next;
@@ -105,36 +105,36 @@ static score_t search_ply(search_context_s *ctx, state_s *state, int depth, scor
     if(in_check(&next_state)) {
       continue;
     }
-    ctx->n_searched++;
+    job->result.n_searched++;
     change_player(&next_state);
-    score_t score = -search_ply(ctx, &next_state, depth + 1, -beta, -alpha);
-    write_move_history(ctx, depth, move, state->to_move, score);
+    score_t score = -search_ply(job, &next_state, depth + 1, -beta, -alpha);
+    write_move_history(job, depth, move, state->to_move, score);
     /* Alpha update - best move found */
     if(score > alpha) {
       alpha = score;
-      /* Record the move if found at the top level */
+      /* Update the chosen move if found at the top level */
       if(depth == 0) {
-        memcpy(ctx->best_move, move, sizeof(*ctx->best_move));
+        job->result.score = score;
+        memcpy(&job->result.move, move, sizeof(job->result.move));
       }
     }
     /* Beta cutoff */
     if(score >= beta) {
-      LOG_THOUGHT(ctx, depth, score, alpha, beta);
-      ctx->n_beta++;
+      LOG_THOUGHT(job, depth, score, alpha, beta);
+      job->result.n_beta++;
       return beta;
     }
-    LOG_THOUGHT(ctx, depth, score, alpha, beta);
+    LOG_THOUGHT(job, depth, score, alpha, beta);
   }
   return alpha;
 }
 
 void do_search(int depth, state_s *state, search_result_s *res)
 {
-  search_context_s search;
-  memset(&search, 0, sizeof(search));
-  search.horizon_depth = depth;
-  search.best_move = &res->best_move;
-  res->score = search_ply(&search, state, 0, -boundary, boundary);
-  res->n_searched = search.n_searched;
-  res->cutoff = (double)search.n_searched / (double)search.n_possible * 100.0f;
+  search_job_s job;
+  memset(&job, 0, sizeof(job));
+  job.depth = depth;
+  search_ply(&job, state, 0, -boundary, boundary);
+  memcpy(res, &job.result, sizeof(*res));
+  res->cutoff = (double)res->n_searched / (double)res->n_possible * 100.0;
 }

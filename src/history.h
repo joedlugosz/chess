@@ -7,9 +7,9 @@
 
 #include "evaluate.h"
 
-struct search_context_s_;
+struct search_job_s_;
 
-void write_move_history(struct search_context_s_ *, int, move_s *, player_e, score_t);
-int is_repeated_move(struct search_context_s_ *, int, move_s *);
+void write_move_history(struct search_job_s_ *, int, move_s *, player_e, score_t);
+int is_repeated_move(struct search_job_s_ *, int, move_s *);
 
 #endif /* HISTORY_H */

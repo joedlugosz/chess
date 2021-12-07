@@ -30,8 +30,9 @@ typedef struct search_result_s_ {
   score_t score;
   int n_searched;
   int n_possible;
+  int n_beta;       /* Number of beta cutoffs */ 
   double cutoff;
-  move_s best_move;
+  move_s move;
 } search_result_s;
 
 enum {
@@ -40,22 +41,18 @@ enum {
   N_MOVES = 218
 };
 
-typedef struct search_context_s_ {
+typedef struct search_job_s_ {
   /* Parameters */
-  int horizon_depth; /* Search depth before quiescence */
-  int halt;          /* Halt search */
+  int depth;   /* Search depth before quiescence */
+  int halt;    /* Halt search */
   /* State */
   notation_s search_history[SEARCH_DEPTH_MAX];
   notation_s repeat_history[REPEAT_HISTORY_SIZE];
-  /* Results */
-  move_s *best_move;
-  score_t score;    /* Score of chosen move */
-  int n_searched;   /* Number of nodes searched */
-  int n_possible;
-  int n_beta;       /* Number of beta cutoffs */ 
   int n_ai_moves;
-} search_context_s;
+  /* Results */
+  search_result_s result;
+} search_job_s;
 
-void do_search(int, state_s *, search_result_s *);
+void search(int, state_s *, search_result_s *);
 
 #endif // SEARCH_H

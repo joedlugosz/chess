@@ -129,7 +129,7 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];  
-  format_move(buf, &result->best_move, engine->xboard_mode);
+  format_move(buf, &result->move, engine->xboard_mode);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   
@@ -228,13 +228,13 @@ static inline void do_ai_move(engine_s *engine)
   start_move_log(engine);
 
   search_result_s result;
-  do_search(engine->depth, &engine->game, &result);
+  search(engine->depth, &engine->game, &result);
 
   int resign = 0;   
 
   if(engine->resign_delayed) {
     resign = 1;
-  } else if(result.best_move.from == NO_POS) {
+  } else if(result.move.from == NO_POS) {
     if(engine->game.check) {
       /* Checkmate */
       resign = 1;
@@ -252,7 +252,7 @@ static inline void do_ai_move(engine_s *engine)
     return;
   }
   
-  make_move(&engine->game, &result.best_move);
+  make_move(&engine->game, &result.move);
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
