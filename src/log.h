@@ -5,6 +5,9 @@
 #ifndef LOG_H
 #define LOG_H
 
+#define YES 1
+#define NO 0
+
 #include "options.h"
 #include <stdio.h>
 
