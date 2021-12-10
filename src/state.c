@@ -76,7 +76,6 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
 plane_t pos2mask[N_POS];
 
-
 /*
  *  Functions 
  */
