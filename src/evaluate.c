@@ -62,7 +62,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
     score += piece_weights[i] * pop_count(state->a[i + pt_first]);
   }
   /* Mobility - for each piece count the number of moves */
-  pieces = state->occ_a[player];
+  pieces = state->player_a[player];
   while(pieces) {
     pos_t pos = mask2pos(next_bit_from(&pieces));
     score += mobility * pop_count(get_moves(state, pos));

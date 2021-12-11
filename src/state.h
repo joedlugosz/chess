@@ -141,10 +141,10 @@ static inline bitboard_t get_moves(state_s *state, pos_t pos) {
   return state->moves[(int)state->index_at[pos]];
 }
 static inline bitboard_t get_my_pieces(state_s *state) {
-  return state->occ_a[state->to_move];
+  return state->player_a[state->to_move];
 }
 static inline bitboard_t get_opponents_pieces(state_s *state) {
-  return state->occ_a[state->to_move];
+  return state->player_a[state->to_move];
 }
 static inline int in_check(state_s *state) {
   return state->check[state->to_move];

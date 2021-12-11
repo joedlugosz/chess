@@ -258,9 +258,9 @@ void calculate_moves(state_s *state)
         /* Apply block to pawn advances */
         moves = pawn_advances[player][pos] & ~block;
         /* Add actual taking moves */
-        moves |= pawn_takes[player][pos] & (state->occ_a[opponent[player]] | state->en_passant);
+        moves |= pawn_takes[player][pos] & (state->player_a[opponent[player]] | state->en_passant);
         /* Claim for pawns is only taking moves */
-        state->claim[player] |= pawn_takes[player][pos] & ~state->occ_a[player];
+        state->claim[player] |= pawn_takes[player][pos] & ~state->player_a[player];
       }
       break;
     case ROOK:
@@ -284,7 +284,7 @@ void calculate_moves(state_s *state)
       break;
     }
     /* You can't take your own piece */
-    moves &= ~state->occ_a[player];
+    moves &= ~state->player_a[player];
       
     state->moves[index] = moves;
     if(piece_type[piece] != PAWN) {
@@ -304,7 +304,7 @@ void calculate_moves(state_s *state)
     player_e player = piece_player[piece];
     bitboard_t moves = get_king_moves(state, state->piece_pos[index], player);
     /* You can't take your own piece */
-    moves &= ~state->occ_a[player];
+    moves &= ~state->player_a[player];
     state->moves[index] = moves;
     state->claim[player] |= moves;
   }
