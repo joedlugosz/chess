@@ -1,5 +1,5 @@
 # Project output name
-PROJNAME	= 5.0-movegen
+PROJNAME	= chess
 
 # Project directory structure
 SRCDIR		= ./src/
@@ -102,17 +102,22 @@ $(DBGOBJDIR) $(RELOBJDIR) $(PRFOBJDIR) $(OUTDIR):
 	$(MKDIR) $@
 
 # Build rules
+# Release
 $(RELOUTPATH): $(RELOBJPATHS) 
 	$(LD) -o $@ $(RELOBJPATHS) $(RELLFLAGS)
+$(RELOBJDIR)info.o: $(SRCDIR)info.c $(SRCDIR)version.h
+	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -o $@ $<
 $(RELOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -o $@ $<
-# Output
+# Debug
 $(DBGOUTPATH): $(DBGOBJPATHS) 
 	$(LD) -o $@ $(DBGOBJPATHS) $(DBGLFLAGS)
 $(DBGOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(DBGCFLAGS) $(BUILDFLAGS) -o $@ $<
-# Output
+# Profiler
 $(PRFOUTPATH): $(PRFOBJPATHS) 
 	$(LD) -o $@ $(PRFOBJPATHS) $(PRFLFLAGS)
 $(PRFOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(PRFCFLAGS) $(BUILDFLAGS) -o $@ $< >> $(@:.o=.lst)
+$(SRCDIR)version.h:
+	./version.sh $@
