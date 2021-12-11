@@ -83,9 +83,9 @@ static inline int is_in_normal_play(engine_s *engine) {
 static inline void print_statistics(engine_s *engine, search_result_s *result) {
   if(!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
-    printf("%d : %0.2lf sec", evaluate(&engine->game)/10, time);
+    printf("\n\n%d : %0.2lf sec", evaluate(&engine->game)/10, time);
     if(ai_turn(engine) && result) {
-      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", result->n_searched,
+      printf(" : %d nodes : %0.1lf%% cutoff %0.2lfk node/s", result->n_searched,
 	      result->cutoff, (double)result->n_searched / (time * 1000.0));
     }
     printf("\n");
@@ -136,9 +136,9 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
   if(engine->xboard_mode) {
     printf("move %s\n", buf);
   } else {
+    print_statistics(engine, result);
     print_prompt(engine);
     printf("%s\n", buf);
-    print_statistics(engine, result);
     print_game_state(engine);
   }
 }
