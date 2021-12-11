@@ -136,7 +136,8 @@ void search(int depth, state_s *state, search_result_s *res)
   search_job_s job;
   memset(&job, 0, sizeof(job));
   job.depth = depth;
+  job.start_time = clock();
   search_ply(&job, state, 0, -boundary, boundary);
   memcpy(res, &job.result, sizeof(*res));
-  res->cutoff = (double)res->n_searched / (double)res->n_possible * 100.0;
+  res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
 }
