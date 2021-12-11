@@ -44,6 +44,7 @@ int load_fen( state_s *state,
   memset(board, EMPTY, sizeof(board));
   memset(count, 0, sizeof(count));
 
+  /* Placement */
   error_text = placement_text;
   while(*ptr) {
     if(*ptr == '/') {
@@ -94,6 +95,7 @@ int load_fen( state_s *state,
     goto error;
   }
   
+  /* Turn */
   player_e turn;
   error_text = active_player_text;
   if(active_player_text[0] == 'w' && active_player_text[1] == 0) {
@@ -105,6 +107,7 @@ int load_fen( state_s *state,
     goto error;
   }
   
+  /* Castling rights */
   ptr = castling_text;
   error_text = castling_text;
   bitboard_t castling_rights = 0;
@@ -121,6 +124,7 @@ int load_fen( state_s *state,
     goto error;
   }
 
+  /* En passant */
   ptr = en_passant_text;
   bitboard_t en_passant;
   if(*ptr == '-') {
@@ -133,17 +137,22 @@ int load_fen( state_s *state,
     }
     en_passant = square2bit[ep_square];
   }
+
   /* Success - write the new positions to state */
   setup_board(state, board, turn, castling_rights, en_passant);
   return 0;
+
+  /* Input error - display location */
  error:
   printf("\nFEN input: %s", error_text);
   printf("\n         : %*c^\n", (int)(ptr-error_text), ' ');
   return 1;
 }
 
+/* Format a FEN string from a state */
 int get_fen(const state_s *state, char *out, size_t outsize)
 {
+  /* Placement */
   int empty_file_count = 0;
   char *ptr = out;
   for(int rank = 7; rank >= 0; rank--) {
@@ -173,7 +182,7 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   }
   *ptr++ = ' ';
 
-  /* Moving player */
+  /* Turn */
   *ptr++ = (state->turn == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
   
