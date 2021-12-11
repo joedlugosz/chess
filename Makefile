@@ -27,8 +27,8 @@ INCFLAGS	= -I$(INCDIR)
 CFLAGS  	= -c -std=c99 -Wfatal-errors -Wall -Werror
 LFLAGS  	= -lrt
 #	Configuration-specific
-RELCFLAGS	= -O3 -msse4 -DLOGGING=NO
-RELLFLAGS	=
+RELCFLAGS	= -g -O3 -msse4 -DLOGGING=NO
+RELLFLAGS	= -g
 DBGCFLAGS	= -g -O0 -DLOGGING=YES
 DBGLFLAGS	= -rdynamic
 PRFCFLAGS	= -pg -g -Wa,-adhln $(RELCFLAGS)
