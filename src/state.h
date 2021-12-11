@@ -20,7 +20,7 @@ extern const char player_text[N_PLAYERS][6];
 typedef unsigned char status_t;
 
 /* Bitboard */
-typedef unsigned long long plane_t;
+typedef unsigned long long bitboard_t;
 
 /* Board position */
 typedef enum {
@@ -72,20 +72,20 @@ enum {
    diagonal schemes. */
 typedef struct state_s_ {
   /* The stacks */
-  plane_t a[N_PLANES];       /* -  Horizontal    */
-  plane_t b[N_PLANES];       /* |  Vertical      */
-  plane_t c[N_PLANES];       /* /  Diagonal      */
-  plane_t d[N_PLANES];       /* \  Diagonal      */
-  plane_t occ_a[N_PLAYERS];  /* Set of each players pieces */
-  plane_t occ_b[N_PLAYERS];  /* Set of each players pieces */
-  plane_t occ_c[N_PLAYERS];  /* Set of each players pieces */
-  plane_t occ_d[N_PLAYERS];  /* Set of each players pieces */
-  plane_t total_a;           /* Total occupancy */
-  plane_t total_b;           /* Total occupancy */
-  plane_t total_c;           /* Total occupancy */
-  plane_t total_d;           /* Total occupancy */
-  plane_t moves[N_PIECES];   /* Set of squares each piece can move to */
-  plane_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
+  bitboard_t a[N_PLANES];       /* -  Horizontal    */
+  bitboard_t b[N_PLANES];       /* |  Vertical      */
+  bitboard_t c[N_PLANES];       /* /  Diagonal      */
+  bitboard_t d[N_PLANES];       /* \  Diagonal      */
+  bitboard_t occ_a[N_PLAYERS];  /* Set of each players pieces */
+  bitboard_t occ_b[N_PLAYERS];  /* Set of each players pieces */
+  bitboard_t occ_c[N_PLAYERS];  /* Set of each players pieces */
+  bitboard_t occ_d[N_PLAYERS];  /* Set of each players pieces */
+  bitboard_t total_a;           /* Total occupancy */
+  bitboard_t total_b;           /* Total occupancy */
+  bitboard_t total_c;           /* Total occupancy */
+  bitboard_t total_d;           /* Total occupancy */
+  bitboard_t moves[N_PIECES];   /* Set of squares each piece can move to */
+  bitboard_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
   pos_t piece_pos[N_PIECES];       /* Board position of each piece */
   int8_t piece_at[N_POS];  /* Piece index at board position */
   int8_t index_at[N_POS];  /* Piece index at board position */
@@ -93,7 +93,7 @@ typedef struct state_s_ {
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
-  plane_t en_passant;        /* En-passant squares */
+  bitboard_t en_passant;        /* En-passant squares */
 } state_s;
 
 /* move_s holds the game state as well as info about moves */
@@ -114,12 +114,12 @@ typedef struct move_s_ {
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *, const int *, player_e, castle_rights_t, plane_t);
+void setup_board(state_s *, const int *, player_e, castle_rights_t, bitboard_t);
 
-plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
+bitboard_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void make_move(state_s *state, move_s *move);
 
-extern plane_t *pos2mask;
+extern bitboard_t *pos2mask;
 extern const piece_e piece_type[N_PLANES];
 extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
@@ -127,7 +127,7 @@ extern const player_e opponent[N_PLAYERS];
 static inline int is_valid_pos(pos_t pos) {
   return (pos >= 0 && pos < N_POS);
 }
-static inline pos_t mask2pos(plane_t mask) {
+static inline pos_t mask2pos(bitboard_t mask) {
   ASSERT(is_valid_pos((pos_t)ctz(mask)));
   return (pos_t)ctz(mask);
 }
@@ -137,13 +137,13 @@ static inline void clear_state(state_s *state) {
 static inline void copy_state(state_s *dst, const state_s *src) {
   memcpy(dst, src, sizeof(state_s));
 }
-static inline plane_t get_moves(state_s *state, pos_t pos) {
+static inline bitboard_t get_moves(state_s *state, pos_t pos) {
   return state->moves[(int)state->index_at[pos]];
 }
-static inline plane_t get_my_pieces(state_s *state) {
+static inline bitboard_t get_my_pieces(state_s *state) {
   return state->occ_a[state->to_move];
 }
-static inline plane_t get_opponents_pieces(state_s *state) {
+static inline bitboard_t get_opponents_pieces(state_s *state) {
   return state->occ_a[state->to_move];
 }
 static inline int in_check(state_s *state) {

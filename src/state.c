@@ -32,7 +32,7 @@ pos_t pos_a2d[N_POS];
 /* Castling */
 const pos_t rook_start_pos[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
 const pos_t king_start_pos[N_PLAYERS] = { 4, 60 };
-const plane_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
+const bitboard_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 
 const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE] = {
   { WHITE_QUEENSIDE, WHITE_KINGSIDE, WHITE_BOTHSIDES },
@@ -74,8 +74,8 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 };
 
 const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
-plane_t _pos2mask[N_POS+1];
-plane_t *pos2mask;
+bitboard_t _pos2mask[N_POS+1];
+bitboard_t *pos2mask;
 
 /*
  *  Functions 
@@ -87,10 +87,10 @@ static inline void add_piece(state_s *state, pos_t pos, piece_e piece, int index
   ASSERT(index != EMPTY);
   ASSERT(state->piece_at[pos] == EMPTY);
   piece_e player = piece_player[piece];
-  plane_t a_mask = pos2mask[pos];
-  plane_t b_mask = pos2mask[pos_a2b[pos]];
-  plane_t c_mask = pos2mask[pos_a2c[pos]];
-  plane_t d_mask = pos2mask[pos_a2d[pos]];
+  bitboard_t a_mask = pos2mask[pos];
+  bitboard_t b_mask = pos2mask[pos_a2b[pos]];
+  bitboard_t c_mask = pos2mask[pos_a2c[pos]];
+  bitboard_t d_mask = pos2mask[pos_a2d[pos]];
   state->a[piece] |= a_mask;
   state->b[piece] |= b_mask;
   state->c[piece] |= c_mask;
@@ -113,10 +113,10 @@ static inline void remove_piece(state_s *state, pos_t pos)
   ASSERT(state->piece_at[pos] != EMPTY);
   int8_t piece = state->piece_at[pos];
   piece_e player = piece_player[piece];
-  plane_t a_mask = pos2mask[pos];
-  plane_t b_mask = pos2mask[pos_a2b[pos]];
-  plane_t c_mask = pos2mask[pos_a2c[pos]];
-  plane_t d_mask = pos2mask[pos_a2d[pos]];
+  bitboard_t a_mask = pos2mask[pos];
+  bitboard_t b_mask = pos2mask[pos_a2b[pos]];
+  bitboard_t c_mask = pos2mask[pos_a2c[pos]];
+  bitboard_t d_mask = pos2mask[pos_a2d[pos]];
   state->a[piece] &= ~a_mask;
   state->b[piece] &= ~b_mask;
   state->c[piece] &= ~c_mask;
@@ -257,7 +257,7 @@ void make_move(state_s *state, move_s *move)
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const int *pieces, 
-  player_e to_move, castle_rights_t castling_rights, plane_t en_passant)
+  player_e to_move, castle_rights_t castling_rights, bitboard_t en_passant)
 {
   memset(state, 0, sizeof(*state));
   state->to_move = to_move;

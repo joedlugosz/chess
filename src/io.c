@@ -125,7 +125,7 @@ void print_thought_moves(FILE *f, int depth, notation_s moves[])
 /*
  *  Board printing
  */
-void print_board(FILE *f, state_s *state, plane_t mask1, plane_t mask2)
+void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2)
 {
   int rank, file;
   int term;

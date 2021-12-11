@@ -9,8 +9,8 @@
 
 struct notation_s_;
 
-void print_board(FILE *f, state_s *state, plane_t hl1, plane_t hl2);
-void print_plane(FILE *f, plane_t plane, plane_t indicator);
+void print_board(FILE *f, state_s *state, bitboard_t hl1, bitboard_t hl2);
+void print_plane(FILE *f, bitboard_t plane, bitboard_t indicator);
 void print_plane_rank(FILE *f, unsigned char rank, unsigned char indicator);
 void print_thought_moves(FILE *f, int depth, struct notation_s_ *moves);
 const char *get_input(void);

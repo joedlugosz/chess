@@ -13,7 +13,7 @@ enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
 struct castle_rights_entry {
   char c;
-  plane_t mask;
+  bitboard_t mask;
 };
 
 static const struct castle_rights_entry 
@@ -107,7 +107,7 @@ int load_fen( state_s *state,
   
   ptr = castling_text;
   error_text = castling_text;
-  plane_t castling_rights = 0;
+  bitboard_t castling_rights = 0;
   while(*ptr) {
     for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
       if(*ptr == castling_rights_letter[i].c) {
@@ -122,7 +122,7 @@ int load_fen( state_s *state,
   }
 
   ptr = en_passant_text;
-  plane_t en_passant;
+  bitboard_t en_passant;
   if(*ptr == '-') {
     en_passant = 0;
   } else {

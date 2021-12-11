@@ -57,7 +57,7 @@ const pos_t shift_d2a[N_POS] = {
 };
 
 /* Starting positions encoded as A-stack */
-const plane_t starting_a[N_PLANES] = {
+const bitboard_t starting_a[N_PLANES] = {
   /* White
      Black */
   /* Pawns     Rooks        Bishops      Knights      Queen        King       */
@@ -65,9 +65,9 @@ const plane_t starting_a[N_PLANES] = {
   0xffull<<48, 0x81ull<<56, 0x42ull<<56, 0x24ull<<56, 0x08ull<<56, 0x10ull<<56
 };
 
-const plane_t king_castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cull << 56, 0x60ull << 56 } };
-const plane_t rook_castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
-const plane_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
+const bitboard_t king_castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x0cull << 56, 0x60ull << 56 } };
+const bitboard_t rook_castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
+const bitboard_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
 
 extern const pos_t pos_a2b[N_POS];
 extern const pos_t pos_a2c[N_POS];
@@ -78,7 +78,7 @@ extern const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE];
 unsigned int blocking[8][256];
 /* For B,C,D-stacks, masks taking rank occupancy back into a vertical or 
    diagonal in A-plane */
-plane_t occ_b2a[256], occ_c2a[256], occ_d2a[256];
+bitboard_t occ_b2a[256], occ_c2a[256], occ_d2a[256];
 
 /* These are reflections in the vertical axis of their C-pos counterparts 
    which are calculated at run-time */
@@ -86,14 +86,14 @@ rank_t shift_d[N_POS];
 rank_t mask_d[N_POS];
 
 /* Knight and king moves */
-plane_t knight_moves[N_POS], king_moves[N_POS];
+bitboard_t knight_moves[N_POS], king_moves[N_POS];
 /* Pawn advances and takes */
-plane_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
+bitboard_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
 
 /* Returns the valid rook moves for a given position, taking into account 
    blockages by other pieces.  Also returns moves where rooks can take their 
    own side's pieces (these are filtered out elsewhere). */
-plane_t get_rook_moves(state_s *state, pos_t a_pos)
+bitboard_t get_rook_moves(state_s *state, pos_t a_pos)
 {
   /* A-stack */
   /* The shift that is required to move the rank containing pos down to rank zero */
@@ -105,7 +105,7 @@ plane_t get_rook_moves(state_s *state, pos_t a_pos)
   /* Permitted moves within the rank */
   rank_t a_moves = blocking[a_file][a_occ];
   /* A-mask of permitted horizontal moves */
-  plane_t h_mask = (plane_t)a_moves << a_shift;  
+  bitboard_t h_mask = (bitboard_t)a_moves << a_shift;  
   /* B-stack */
   /* B-position */
   int b_pos = pos_a2b[a_pos];
@@ -115,9 +115,9 @@ plane_t get_rook_moves(state_s *state, pos_t a_pos)
   rank_t b_occ = (rank_t)((state->total_b >> b_shift) & 0xfful);
   rank_t b_moves = blocking[b_file][b_occ];
   /* A-mask (note) of permitted vertical moves in file 0 */
-  plane_t b_mask = occ_b2a[b_moves];
+  bitboard_t b_mask = occ_b2a[b_moves];
   /* Shift A-mask to correct file position */
-  plane_t v_mask = b_mask << a_file;
+  bitboard_t v_mask = b_mask << a_file;
   /* Or the horizontal and vertical masks */
   return (h_mask | v_mask); 
 }
@@ -125,7 +125,7 @@ plane_t get_rook_moves(state_s *state, pos_t a_pos)
 /* Returns the valid bishop moves for a given position, taking into account 
    blockages by other pieces.  Also returns moves where bishops can take their
    own side's pieces (these are filtered out elsewhere). */
-plane_t get_bishop_moves(state_s *state, pos_t a_pos)
+bitboard_t get_bishop_moves(state_s *state, pos_t a_pos)
 {
   /* C-pos */
   /* Shift required to shift the rank containing pos down to rank zero */
@@ -138,7 +138,7 @@ plane_t get_bishop_moves(state_s *state, pos_t a_pos)
   /* Permitted moves within the rank */
   rank_t c_moves = blocking[c_file][c_occ] & c_mask;
   /* A-mask of permitted C moves */
-  plane_t c_ret = occ_c2a[c_moves] << shift_c2a[a_pos];
+  bitboard_t c_ret = occ_c2a[c_moves] << shift_c2a[a_pos];
   /* D-pos */
   /* Shift required to shift the rank containing pos down to rank zero */
   int d_shift = shift_d[a_pos];
@@ -150,17 +150,17 @@ plane_t get_bishop_moves(state_s *state, pos_t a_pos)
   /* Permitted moves within the rank */
   rank_t d_moves = blocking[d_file][d_occ] & d_mask;
   /* A-mask of permitted D moves */
-  plane_t d_ret = occ_d2a[d_moves] << shift_d2a[a_pos];
+  bitboard_t d_ret = occ_d2a[d_moves] << shift_d2a[a_pos];
 
   return (c_ret | d_ret); 
 }
 
 /* Returns the valid king moves for a given position, including king 
    destinations for castling if possible */
-plane_t get_king_moves(state_s *state, pos_t from, player_e player)
+bitboard_t get_king_moves(state_s *state, pos_t from, player_e player)
 {
   /* All non-castling king moves minus any that would lead into check */
-  plane_t moves = king_moves[from] & ~state->claim[opponent[player]];
+  bitboard_t moves = king_moves[from] & ~state->claim[opponent[player]];
 
   /* Castling */
   /* There must be some castling rights for this player and the king must not
@@ -172,7 +172,7 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
     return moves;
   }
   /* Get all pieces in the board which might block castling */
-  plane_t all = state->total_a;
+  bitboard_t all = state->total_a;
   for(int side = 0; side < 2; side++) {
     /* Castling rights must exist for this board side */
     if(!(state->castling_rights & castling_rights[player][side])) {
@@ -181,11 +181,11 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
     /* Look for any occupied sqares which would block the rook from
      * sliding, then any squares under attack which would block the king
      * from sliding.  */
-    plane_t blocked = all & rook_castle_slides[player][side];
+    bitboard_t blocked = all & rook_castle_slides[player][side];
     if(!blocked) {
-      plane_t king_slides = king_castle_slides[player][side];
+      bitboard_t king_slides = king_castle_slides[player][side];
       while(king_slides) {
-        plane_t mask = next_bit_from(&king_slides);
+        bitboard_t mask = next_bit_from(&king_slides);
         if(get_attacks(state, mask2pos(mask), opponent[player])) {
           blocked |= mask;
         }
@@ -200,10 +200,10 @@ plane_t get_king_moves(state_s *state, pos_t from, player_e player)
 }
 
 /* Returns the set of all pieces that can attack a given position */
-plane_t get_attacks(state_s *state, pos_t target, player_e attacking)
+bitboard_t get_attacks(state_s *state, pos_t target, player_e attacking)
 {
-  plane_t attacks = 0;
-  plane_t target_mask = pos2mask[target];
+  bitboard_t attacks = 0;
+  bitboard_t target_mask = pos2mask[target];
   int base = attacking * N_PIECE_T;
   /* Check player is not trying to attack own piece (checking an empty square is ok because
    * it needs to be done for castling) */
@@ -213,9 +213,9 @@ plane_t get_attacks(state_s *state, pos_t target, player_e attacking)
   attacks = pawn_takes[opponent[attacking]][target] & state->a[base + PAWN];
   attacks |= knight_moves[target] & state->a[base + KNIGHT];
   attacks |= king_moves[target] & state->a[base + KING];
-  plane_t sliders = state->a[base + ROOK] | state->a[base + BISHOP] | state->a[base + QUEEN];
+  bitboard_t sliders = state->a[base + ROOK] | state->a[base + BISHOP] | state->a[base + QUEEN];
   while(sliders) {
-    plane_t attacker = next_bit_from(&sliders);
+    bitboard_t attacker = next_bit_from(&sliders);
     if(target_mask & state->moves[(int)state->index_at[mask2pos(attacker)]]) attacks |= attacker;
   }
   return attacks;
@@ -239,13 +239,13 @@ void calculate_moves(state_s *state)
     if(piece_type[piece] == KING) 
       continue;
     player_e player = piece_player[piece];
-    plane_t moves;
+    bitboard_t moves;
     /* Get moves for the piece including taking moves for all pieces */
     switch(piece_type[piece]) {	
     case PAWN:
       {
         /* Pawns are blocked from moving ahead by any piece */
-        plane_t block = state->total_a;
+        bitboard_t block = state->total_a;
         /* Special case for double advance to prevent jumping */
         /* Remove the pawn so it does not block itself */
         block &= ~pos2mask[pos];
@@ -302,7 +302,7 @@ void calculate_moves(state_s *state)
     if(piece_type[piece] != KING) 
       continue;
     player_e player = piece_player[piece];
-    plane_t moves = get_king_moves(state, state->piece_pos[index], player);
+    bitboard_t moves = get_king_moves(state, state->piece_pos[index], player);
     /* You can't take your own piece */
     moves &= ~state->occ_a[player];
     state->moves[index] = moves;
@@ -382,7 +382,7 @@ void init_moves(void)
    */
 
   for(pos_t pos = 0; pos < N_POS; pos++) {
-    plane_t pos_mask = pos2mask[pos];
+    bitboard_t pos_mask = pos2mask[pos];
 
     /* Possible knight moves: A-H
      * Possible king moves: I-P
@@ -431,7 +431,7 @@ void init_moves(void)
 
   for(player_e player = 0; player < N_PLAYERS; player++) {
     for(pos_t pos = 0; pos < N_POS; pos++) {
-      plane_t current, advance, jump, take;
+      bitboard_t current, advance, jump, take;
       /* Mask for pawn */
       current = pos2mask[pos];
       advance = current;

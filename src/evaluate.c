@@ -53,7 +53,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
 {
   int score = 0;
   int pt_first;
-  plane_t pieces;
+  bitboard_t pieces;
 
   pt_first = N_PIECE_T * player;
 
