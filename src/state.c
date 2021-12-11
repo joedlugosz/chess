@@ -263,13 +263,9 @@ void setup_board(state_s *state, const int *pieces,
   state->castling_rights = castling_rights;
   state->en_passant = en_passant;
 
-  for(int i = 0; i < N_PIECES; i++) {
-    state->piece_pos[i] = NO_POS;
-  }
-  for(pos_t pos = 0; pos < N_POS; pos++) {
-    state->index_at[pos] = EMPTY;      
-    state->piece_at[pos] = EMPTY;      
-  }
+  memset(state->piece_pos, NO_POS, N_PIECES * sizeof(state->piece_pos[0]));
+  memset(state->index_at, EMPTY, N_POS * sizeof(state->index_at[0]));
+  memset(state->piece_at, EMPTY, N_POS * sizeof(state->piece_at[0]));
   
   /* Iterate through positions */
   int index = 0;
