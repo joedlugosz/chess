@@ -72,25 +72,25 @@ enum {
    diagonal schemes. */
 typedef struct state_s_ {
   /* The stacks */
-  bitboard_t a[N_PLANES];       /* -  Horizontal    */
-  bitboard_t b[N_PLANES];       /* |  Vertical      */
-  bitboard_t c[N_PLANES];       /* /  Diagonal      */
-  bitboard_t d[N_PLANES];       /* \  Diagonal      */
-  bitboard_t occ_a[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t occ_b[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t occ_c[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t occ_d[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t total_a;           /* Total occupancy */
-  bitboard_t total_b;           /* Total occupancy */
-  bitboard_t total_c;           /* Total occupancy */
-  bitboard_t total_d;           /* Total occupancy */
-  bitboard_t moves[N_PIECES];   /* Set of squares each piece can move to */
-  bitboard_t claim[N_PLAYERS];  /* Set of all squares each player can move to */
-  pos_t piece_pos[N_PIECES];       /* Board position of each piece */
-  int8_t piece_at[N_POS];  /* Piece index at board position */
-  int8_t index_at[N_POS];  /* Piece index at board position */
+  bitboard_t a[N_PLANES];           /* -  Horizontal    */
+  bitboard_t b[N_PLANES];           /* |  Vertical      */
+  bitboard_t c[N_PLANES];           /* /  Diagonal      */
+  bitboard_t d[N_PLANES];           /* \  Diagonal      */
+  bitboard_t player_a[N_PLAYERS];   /* Set of each players pieces */
+  bitboard_t player_b[N_PLAYERS];   /* Set of each players pieces */
+  bitboard_t player_c[N_PLAYERS];   /* Set of each players pieces */
+  bitboard_t player_d[N_PLAYERS];   /* Set of each players pieces */
+  bitboard_t total_a;               /* Set of all pieces */
+  bitboard_t total_b;               /* Set of all pieces */
+  bitboard_t total_c;               /* Set of all pieces */
+  bitboard_t total_d;               /* Set of all pieces */
+  bitboard_t moves[N_PIECES];       /* Set of squares each piece can move to */
+  bitboard_t claim[N_PLAYERS];      /* Set of all squares each player can move to */
+  pos_t piece_pos[N_PIECES];        /* Board position of each piece */
+  int8_t piece_at[N_POS];           /* Piece type at board position */
+  int8_t index_at[N_POS];           /* Piece index at board position */
 
-  status_t to_move : 1;      /* Player to move next */
+  status_t turn : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
   bitboard_t en_passant;        /* En-passant squares */
@@ -141,16 +141,16 @@ static inline bitboard_t get_moves(state_s *state, pos_t pos) {
   return state->moves[(int)state->index_at[pos]];
 }
 static inline bitboard_t get_my_pieces(state_s *state) {
-  return state->player_a[state->to_move];
+  return state->player_a[state->turn];
 }
 static inline bitboard_t get_opponents_pieces(state_s *state) {
-  return state->player_a[state->to_move];
+  return state->player_a[state->turn];
 }
 static inline int in_check(state_s *state) {
-  return state->check[state->to_move];
+  return state->check[state->turn];
 }
 static inline void change_player(state_s *state) {
-  state->to_move = opponent[state->to_move];
+  state->turn = opponent[state->turn];
 }
 static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
   if(pos2mask[to] & 0xff000000000000ffull) 

@@ -27,17 +27,17 @@ void ui_force(engine_s *e) {
 }
 void ui_black(engine_s *e) { 
   //e->engine_mode = ENGINE_PLAYING_AS_BLACK;
-  //e->game.to_move = WHITE;
+  //e->game.turn = WHITE;
 }
 void ui_white(engine_s *e) { 
   //e->engine_mode = ENGINE_PLAYING_AS_WHITE; 
-  //e->game.to_move = BLACK;
+  //e->game.turn = BLACK;
 }
-void ui_go(engine_s *e) { 
-  e->mode = e->game.to_move; 
+void ui_go(engine_s *e) {
+  e->mode = e->game.turn; 
 }
-void ui_playother(engine_s *e) { 
-  e->mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.to_move; 
+void ui_playother(engine_s *e) {
+  e->mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.turn;
 }
 void ui_computer(engine_s *e) { }
 
@@ -49,7 +49,7 @@ void ui_new(engine_s *e) {
   e->move_n = 1;
   e->resign_delayed = 0;
   e->waiting = 1;
-  e->game.to_move = WHITE;
+  e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
   reset_board(&e->game);
   START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
@@ -149,7 +149,7 @@ void ui_attacks(engine_s *e) {
   if(no_piece_at_pos(e, target)) {
     return;
   }
-  print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.to_move])); 
+  print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
   
 void ui_moves(engine_s *e) {

@@ -108,7 +108,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     job->result.n_searched++;
     change_player(&next_state);
     score_t score = -search_ply(job, &next_state, depth + 1, -beta, -alpha);
-    write_move_history(job, depth, move, state->to_move, score);
+    write_move_history(job, depth, move, state->turn, score);
     /* Alpha update - best move found */
     if(score > alpha) {
       alpha = score;

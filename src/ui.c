@@ -65,9 +65,9 @@ static inline clock_t get_time(engine_s *engine)
   return engine->elapsed_time;
 }
 
-static inline int ai_to_move(engine_s *engine)
+static inline int ai_turn(engine_s *engine)
 {
-  if(engine->game.to_move != engine->mode) return 0;
+  if(engine->game.turn != engine->mode) return 0;
   else return 1;
 }
 
@@ -84,7 +84,7 @@ static inline void print_statistics(engine_s *engine, search_result_s *result) {
   if(!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("%d : %0.2lf sec", evaluate(&engine->game)/10, time);
-    if(ai_to_move(engine) && result) {
+    if(ai_turn(engine) && result) {
       printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", result->n_searched,
 	      result->cutoff, (double)result->n_searched / (time * 1000.0));
     }
@@ -97,7 +97,7 @@ static inline void print_game_state(engine_s *engine)
   if(!engine->xboard_mode) {
     print_board(stdout, &engine->game, 0, 0);
     if(in_check(&engine->game)) {
-      printf("%s is in check.\n", player_text[engine->game.to_move]);
+      printf("%s is in check.\n", player_text[engine->game.turn]);
     }
   }
 }
@@ -106,8 +106,8 @@ static inline void print_prompt(engine_s *engine)
 {
   if(!engine->xboard_mode) {
     if(engine->mode != ENGINE_FORCE_MODE) {
-      printf("%s %s> ", player_text[engine->game.to_move],
-	     engine->game.to_move == engine->mode ? "(AI) " : "");
+      printf("%s %s> ", player_text[engine->game.turn],
+	     engine->game.turn == engine->mode ? "(AI) " : "");
     } else {
       printf("FORCE > ");
     }
@@ -120,7 +120,7 @@ static inline void print_ai_resign(engine_s *engine)
   if(engine->xboard_mode) {
     printf("resign\n");
   } else {
-    printf("%s resigns.", player_text[engine->game.to_move]);
+    printf("%s resigns.", player_text[engine->game.turn]);
   }
 }
 
@@ -212,7 +212,7 @@ void finished_move(engine_s *engine)
   change_player(&engine->game);
   /* move_n holds number of complete moves, incremented when it is
      white's move */
-  if(engine->game.to_move == WHITE) {
+  if(engine->game.turn == WHITE) {
     engine->move_n++;
   }    
 }
@@ -316,7 +316,7 @@ static inline void get_user_input(engine_s *engine)
 void main_loop(engine_s *engine) 
 {
   while(engine->mode != ENGINE_QUIT) {
-    if(ai_to_move(engine)) {
+    if(ai_turn(engine)) {
       do_ai_move(engine);
     } else {
       get_user_input(engine);

@@ -94,7 +94,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
 score_t evaluate(state_s *state)
 {
   return (evaluate_player(state, WHITE) - evaluate_player(state, BLACK)) 
-    * player_factor[state->to_move];
+    * player_factor[state->turn];
 }
 
 /* Tests */

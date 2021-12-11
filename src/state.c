@@ -171,7 +171,7 @@ void make_move(state_s *state, move_s *move)
   if(victim_piece != EMPTY) {
     ASSERT(piece_type[victim_piece] != KING);
     player_e victim_player = piece_player[victim_piece];
-    ASSERT(victim_player != state->to_move);
+    ASSERT(victim_player != state->turn);
     remove_piece(state, move->to);
     move->result |= CAPTURED;
     /* If a rook has been captured, treat it as moved to prevent castling */
@@ -182,7 +182,7 @@ void make_move(state_s *state, move_s *move)
 
   /* Moving */
   uint8_t moving_piece = state->piece_at[move->from];
-  ASSERT(piece_player[moving_piece] == state->to_move);
+  ASSERT(piece_player[moving_piece] == state->turn);
   int8_t moving_index = state->index_at[move->from];
   remove_piece(state, move->from);
   add_piece(state, move->to, moving_piece, moving_index);
@@ -201,7 +201,7 @@ void make_move(state_s *state, move_s *move)
     clear_king_castling_rights(state, piece_player[moving_piece]);
     break;
   case ROOK:
-    clear_rook_castling_rights(state, move->from, state->to_move);
+    clear_rook_castling_rights(state, move->from, state->turn);
     break;
   case PAWN:
     if(is_promotion_move(state, move->from, move->to)) {
@@ -214,10 +214,10 @@ void make_move(state_s *state, move_s *move)
     /* If pawn has been taken en-passant */
     if(pos2mask[move->to] == state->en_passant) {
       pos_t target_pos = move->to;
-      if(state->to_move == WHITE) target_pos -= 8;
+      if(state->turn == WHITE) target_pos -= 8;
       else target_pos += 8;
       ASSERT(state->piece_at[target_pos] != EMPTY);
-      ASSERT(piece_player[state->piece_at[target_pos]] != state->to_move);
+      ASSERT(piece_player[state->piece_at[target_pos]] != state->turn);
       remove_piece(state, target_pos);
       move->result |= EN_PASSANT | CAPTURED;
     }
@@ -249,7 +249,7 @@ void make_move(state_s *state, move_s *move)
       state->check[player] = 0;
     }
   }
-  if(state->check[state->to_move]) {
+  if(state->check[state->turn]) {
     move->result |= CHECK;
   }
 }
@@ -257,10 +257,10 @@ void make_move(state_s *state, move_s *move)
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const int *pieces, 
-  player_e to_move, castle_rights_t castling_rights, bitboard_t en_passant)
+  player_e turn, castle_rights_t castling_rights, bitboard_t en_passant)
 {
   memset(state, 0, sizeof(*state));
-  state->to_move = to_move;
+  state->turn = turn;
   state->castling_rights = castling_rights;
   state->en_passant = en_passant;
 

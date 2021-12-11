@@ -94,12 +94,12 @@ int load_fen( state_s *state,
     goto error;
   }
   
-  player_e to_move;
+  player_e turn;
   error_text = active_player_text;
   if(active_player_text[0] == 'w' && active_player_text[1] == 0) {
-    to_move = WHITE;
+    turn = WHITE;
   } else if(active_player_text[0] == 'b' && active_player_text[1] == 0) {
-    to_move = BLACK;
+    turn = BLACK;
   } else {
     printf("Unrecognised active player input\n");
     goto error;
@@ -134,7 +134,7 @@ int load_fen( state_s *state,
     en_passant = pos2mask[ep_pos];
   }
   /* Success - write the new positions to state */
-  setup_board(state, board, to_move, castling_rights, en_passant);
+  setup_board(state, board, turn, castling_rights, en_passant);
   return 0;
  error:
   printf("\nFEN input: %s", error_text);
@@ -174,7 +174,7 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   *ptr++ = ' ';
 
   /* Moving player */
-  *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
+  *ptr++ = (state->turn == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
   
   /* Castling rights */

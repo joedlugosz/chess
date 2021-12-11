@@ -6,11 +6,11 @@
 #include "search.h"
 
 void write_move_history(search_job_s *job, int depth, move_s *move,
-  player_e to_move, score_t score)
+  player_e turn, score_t score)
 {
   job->search_history[depth].from = move->from;
   job->search_history[depth].to = move->to;
-  job->search_history[depth].player = to_move;
+  job->search_history[depth].player = turn;
   job->search_history[depth].score = score;
 }
 

@@ -101,11 +101,11 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
 {
   movelist_s *prev = 0;
   int count = 0;
-  bitboard_t victims = state->claim[state->to_move] & get_opponents_pieces(state);
+  bitboard_t victims = state->claim[state->turn] & get_opponents_pieces(state);
   while(victims) {
     bitboard_t to_mask = next_bit_from(&victims);
     pos_t to = mask2pos(to_mask);
-    bitboard_t attackers = get_attacks(state, to, state->to_move);
+    bitboard_t attackers = get_attacks(state, to, state->turn);
     while(attackers) {
       bitboard_t from_mask = next_bit_from(&attackers);
       pos_t from = mask2pos(from_mask);
