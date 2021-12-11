@@ -15,7 +15,7 @@ test_perft() {
     REFERENCE=$1/$1
     DEPTH=$2
     read FEN < $REFERENCE
-    $EXENAME x <<< 'fen '$FEN' getfen perft '$DEPTH' q' > perft.out
+    $EXENAME x <<< 'fen '$FEN' getfen perft '$DEPTH' q' | tee perft.out
     diff perft.out <(head -n `expr $DEPTH + 2` $REFERENCE) > diff.out
     if [ $? -eq 1 ]
     then
@@ -34,7 +34,7 @@ test_perftd() {
     DEPTH=$2
     read FEN < $REFERENCE
     #echo 'fen '$FEN' perftd '$DEPTH' q'
-    $EXENAME x <<< 'fen '$FEN' perftd '$DEPTH' q' > perft.out
+    $EXENAME x <<< 'fen '$FEN' perftd '$DEPTH' q' | tee perft.out
     diff <(sort perft.out) <(sort $1/stockfish$DEPTH) > diff.out 
     if [ $? -eq 1 ]
     then
