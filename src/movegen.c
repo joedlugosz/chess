@@ -131,9 +131,9 @@ void perft(perft_s *data, state_s *state, int depth, moveresult_t result)
     if(result & CAPTURED) {
       data->captures = 1;
     }
-      if(result & EN_PASSANT) {
-	      data->ep_captures = 1;
-      }
+    if(result & EN_PASSANT) {
+      data->ep_captures = 1;
+    }
     
     if(result & CASTLED) data->castles = 1;
     if(result & PROMOTED) data->promotions = 1;

@@ -120,7 +120,6 @@ int accept(void)
   return 0;
 }
 
-
 void ui_fen(engine_s *e) {
   const char *placement = get_input();
   const char *active = get_input();
