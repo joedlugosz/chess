@@ -12,7 +12,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-MODULES		= build commands evaluate fen history io log moves movegen options search state ui
+MODULES		= commands evaluate fen history io info log moves movegen options search state ui
 
 #	Build tools
 TOOLCHAIN	= 
@@ -44,9 +44,8 @@ MODULES		+= posix
 endif
 
 COMPNAME	:= $(shell gcc --version | grep 'gcc')
-TARGETNAME	:= $(shell gcc -dumpmachine)
-BUILDFLAGS	:= -DCOMPILER_NAME="\"$(COMPNAME)\"" -DTARGET_NAME="\"$(TARGETNAME)\"" \
-			-DOS_NAME="\"$(OS)\"" -DPROGRAM_NAME="\"$(PROJNAME)\"" \
+BUILDFLAGS	:= -DCOMPILER_NAME="\"$(COMPNAME)\""  \
+		  -DPROGRAM_NAME="\"$(PROJNAME)\"" \
 			-DLOG_DIR="\"$(LOGDIR)\""
 
 # 	Output file names
