@@ -1,16 +1,11 @@
 /*
- *   movegen.c
- *
- *   Move generation, sorting, and perft
- *
- *   5.0              Original
- *   5.1   24/02/2019 En passant
+ *   Move list generation, sorting, and perft
  */
 
 #include "movegen.h"
 #include "history.h"
-#include "sys.h"
-#include "board.h"
+#include "io.h"
+#include "state.h"
 
 const score_t player_fact[N_PLAYERS] = { 1, -1 };
 
@@ -62,7 +57,7 @@ static int sort_evaluate(state_s *state, move_s *move)
 /* Add movelist entries for a given from and to position.  Add promotion
    moves if necessary */
 static inline void add_movelist_entries(
-  state_s *state, pos_t from, pos_t to, movelist_s *move_buf, /* in */ 
+  state_s *state, square_e from, square_e to, movelist_s *move_buf, /* in */ 
   movelist_s **prev, int *index) /* in, out */
 {
   piece_e promotion = (piece_type[state->piece_at[from]] == PAWN 
@@ -87,13 +82,13 @@ int generate_search_movelist(state_s *state, movelist_s **move_buf)
 {
   movelist_s *prev = 0;
   int count = 0; 
-  plane_t pieces = get_my_pieces(state);
+  bitboard_t pieces = get_my_pieces(state);
   while(pieces) {
-    pos_t from = mask2pos(next_bit_from(&pieces));
-    plane_t moves = get_moves(state, from);
+    square_e from = bit2square(next_bit_from(&pieces));
+    bitboard_t moves = get_moves(state, from);
     while(moves) {
-      plane_t to_mask = next_bit_from(&moves);
-      pos_t to = mask2pos(to_mask);
+      bitboard_t to_mask = next_bit_from(&moves);
+      square_e to = bit2square(to_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }
@@ -106,14 +101,14 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
 {
   movelist_s *prev = 0;
   int count = 0;
-  plane_t victims = state->claim[state->to_move] & get_opponents_pieces(state);
+  bitboard_t victims = state->claim[state->turn] & get_opponents_pieces(state);
   while(victims) {
-    plane_t to_mask = next_bit_from(&victims);
-    pos_t to = mask2pos(to_mask);
-    plane_t attackers = get_attacks(state, to, state->to_move);
+    bitboard_t to_mask = next_bit_from(&victims);
+    square_e to = bit2square(to_mask);
+    bitboard_t attackers = get_attacks(state, to, state->turn);
     while(attackers) {
-      plane_t from_mask = next_bit_from(&attackers);
-      pos_t from = mask2pos(from_mask);
+      bitboard_t from_mask = next_bit_from(&attackers);
+      square_e from = bit2square(from_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }
@@ -136,9 +131,9 @@ void perft(perft_s *data, state_s *state, int depth, moveresult_t result)
     if(result & CAPTURED) {
       data->captures = 1;
     }
-      if(result & EN_PASSANT) {
-	      data->ep_captures = 1;
-      }
+    if(result & EN_PASSANT) {
+      data->ep_captures = 1;
+    }
     
     if(result & CASTLED) data->castles = 1;
     if(result & PROMOTED) data->promotions = 1;

@@ -1,24 +1,19 @@
 
-#include "chess.h"
-#include "board.h"
-#include "sys.h"
-
 /*
- *   Routines for FEN input and output
- *
- *   4.3 24/02/18 - Created 
- *   5.1 24/02/19 - Fixes
+ *   Forsyth-Edwards Notation input and output
  */
+
+#include "state.h"
+#include "io.h"
 
 /* FEN piece letters */
 static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
-enum { N_CASTLE_RIGHTS_MASKS = 4
-};
+enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
 struct castle_rights_entry {
   char c;
-  plane_t mask;
+  bitboard_t mask;
 };
 
 static const struct castle_rights_entry 
@@ -29,7 +24,7 @@ static const struct castle_rights_entry
   { 'q', BLACK_QUEENSIDE }
 };
 
-/* Loads a board state given in FEN, into state */
+/* Load a board state given in FEN, into state */
 int load_fen( state_s *state, 
               const char *placement_text, 
               const char *active_player_text,
@@ -39,7 +34,7 @@ int load_fen( state_s *state,
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
-  int board[N_POS];
+  int board[N_SQUARES];
   int file = 0;
   int rank = 7;
   const char *ptr = placement_text;
@@ -49,6 +44,7 @@ int load_fen( state_s *state,
   memset(board, EMPTY, sizeof(board));
   memset(count, 0, sizeof(count));
 
+  /* Placement */
   error_text = placement_text;
   while(*ptr) {
     if(*ptr == '/') {
@@ -77,7 +73,6 @@ int load_fen( state_s *state,
           break;
         }
       }
-      /* Unrecognised characters */
       if(piece == N_PLANES) {
 	      printf("FEN: Unrecognised piece\n");
 	      goto error;
@@ -89,33 +84,33 @@ int load_fen( state_s *state,
       }
     }
   
-    /* Too much input */
     if(file > 8 || rank < 0) {
       printf("FEN: Too much board input\n");
 	    goto error;
 	  }
     ptr++;
   }
-  /* Not enough input */
   if(rank > 0) {
     printf("FEN: Not enough board input\n");
     goto error;
   }
   
-  player_e to_move;
+  /* Turn */
+  player_e turn;
   error_text = active_player_text;
   if(active_player_text[0] == 'w' && active_player_text[1] == 0) {
-    to_move = WHITE;
+    turn = WHITE;
   } else if(active_player_text[0] == 'b' && active_player_text[1] == 0) {
-    to_move = BLACK;
+    turn = BLACK;
   } else {
     printf("Unrecognised active player input\n");
     goto error;
   }
   
+  /* Castling rights */
   ptr = castling_text;
   error_text = castling_text;
-  plane_t castling_rights = 0;
+  bitboard_t castling_rights = 0;
   while(*ptr) {
     for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
       if(*ptr == castling_rights_letter[i].c) {
@@ -129,27 +124,35 @@ int load_fen( state_s *state,
     goto error;
   }
 
+  /* En passant */
   ptr = en_passant_text;
-  pos_t en_passant;
+  bitboard_t en_passant;
   if(*ptr == '-') {
-    en_passant = NO_POS;
+    en_passant = 0;
   } else {
-    if(parse_pos(en_passant_text, &en_passant)) {
+    square_e ep_square;
+    if(parse_square(en_passant_text, &ep_square)) {
       printf("FEN: Invalid en-passant input\n");
       goto error;
     }
+    en_passant = square2bit[ep_square];
   }
+
   /* Success - write the new positions to state */
-  setup_board(state, board, to_move, castling_rights, en_passant);
+  setup_board(state, board, turn, castling_rights, en_passant);
   return 0;
+
+  /* Input error - display location */
  error:
   printf("\nFEN input: %s", error_text);
   printf("\n         : %*c^\n", (int)(ptr-error_text), ' ');
   return 1;
 }
 
+/* Format a FEN string from a state */
 int get_fen(const state_s *state, char *out, size_t outsize)
 {
+  /* Placement */
   int empty_file_count = 0;
   char *ptr = out;
   for(int rank = 7; rank >= 0; rank--) {
@@ -178,9 +181,11 @@ int get_fen(const state_s *state, char *out, size_t outsize)
     }
   }
   *ptr++ = ' ';
-  /* Moving player */
-  *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
+
+  /* Turn */
+  *ptr++ = (state->turn == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
+  
   /* Castling rights */
   for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
     if(state->castling_rights & castling_rights_letter[i].mask) {
@@ -189,17 +194,14 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   }
   if(!state->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
+
   /* En passant */
-  if(state->en_passant == NO_POS) {
+  if(state->en_passant == 0) {
     *ptr++ = '-';
   } else {
-    format_pos(ptr, state->en_passant);
+    format_square(ptr, bit2square(state->en_passant));
     ptr += 2;
   }
-  //*ptr++ = ' ';
-  //*ptr++ = '0';
-  //*ptr++ = ' ';
-  //*ptr++ = '0';
   *ptr = 0;
   return 0;
 }

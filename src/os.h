@@ -1,6 +1,8 @@
-/*
- *   4.1 New - Windows supported
- */
+#ifndef OS_H
+#define OS_H
+
+#include "compiler.h"
+
 #define POSIX 0
 #define WIN 1
 
@@ -25,15 +27,13 @@
 #  define BLACK_PIECE  ""
 # endif
 
-
 /* For fileno() in stdio */
-//# if (TERMINAL)
 # define _POSIX_SOURCE
-//# endif
 # include <unistd.h>
-typedef int 	file_t;		/* Int file descriptor */
+# include <sys/types.h>
+typedef int file_t;		/* Int file descriptor */
 typedef ssize_t filesize_t;
-typedef pid_t   procid_t;
+typedef pid_t procid_t;
 # define FD_STDIN 0
 
 #elif (OS == WIN)
@@ -47,9 +47,6 @@ typedef pid_t   procid_t;
 #  define HLITE_SQUARE (BACKGROUND_GREEN | FOREGROUND_INTENSITY)
 #  define BLACK_PIECE FOREGROUND_INTENSITY
 #  define WHITE_PIECE (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY)
- //#  define WHITE_SQUARE 4
-//#  define BLACK_SQUARE 0
-//#  define HLITE_SQUARE 5
 # else
 #  define WHITE_SQUARE BACKGROUND_BLACK
 #  define BLACK_SQUARE BACKGROUND_BLACK
@@ -69,11 +66,6 @@ typedef DWORD	procid_t;
 #else
 # define TERMINAL 0
 #endif
-
-#if(TERMINAL)
-//# include <unistd.h>
-#endif
-
 
 #include <stdio.h>
 
@@ -95,3 +87,4 @@ void set_console_black_square(void);
 void set_console_white_piece(void);
 void set_console_black_piece(void);
 
+#endif /* OS_H */

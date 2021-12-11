@@ -1,27 +1,31 @@
-#include "chess.h"
-#include "board.h"
+/*
+ *  Static evaluation
+ */
+
+#include "state.h"
 #include "log.h"
-#include "eval.h"
+#include "evaluate.h"
+
 #include <stdlib.h>
 #include <limits.h>
 
-/*
- *   4.1 MSVC compatibility (a & -a)
- *   4.4 Changes to inlines, tidy up, comments
- *   5.2 player_factor
- */
-
 const score_t player_factor[N_PLAYERS] = { 1, -1 };
 
-/* Options */
+/* 
+ *  Options 
+ */
+
 /* Shannon's weights * 10 */
 int piece_weights[N_PIECE_T] = { 100, 500, 300, 300, 900, 2000 };
+
 /* Other factors in Shannon's method * 10 */
 int mobility = 10;
 int doubled = 50;
 int blocked = 50;
+
 /* Small random value 0-9 */
 int randomness = 0;
+
 /* All the options can be changed */
 enum { 
   N_EVAL_OPTS = N_PIECE_T + 4
@@ -40,12 +44,16 @@ const option_s _eval_opts[N_EVAL_OPTS] = {
 };
 const options_s eval_opts = { N_EVAL_OPTS, _eval_opts };
 
+/*
+ *  Functions
+ */
+
 /* Evaluate one player's pieces */
 static inline score_t evaluate_player(state_s *state, player_e player)
 {
   int score = 0;
   int pt_first;
-  plane_t pieces;
+  bitboard_t pieces;
 
   pt_first = N_PIECE_T * player;
 
@@ -54,9 +62,9 @@ static inline score_t evaluate_player(state_s *state, player_e player)
     score += piece_weights[i] * pop_count(state->a[i + pt_first]);
   }
   /* Mobility - for each piece count the number of moves */
-  pieces = state->occ_a[player];
+  pieces = state->player_a[player];
   while(pieces) {
-    pos_t pos = mask2pos(next_bit_from(&pieces));
+    square_e pos = bit2square(next_bit_from(&pieces));
     score += mobility * pop_count(get_moves(state, pos));
   }
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
@@ -70,7 +78,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
   /* Blocked pawns - look for pawns with no moves */
   pieces = state->a[PAWN + pt_first];
   while(pieces) {
-    pos_t pos = mask2pos(next_bit_from(&pieces));
+    square_e pos = bit2square(next_bit_from(&pieces));
     if(pop_count(get_moves(state, pos) == 0ull)) {
       score -= blocked;
     }
@@ -82,14 +90,14 @@ static inline score_t evaluate_player(state_s *state, player_e player)
   return score;
 }
 
-/* Evalate the board position */
+/* Evalate the position */
 score_t evaluate(state_s *state)
 {
   return (evaluate_player(state, WHITE) - evaluate_player(state, BLACK)) 
-    * player_factor[state->to_move];
+    * player_factor[state->turn];
 }
 
-/* Unit tests */
+/* Tests */
 int test_eval(void)
 {
   state_s state;

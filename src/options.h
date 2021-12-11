@@ -1,6 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+struct engine_s_;
+
 enum {
   NAME_LENGTH = 50
 };
@@ -32,5 +34,10 @@ typedef struct options_s_ {
   int n_opts;
   const option_s *const opts;
 } options_s;
+
+void list_features(void);
+void feature_accepted(const char *name);
+void list_options(void);
+int set_option(struct engine_s_ *e, const char *name);
 
 #endif /* OPTIONS_H */

@@ -1,16 +1,3 @@
-#
-# Makefile
-#	
-# J Dlugosz March 2016
-# 	   1.0
-# 27/01/17 1.1  Added eval, game, sys dirs
-# 12/02/18 2.4  Multiple targets
-# 14/02/18 3.0  Build and release configurations
-# 18/02/18 4.1  Windows supported
-#	   4.4  gprof configuration
-# 15/02/19 5.0  Simplified - only one search module and one source dir
-#               movegen
-
 # Project output name
 PROJNAME	= 5.0-movegen
 
@@ -25,9 +12,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-
-MODULES		= eval game search moves movegen history features io log ui commands build fen
-HEADERS		= chess
+MODULES		= build commands evaluate fen history io log moves movegen options search state ui
 
 #	Build tools
 TOOLCHAIN	= 
@@ -42,8 +27,8 @@ INCFLAGS	= -I$(INCDIR)
 CFLAGS  	= -c -std=c99 -Wfatal-errors -Wall -Werror
 LFLAGS  	= -lrt
 #	Configuration-specific
-RELCFLAGS	= -O3 -msse4 -DLOGGING=NO
-RELLFLAGS	=
+RELCFLAGS	= -g -O3 -msse4 -DLOGGING=NO
+RELLFLAGS	= -g
 DBGCFLAGS	= -g -O0 -DLOGGING=YES
 DBGLFLAGS	= -rdynamic
 PRFCFLAGS	= -pg -g -Wa,-adhln $(RELCFLAGS)
@@ -120,15 +105,15 @@ $(DBGOBJDIR) $(RELOBJDIR) $(PRFOBJDIR) $(OUTDIR):
 # Build rules
 $(RELOUTPATH): $(RELOBJPATHS) 
 	$(LD) -o $@ $(RELOBJPATHS) $(RELLFLAGS)
-$(RELOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(RELOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -o $@ $<
 # Output
 $(DBGOUTPATH): $(DBGOBJPATHS) 
 	$(LD) -o $@ $(DBGOBJPATHS) $(DBGLFLAGS)
-$(DBGOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(DBGOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(DBGCFLAGS) $(BUILDFLAGS) -o $@ $<
 # Output
 $(PRFOUTPATH): $(PRFOBJPATHS) 
 	$(LD) -o $@ $(PRFOBJPATHS) $(PRFLFLAGS)
-$(PRFOBJDIR)%.o: $(SRCDIR)%.c $(SRCDIR)chess.h
+$(PRFOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(PRFCFLAGS) $(BUILDFLAGS) -o $@ $< >> $(@:.o=.lst)

@@ -1,9 +1,9 @@
 /*
- *   4.1 Windows supported
+ *   Text IO formatting and parsing
  */
 
-#include "language.h"
-#include "board.h"
+#include "compiler.h"
+#include "state.h"
 #include "search.h"
 #include "os.h"
 #include "log.h"
@@ -47,27 +47,27 @@ const char player_text[N_PLAYERS][6] = {
 /*
  *  Instruction encoding and decoding
  */
-int parse_pos(const char *buf, pos_t *pos)
+int parse_square(const char *buf, square_e *square)
 {
   const char *ptr = buf;
-  *pos = -1;
+  *square = NO_SQUARE;
   if(*ptr == 0) return 1;
   if(!isalpha(*ptr)) return 1;
-  *pos = (pos_t)(tolower(*ptr) - 'a');
-  if(*pos > 7) return 1;
+  *square = (square_e)(tolower(*ptr) - 'a');
+  if(*square > 7) return 1;
   ptr++;
   if(*ptr == 0) return 1;
   if(!isdigit(*ptr)) return 1;
   if(*ptr > '8') return 1;
-  *pos += 8 * (pos_t)(*ptr - '1');
+  *square += 8 * (square_e)(*ptr - '1');
   ptr++;
   return 0;
 }
 
 int parse_move(const char *buf, move_s *move)
 {
-  if(parse_pos(buf, &move->from)) return 1;
-  if(parse_pos(buf+2, &move->to)) return 1;
+  if(parse_square(buf, &move->from)) return 1;
+  if(parse_square(buf+2, &move->to)) return 1;
   if(buf[4] == 0) {
     move->promotion = 0;
     return 0;
@@ -81,14 +81,14 @@ int parse_move(const char *buf, move_s *move)
   return 1;
 }
 
-int format_pos(char *buf, pos_t pos)
+int format_square(char *buf, square_e square)
 {
-  if(pos < 0 || pos >= N_POS) {
+  if(square < 0 || square >= N_SQUARES) {
     buf[0] = 0;
     return 1;
   }
-  buf[0] = (char)(pos % 8) + 'a';
-  buf[1] = (char)(pos / 8) + '1';
+  buf[0] = (char)(square % 8) + 'a';
+  buf[1] = (char)(square / 8) + '1';
   buf[2] = 0;
   return 0;
 }
@@ -96,11 +96,11 @@ int format_pos(char *buf, pos_t pos)
 int format_move(char *buf, move_s *move, int bare)
 {
   char *ptr = buf;
-  if(format_pos(ptr, move->from)) return 1;
+  if(format_square(ptr, move->from)) return 1;
   ptr += 2;
   if(!bare && (move->result & CAPTURED))
     *ptr++ = 'x';
-  if(format_pos(ptr, move->to)) return 1;
+  if(format_square(ptr, move->to)) return 1;
   ptr += 2;
   if(move->promotion > PAWN) {
     *ptr++ = piece_letter[move->promotion];
@@ -112,12 +112,12 @@ int format_move(char *buf, move_s *move, int bare)
   return 0;
 }
 
-void print_thought_moves(FILE *f, int depth, notation_s moves[])
+void print_thought_moves(FILE *f, int depth, move_s moves[])
 {
   char buf[6];
   int i;
   for(i = 0; i <= depth; i++) {
-    //format_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
+    format_move(buf, &moves[i], 0);
     fprintf(f, "%s ", buf);
   }
 }
@@ -125,7 +125,7 @@ void print_thought_moves(FILE *f, int depth, notation_s moves[])
 /*
  *  Board printing
  */
-void print_board(FILE *f, state_s *state, plane_t mask1, plane_t mask2)
+void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2)
 {
   int rank, file;
   int term;
@@ -145,9 +145,9 @@ void print_board(FILE *f, state_s *state, plane_t mask1, plane_t mask2)
 	  int piece = state->piece_at[rank * 8 + file];
 	  /* Print square colours if a terminal */
 	  if(term) {
-	    if(mask1 & pos2mask[rank * 8 + file]) {
+	    if(mask1 & square2bit[rank * 8 + file]) {
 	      set_console_hilight1();
-	    } else if(mask2 & pos2mask[rank * 8 + file]) {
+	    } else if(mask2 & square2bit[rank * 8 + file]) {
 	      set_console_hilight2();
 	    } else if((rank + file) & 1) {
 	      set_console_white_square();

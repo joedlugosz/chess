@@ -1,29 +1,13 @@
 /*
- *  ui.c
- *
  *  Program entry point and user interface.
- *
- *  Features:
- *   * Console game mode
- *   * XBoard mode supporting most of v2 protocol
- *   * Extra debugging commands
- *
- *  Limitations:
- *   * SIGINT and SIGTERM are ignored
- *
- *  Revisions:
- *   0.1  09/04/16  Current
- *   4.1  18/02/18  Minor changes due to Windows support
- *   4.2  19/02/18  Refactoring
- *   5.0  17/02/19  Simplified file structure
  */
 
-//#include "language.h"
-#include "chess.h"
-#include "search.h"
-#include "sys.h"
-#include "os.h"
+#include "commands.h"
+#include "engine.h"
 #include "log.h"
+#include "os.h"
+#include "search.h"
+#include "io.h"
 
 #include <time.h>
 #include <ctype.h>
@@ -31,12 +15,14 @@
 #include <stdlib.h>
 #include <signal.h>
 
+enum { POS_BUF_SIZE = 3, 
+       MOVE_BUF_SIZE = 10 };
+
 log_s xboard_log = { .new_every = NE_SESSION };
 log_s error_log = { .new_every = NE_SESSION };
 
 static const option_s options[] = {
   { "New XBoard log",   COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo },
-//  { "Search depth",   SPIN_OPT,  &search_depth, 0, SEARCH_DEPTH_MAX, 0 },
 };
 const options_s engine_options = { 
   sizeof(options)/sizeof(options[0]), options 
@@ -79,9 +65,9 @@ static inline clock_t get_time(engine_s *engine)
   return engine->elapsed_time;
 }
 
-static inline int ai_to_move(engine_s *engine)
+static inline int ai_turn(engine_s *engine)
 {
-  if(engine->game.to_move != engine->mode) return 0;
+  if(engine->game.turn != engine->mode) return 0;
   else return 1;
 }
 
@@ -97,9 +83,9 @@ static inline int is_in_normal_play(engine_s *engine) {
 static inline void print_statistics(engine_s *engine, search_result_s *result) {
   if(!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
-    printf("%d : %0.2lf sec", evaluate(&engine->game)/10, time);
-    if(ai_to_move(engine) && result) {
-      printf(" : %d nodes : %0.1lf%% cutoff %0.2lf Knps", result->n_searched,
+    printf("\n\n%d : %0.2lf sec", evaluate(&engine->game)/10, time);
+    if(ai_turn(engine) && result) {
+      printf(" : %d nodes : %0.1lf%% cutoff %0.2lfk node/s", result->n_searched,
 	      result->cutoff, (double)result->n_searched / (time * 1000.0));
     }
     printf("\n");
@@ -111,7 +97,7 @@ static inline void print_game_state(engine_s *engine)
   if(!engine->xboard_mode) {
     print_board(stdout, &engine->game, 0, 0);
     if(in_check(&engine->game)) {
-      printf("%s is in check.\n", player_text[engine->game.to_move]);
+      printf("%s is in check.\n", player_text[engine->game.turn]);
     }
   }
 }
@@ -120,8 +106,8 @@ static inline void print_prompt(engine_s *engine)
 {
   if(!engine->xboard_mode) {
     if(engine->mode != ENGINE_FORCE_MODE) {
-      printf("%s %s> ", player_text[engine->game.to_move],
-	     engine->game.to_move == engine->mode ? "(AI) " : "");
+      printf("%s %s> ", player_text[engine->game.turn],
+	     engine->game.turn == engine->mode ? "(AI) " : "");
     } else {
       printf("FORCE > ");
     }
@@ -134,7 +120,7 @@ static inline void print_ai_resign(engine_s *engine)
   if(engine->xboard_mode) {
     printf("resign\n");
   } else {
-    printf("%s resigns.", player_text[engine->game.to_move]);
+    printf("%s resigns.", player_text[engine->game.turn]);
   }
 }
 
@@ -143,28 +129,28 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];  
-  format_move(buf, &result->best_move, engine->xboard_mode);
+  format_move(buf, &result->move, engine->xboard_mode);
 
   PRINT_LOG(&xboard_log, "\nAI > %s", buf);
   
   if(engine->xboard_mode) {
     printf("move %s\n", buf);
   } else {
+    print_statistics(engine, result);
     print_prompt(engine);
     printf("%s\n", buf);
-    print_statistics(engine, result);
     print_game_state(engine);
   }
 }
 
-static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
+static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e to) {
   if(!engine->xboard_mode) {
     if(from >= 0) {
       char from_buf[POS_BUF_SIZE];
-      format_pos(from_buf, from);
+      format_square(from_buf, from);
       if(to >= 0) {
         char to_buf[POS_BUF_SIZE];
-        format_pos(to_buf, to);
+        format_square(to_buf, to);
         printf(fmt, from_buf, to_buf);
       } else {
         printf(fmt, from_buf);
@@ -178,10 +164,10 @@ static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
 /* 
  *  Move Checking 
  */
-int no_piece_at_pos(engine_s *engine, pos_t pos) 
+int no_piece_at_square(engine_s *engine, square_e square) 
 {
-  if((pos2mask[pos] & engine->game.total_a) == 0) {
-    print_msg(engine, "There is no piece at %s.\n", pos, -1);
+  if((square2bit[square] & engine->game.total_a) == 0) {
+    print_msg(engine, "There is no piece at %s.\n", square, -1);
     return 1;
   }
   return 0;
@@ -189,18 +175,18 @@ int no_piece_at_pos(engine_s *engine, pos_t pos)
 
 int move_is_illegal(engine_s *engine, move_s *move)
 {
-  if(no_piece_at_pos(engine, move->from)) {
+  if(no_piece_at_square(engine, move->from)) {
     return 1;
   }
   if(move->from == move->to) {
     print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[move->from] & get_my_pieces(&engine->game)) == 0) {
+  if((square2bit[move->from] & get_my_pieces(&engine->game)) == 0) {
     print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[move->to] & get_moves(&engine->game, move->from)) == 0) { 
+  if((square2bit[move->to] & get_moves(&engine->game, move->from)) == 0) { 
     print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
     return 1;
   } 
@@ -226,7 +212,7 @@ void finished_move(engine_s *engine)
   change_player(&engine->game);
   /* move_n holds number of complete moves, incremented when it is
      white's move */
-  if(engine->game.to_move == WHITE) {
+  if(engine->game.turn == WHITE) {
     engine->move_n++;
   }    
 }
@@ -242,13 +228,13 @@ static inline void do_ai_move(engine_s *engine)
   start_move_log(engine);
 
   search_result_s result;
-  do_search(engine->depth, &engine->game, &result);
+  search(engine->depth, &engine->game, &result);
 
   int resign = 0;   
 
   if(engine->resign_delayed) {
     resign = 1;
-  } else if(result.best_move.from == NO_POS) {
+  } else if(result.move.from == NO_SQUARE) {
     if(engine->game.check) {
       /* Checkmate */
       resign = 1;
@@ -266,7 +252,7 @@ static inline void do_ai_move(engine_s *engine)
     return;
   }
   
-  make_move(&engine->game, &result.best_move);
+  make_move(&engine->game, &result.move);
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
@@ -330,7 +316,7 @@ static inline void get_user_input(engine_s *engine)
 void main_loop(engine_s *engine) 
 {
   while(engine->mode != ENGINE_QUIT) {
-    if(ai_to_move(engine)) {
+    if(ai_turn(engine)) {
       do_ai_move(engine);
     } else {
       get_user_input(engine);

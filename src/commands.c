@@ -1,73 +1,89 @@
 /*
- *   4.1 18/02/2018 Added 'help' command
- *   5.0 24/02/2019 Added 'perft' command
+ *  UI commands
  */
-#include "chess.h"
-#include "sys.h"
+
+#include "engine.h"
+#include "fen.h"
 #include "log.h"
 #include "search.h"
 #include "movegen.h"
+#include "io.h"
+#include "ui.h"
 
-/*
- *  Commands
- */ 
+typedef void (*ui_fn)(engine_s *);
 
+/* --- Commands */
+
+/* -- Game Control */
+
+/* Permenently switch to XBoard mode */
 void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
 
-/* Game Control */
+/* Quit the program */
 void ui_quit(engine_s *e) { 
   e->mode = ENGINE_QUIT; 
 }
+
+/* Enter force mode */
 void ui_force(engine_s *e) { 
   e->mode = ENGINE_FORCE_MODE; 
 }
-void ui_black(engine_s *e) { 
-  //e->engine_mode = ENGINE_PLAYING_AS_BLACK;
-  //e->game.to_move = WHITE;
-}
-void ui_white(engine_s *e) { 
-  //e->engine_mode = ENGINE_PLAYING_AS_WHITE; 
-  //e->game.to_move = BLACK;
-}
-void ui_go(engine_s *e) { 
-  e->mode = e->game.to_move; 
-}
-void ui_playother(engine_s *e) { 
-  e->mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.to_move; 
-}
-void ui_computer(engine_s *e) { }
 
+void ui_go(engine_s *e) {
+  e->mode = e->game.turn; 
+}
+
+void ui_playother(engine_s *e) {
+  e->mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.turn;
+}
+
+/* Not used by CECP v2 */
+void ui_black(engine_s *e) {}
+void ui_white(engine_s *e) {}
+
+/* Tell this AI that it is playing another AI - not implemented */
+void ui_computer(engine_s *e) {}
+
+/* XBoard notifies a result */
 void ui_result(engine_s *e) {
   PRINT_LOG(&xboard_log, "%s ", get_input());
 }
+
+/* New game */
 void ui_new(engine_s *e) {
   e->game_n++;
   e->move_n = 1;
   e->resign_delayed = 0;
   e->waiting = 1;
-  e->game.to_move = WHITE;
+  e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
   reset_board(&e->game);
   START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
   START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
 }
 
-/* Engine control */
+/* -- Engine control */
+
+/* Search depth - not implemented */
 void ui_sd(engine_s *e) {
   int depth;
   sscanf(get_input(), "%d", &depth);
   /* TODO: depth */
 }
+
+/* Set time control mode - not implemented */
 void ui_level(engine_s *e) {
   get_input();
   get_input();
   get_input();
 }
+
+/* v1 otim command - not implemented */
 void ui_otim(engine_s *e) {
   sscanf(get_input(), "%lu", &e->otim);
 }
 
-/* Handles "protover" command - for protocol version >= 2 */
+/* XBoard sets protocol version */
 void ui_protover(engine_s *e) {
   int ver;
   sscanf(get_input(), "%d", &ver);
@@ -78,9 +94,8 @@ void ui_protover(engine_s *e) {
   }
 }
 
-/* Handles "option" command - XBoard sets an option value */
-void ui_option(engine_s *e)
-{
+/* XBoard sets an option value */
+void ui_option(engine_s *e) {
   const char *name;
   int reject = 0;
 
@@ -97,7 +112,7 @@ void ui_option(engine_s *e)
   }
 }
 
-/* Handles "accepted" message */
+/* Handle "accepted" message */
 void ui_accepted(engine_s *e) {
   const char *arg;
   arg = get_input();
@@ -108,15 +123,13 @@ void ui_accepted(engine_s *e) {
 }
 
 /* XBoard accepts an option or feature */
-int accept(void)
-{
-  if(strcmp(get_input(), "accepted") == 0) { 
-    return 1;
-  }
-  return 0;
+int accept(void) {
+  return (strcmp(get_input(), "accepted") == 0);
 }
 
+/* -- FEN input and output */
 
+/* Set game state from FEN input */
 void ui_fen(engine_s *e) {
   const char *placement = get_input();
   const char *active = get_input();
@@ -127,43 +140,50 @@ void ui_fen(engine_s *e) {
   }
 }
 
+/* Output game state */
 void ui_getfen(engine_s *e) {
   char buf[100];
   get_fen(&e->game, buf, sizeof(buf));
   printf("%s\n", buf);
 }
 
-/* Debug */
+/* -- Debugging */
+
+/* Print board */
 void ui_print(engine_s *e) {
   print_board(stdout, &(e->game), 0, 0);
 }
 
+/* Print board showing pieces attacking a target square */
 void ui_attacks(engine_s *e) {
-  pos_t target;
-  if(parse_pos(get_input(), &target)) {
+  square_e target;
+  if(parse_square(get_input(), &target)) {
     return;
   }
-  if(no_piece_at_pos(e, target)) {
+  if(no_piece_at_square(e, target)) {
     return;
   }
-  print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.to_move])); 
-}
-  
-void ui_moves(engine_s *e) {
-  pos_t from;
-  if(parse_pos(get_input(), &from)) {
-    return;
-  }
-  if(no_piece_at_pos(e, from)) {
-    return;
-  }
-  print_board(stdout, &(e->game), get_moves(&(e->game), from), pos2mask[from]);
+  print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
 
+/* Print board showing squares a piece can move to */
+void ui_moves(engine_s *e) {
+  square_e from;
+  if(parse_square(get_input(), &from)) {
+    return;
+  }
+  if(no_piece_at_square(e, from)) {
+    return;
+  }
+  print_board(stdout, &(e->game), get_moves(&(e->game), from), square2bit[from]);
+}
+
+/* Evaluate the position and print the score */
 void ui_eval(engine_s *e) {
   printf("%d\n", evaluate(&(e->game)));
 }
 
+/* Run perft to a specified depth */
 void ui_perft(engine_s *e) {
   int depth;
   if(!sscanf(get_input(), "%d", &depth)) {

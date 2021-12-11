@@ -1,4 +1,4 @@
-#include "language.h"
+#include "compiler.h"
 #include "os.h"
 #include "log.h"
 //#include "chess.h"
@@ -53,6 +53,7 @@ int is_terminal(FILE *f) {
 #endif
 }
 
+#include <string.h>
 void print_backtrace(FILE *out)
 {
   void *bt[1024];
@@ -62,20 +63,33 @@ void print_backtrace(FILE *out)
   bt_syms = backtrace_symbols(bt, n_bt);
   fprintf(out, "\nCall stack:\n");
   printf("\n{Call stack:}\n");
-  for(i = 2; i < n_bt; i++) {
-    fprintf(out, "%s\n", bt_syms[i]);
-    printf("{%s}\n", bt_syms[i]);
-  }
-  /*
-  for(i = 1; i < n_bt; i++) {
+
+  char bt_function[1000][1024];
+  char bt_line[1000][1024];
+  for (i = 1; i < n_bt; i++) {
     char exename[256];
     sscanf(bt_syms[i], "%s", exename);
-    char cmd[256];
-    snprintf(cmd, 256, "addr2line -f -e %s %p", ((const char const *)exename), bt[i]);
+    exename[strlen(exename)-9] = ' ';
+    exename[strlen(exename)-1] = 0;
+    char cmd[1000];
+    snprintf(cmd, 1000, "addr2line -f -e %s", ((const char *)exename));
     printf("%s\n", cmd);
-    if(system(cmd)) {
+
+    FILE *out;
+    out = popen(cmd, "r");
+    if (out) {
+      if (!fgets(bt_function[i], 1024, out)) sprintf(bt_function[i], "%s", "???");
+      bt_function[i][strlen(bt_function[i])-1] = 0;
+      if (!fgets(bt_line[i], 1024, out)) sprintf(bt_line[i], "%s", "???");
+      bt_line[i][strlen(bt_line[i])-1] = 0;
+      pclose(out);
     }
-    }*/
+  }
+
+  for(i = 2; i < n_bt; i++) {
+    fprintf(out, "%s %-20s %s\n", bt_syms[i], bt_function[i], bt_line[i]);
+    printf("{%s %20s %s}\n", bt_syms[i], bt_function[i], bt_line[i]);
+  }
 }
 
 static void sigsegv_handler(int sig, siginfo_t *si, void *unused)
