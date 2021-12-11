@@ -9,7 +9,7 @@
 
 struct search_job_s_;
 
-void write_move_history(struct search_job_s_ *, int, move_s *, player_e, score_t);
+void write_search_history(struct search_job_s_ *, int, move_s *);
 int is_repeated_move(struct search_job_s_ *, int, move_s *);
 
 #endif /* HISTORY_H */

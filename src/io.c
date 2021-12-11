@@ -112,12 +112,12 @@ int format_move(char *buf, move_s *move, int bare)
   return 0;
 }
 
-void print_thought_moves(FILE *f, int depth, notation_s moves[])
+void print_thought_moves(FILE *f, int depth, move_s moves[])
 {
   char buf[6];
   int i;
   for(i = 0; i <= depth; i++) {
-    //format_move(buf, moves[i].from, moves[i].to, moves[i].captured, moves[i].check);
+    format_move(buf, &moves[i], 0);
     fprintf(f, "%s ", buf);
   }
 }

@@ -8,16 +8,7 @@
 #include "evaluate.h"
 #include "log.h"
 
-typedef struct notation_s_
-{
-  square_e from;
-  square_e to;
-  piece_e promotion;
-  score_t score;
-  player_e player;
-  status_t captured : 1;
-  status_t check : 1;
-} notation_s;
+#include <time.h>
 
 /* linked list */
 typedef struct movelist_s_ {

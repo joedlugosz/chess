@@ -5,13 +5,9 @@
 #include "history.h"
 #include "search.h"
 
-void write_move_history(search_job_s *job, int depth, move_s *move,
-  player_e turn, score_t score)
+void write_search_history(search_job_s *job, int depth, move_s *move)
 {
-  job->search_history[depth].from = move->from;
-  job->search_history[depth].to = move->to;
-  job->search_history[depth].player = turn;
-  job->search_history[depth].score = score;
+  memcpy(&job->search_history[depth], move, sizeof(*job->search_history));
 }
 
 int is_repeated_move(search_job_s *job, int depth, move_s *move)
@@ -22,11 +18,6 @@ int is_repeated_move(search_job_s *job, int depth, move_s *move)
   if (depth > 1) {
     if (move->to == job->search_history[depth-2].from
 	&& move->from == job->search_history[depth-2].to) {
-      return 1;
-    }
-  } else if (job->n_ai_moves > 0) {
-    if(move->to == job->repeat_history[job->n_ai_moves-1].from
-       && move->from == job->repeat_history[job->n_ai_moves-1].to) {
       return 1;
     }
   }
