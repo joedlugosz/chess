@@ -74,8 +74,8 @@ typedef struct state_s_ {
   /* The stacks */
   plane_t a[N_PLANES];       /* -  Horizontal    */
   plane_t b[N_PLANES];       /* |  Vertical      */
-  plane_t c[N_PLANES];       /* /  Bend Dexter   */
-  plane_t d[N_PLANES];       /* \  Bend Sinister */
+  plane_t c[N_PLANES];       /* /  Diagonal      */
+  plane_t d[N_PLANES];       /* \  Diagonal      */
   plane_t occ_a[N_PLAYERS];  /* Set of each players pieces */
   plane_t occ_b[N_PLAYERS];  /* Set of each players pieces */
   plane_t occ_c[N_PLAYERS];  /* Set of each players pieces */
