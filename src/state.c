@@ -74,7 +74,8 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 };
 
 const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
-plane_t pos2mask[N_POS];
+plane_t _pos2mask[N_POS+1];
+plane_t *pos2mask;
 
 /*
  *  Functions 
@@ -289,6 +290,8 @@ void reset_board(state_s *state)
 /* Initialises the module */
 void init_board(void)
 {
+  pos2mask = _pos2mask + 1;
+  pos2mask[NO_POS] = 0;
   for(pos_t pos = 0; pos < N_POS; pos++) {
     pos2mask[pos] = 1ull << pos;
     pos_a2b[pos] = (pos / 8) + (pos % 8) * 8;

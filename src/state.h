@@ -119,7 +119,7 @@ void setup_board(state_s *, const int *, player_e, castle_rights_t, plane_t);
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void make_move(state_s *state, move_s *move);
 
-extern plane_t pos2mask[N_POS];
+extern plane_t *pos2mask;
 extern const piece_e piece_type[N_PLANES];
 extern const player_e piece_player[N_PLANES];
 extern const player_e opponent[N_PLAYERS];
