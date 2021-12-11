@@ -37,8 +37,8 @@ typedef struct search_job_s_ {
   int depth;   /* Search depth before quiescence */
   int halt;    /* Halt search */
   /* State */
-  notation_s search_history[SEARCH_DEPTH_MAX];
-  notation_s repeat_history[REPEAT_HISTORY_SIZE];
+  clock_t start_time;
+  move_s search_history[SEARCH_DEPTH_MAX];
   int n_ai_moves;
   /* Results */
   search_result_s result;

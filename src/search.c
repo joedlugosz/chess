@@ -116,6 +116,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
       if(depth == 0) {
         job->result.score = score;
         memcpy(&job->result.move, move, sizeof(job->result.move));
+        xboard_thought(stdout, job, depth, score, clock() - job->start_time,
+          job->result.n_searched++);
       }
     }
     /* Beta cutoff */
