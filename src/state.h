@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 
+/* Players */
 typedef enum player_e_ {
   WHITE = 0, BLACK, N_PLAYERS
 } player_e;
@@ -19,12 +20,9 @@ extern const char player_text[N_PLAYERS][6];
 
 typedef unsigned char status_t;
 
-/* Bitboard */
-typedef unsigned long long bitboard_t;
-
-/* Board position */
+/* Squares on the board */
 typedef enum {
-  NO_POS = -1,
+  NO_SQUARE = -1,
   A1 = 0,
       B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
@@ -34,24 +32,10 @@ typedef enum {
   A6, B6, C6, D6, E6, F6, G6, H6,
   A7, B7, C7, D7, E7, F7, G7, H7,
   A8, B8, C8, D8, E8, F8, G8, H8,
-  N_POS
-} pos_t;
+  N_SQUARES
+} square_e;
 
-/* Piece types */
-typedef enum piece_e_ {
-  EMPTY = -1,
-  PAWN = 0,
-  ROOK, KNIGHT, BISHOP, QUEEN, KING,
-  N_PIECE_T
-} piece_e;
-
-enum {
-  /* Planes in a stack */
-  N_PLANES = N_PIECE_T * N_PLAYERS,
-  /* Pieces */
-  N_PIECES = 32,
-};
-
+/* Sides of the board */
 typedef enum boardside_e {
   QUEENSIDE = 0, KINGSIDE, BOTHSIDES, N_BOARDSIDE
 } boardside_e;
@@ -65,6 +49,29 @@ enum {
   BLACK_KINGSIDE =    0x08,
   BLACK_BOTHSIDES =   0x0c,
   ALL_CASTLE_RIGHTS = 0x0f       
+};
+
+/* Piece types */
+typedef enum piece_e_ {
+  EMPTY = -1,
+  PAWN = 0,
+  ROOK, KNIGHT, BISHOP, QUEEN, KING,
+  N_PIECE_T
+} piece_e;
+
+/* Pieces */
+enum {
+  N_PIECES = 32,
+};
+
+/* Bitboard - a 64-bit number describing a set of squares on the board */
+typedef unsigned long long bitboard_t;
+
+/* The state of the game */
+
+/* Stacks of bitboards - there is one bitboard for each type of piece for each player */
+enum {
+  N_PLANES = N_PIECE_T * N_PLAYERS,
 };
 
 /* Four stacks are used to represent the same information with different bit 
@@ -86,15 +93,16 @@ typedef struct state_s_ {
   bitboard_t total_d;               /* Set of all pieces */
   bitboard_t moves[N_PIECES];       /* Set of squares each piece can move to */
   bitboard_t claim[N_PLAYERS];      /* Set of all squares each player can move to */
-  pos_t piece_pos[N_PIECES];        /* Board position of each piece */
-  int8_t piece_at[N_POS];           /* Piece type at board position */
-  int8_t index_at[N_POS];           /* Piece index at board position */
+  square_e piece_square[N_PIECES];        /* Board position of each piece */
+  int8_t piece_at[N_SQUARES];           /* Piece type at board position */
+  int8_t index_at[N_SQUARES];           /* Piece index at board position */
 
   status_t turn : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
   bitboard_t en_passant;        /* En-passant squares */
 } state_s;
+
 
 /* move_s holds the game state as well as info about moves */
 typedef uint8_t moveresult_t;
@@ -107,29 +115,31 @@ enum { CAPTURED = 1<<0,
         PROMOTED = 1<<6, 
       };
 typedef struct move_s_ {
-  pos_t from, to;
+  square_e from, to;
   piece_e promotion;
   moveresult_t result;
 } move_s;
+
+extern bitboard_t *square2bit;
+extern const piece_e piece_type[N_PLANES];
+extern const player_e piece_player[N_PLANES];
+extern const player_e opponent[N_PLAYERS];
+
 
 void init_board(void);
 void reset_board(state_s *state);
 void setup_board(state_s *, const int *, player_e, castle_rights_t, bitboard_t);
 
-bitboard_t get_attacks(state_s *state, pos_t target, player_e attacking);
+bitboard_t get_attacks(state_s *state, square_e target, player_e attacking);
 void make_move(state_s *state, move_s *move);
 
-extern bitboard_t *pos2mask;
-extern const piece_e piece_type[N_PLANES];
-extern const player_e piece_player[N_PLANES];
-extern const player_e opponent[N_PLAYERS];
 
-static inline int is_valid_pos(pos_t pos) {
-  return (pos >= 0 && pos < N_POS);
+static inline int is_valid_square(square_e square) {
+  return (square >= 0 && square < N_SQUARES);
 }
-static inline pos_t mask2pos(bitboard_t mask) {
-  ASSERT(is_valid_pos((pos_t)ctz(mask)));
-  return (pos_t)ctz(mask);
+static inline square_e bit2square(bitboard_t mask) {
+  ASSERT(is_valid_square((square_e)ctz(mask)));
+  return (square_e)ctz(mask);
 }
 static inline void clear_state(state_s *state) {
   memset(state, 0, sizeof(state_s));
@@ -137,8 +147,8 @@ static inline void clear_state(state_s *state) {
 static inline void copy_state(state_s *dst, const state_s *src) {
   memcpy(dst, src, sizeof(state_s));
 }
-static inline bitboard_t get_moves(state_s *state, pos_t pos) {
-  return state->moves[(int)state->index_at[pos]];
+static inline bitboard_t get_moves(state_s *state, square_e square) {
+  return state->moves[(int)state->index_at[square]];
 }
 static inline bitboard_t get_my_pieces(state_s *state) {
   return state->player_a[state->turn];
@@ -152,11 +162,7 @@ static inline int in_check(state_s *state) {
 static inline void change_player(state_s *state) {
   state->turn = opponent[state->turn];
 }
-static inline int is_promotion_move(state_s *state, pos_t from, pos_t to) {
-  if(pos2mask[to] & 0xff000000000000ffull) 
-  {
-    return 1;
-  }
-  return 0;
+static inline int is_promotion_move(state_s *state, square_e from, square_e to) {
+  return ((square2bit[to] & 0xff000000000000ffull) != 0);
 }
 #endif /* STATE_H */

@@ -15,9 +15,9 @@ void print_plane_rank(FILE *f, unsigned char rank, unsigned char indicator);
 void print_thought_moves(FILE *f, int depth, struct notation_s_ *moves);
 const char *get_input(void);
 const char *get_delim(char delim);
-int parse_pos(const char *, pos_t *);
+int parse_square(const char *, square_e *);
 int parse_move(const char *, move_s *);
-int format_pos(char *, pos_t);
+int format_square(char *, square_e);
 int format_move(char *, move_s *, int);
 
 #endif /* IO_H */

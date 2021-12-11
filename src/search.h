@@ -10,8 +10,8 @@
 
 typedef struct notation_s_
 {
-  pos_t from;
-  pos_t to;
+  square_e from;
+  square_e to;
   piece_e promotion;
   score_t score;
   player_e player;

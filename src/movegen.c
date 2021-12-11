@@ -57,7 +57,7 @@ static int sort_evaluate(state_s *state, move_s *move)
 /* Add movelist entries for a given from and to position.  Add promotion
    moves if necessary */
 static inline void add_movelist_entries(
-  state_s *state, pos_t from, pos_t to, movelist_s *move_buf, /* in */ 
+  state_s *state, square_e from, square_e to, movelist_s *move_buf, /* in */ 
   movelist_s **prev, int *index) /* in, out */
 {
   piece_e promotion = (piece_type[state->piece_at[from]] == PAWN 
@@ -84,11 +84,11 @@ int generate_search_movelist(state_s *state, movelist_s **move_buf)
   int count = 0; 
   bitboard_t pieces = get_my_pieces(state);
   while(pieces) {
-    pos_t from = mask2pos(next_bit_from(&pieces));
+    square_e from = bit2square(next_bit_from(&pieces));
     bitboard_t moves = get_moves(state, from);
     while(moves) {
       bitboard_t to_mask = next_bit_from(&moves);
-      pos_t to = mask2pos(to_mask);
+      square_e to = bit2square(to_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }
@@ -104,11 +104,11 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
   bitboard_t victims = state->claim[state->turn] & get_opponents_pieces(state);
   while(victims) {
     bitboard_t to_mask = next_bit_from(&victims);
-    pos_t to = mask2pos(to_mask);
+    square_e to = bit2square(to_mask);
     bitboard_t attackers = get_attacks(state, to, state->turn);
     while(attackers) {
       bitboard_t from_mask = next_bit_from(&attackers);
-      pos_t from = mask2pos(from_mask);
+      square_e from = bit2square(from_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
   }

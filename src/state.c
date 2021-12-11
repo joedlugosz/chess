@@ -12,12 +12,12 @@ void init_moves(void);
  *  Lookup tables
  */
 
-/* Mapping from A-pos to B-pos
+/* Mapping from A-square to B-square
    Calculated at init using a formula */
-pos_t pos_a2b[N_POS];
+square_e square_a2b[N_SQUARES];
 
-/* Mapping from A-pos to C-pos */
-const pos_t pos_a2c[N_POS] = {
+/* Mapping from A-square to C-square */
+const square_e square_a2c[N_SQUARES] = {
   0,  1,  3,  6, 10, 15, 21, 28,
   2,  4,  7, 11, 16, 22, 29, 36,
   5,  8, 12, 17, 23, 30, 37, 43,
@@ -27,11 +27,11 @@ const pos_t pos_a2c[N_POS] = {
   27, 34, 41, 47, 52, 56, 59, 61,
   35, 42, 48, 53, 57, 60, 62, 63
 };
-pos_t pos_a2d[N_POS];
+square_e square_a2d[N_SQUARES];
 
 /* Castling */
-const pos_t rook_start_pos[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
-const pos_t king_start_pos[N_PLAYERS] = { 4, 60 };
+const square_e rook_start_square[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
+const square_e king_start_square[N_PLAYERS] = { 4, 60 };
 const bitboard_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 
 const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE] = {
@@ -39,7 +39,7 @@ const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE] = {
   { BLACK_QUEENSIDE, BLACK_KINGSIDE, BLACK_BOTHSIDES }
 };
 
-const char start_indexes[N_POS] = {
+const char start_indexes[N_SQUARES] = {
    0,   1,   2,   3,   4,   5,   6,   7,
    8,   9,  10,  11,  12,  13,  14,  15,
   -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
@@ -57,7 +57,7 @@ const piece_e piece_type[N_PIECE_T * N_PLAYERS] = {
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING  
 };
 
-const piece_e start_pieces[N_POS] = { 
+const piece_e start_pieces[N_SQUARES] = { 
   ROOK,  KNIGHT, BISHOP, QUEEN, KING,  BISHOP, KNIGHT, ROOK,
   PAWN,  PAWN,   PAWN,   PAWN,  PAWN,  PAWN,   PAWN,   PAWN,
   EMPTY, EMPTY,  EMPTY,  EMPTY, EMPTY, EMPTY,  EMPTY,  EMPTY,
@@ -74,23 +74,23 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 };
 
 const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
-bitboard_t _pos2mask[N_POS+1];
-bitboard_t *pos2mask;
+bitboard_t _square2bit[N_SQUARES+1];
+bitboard_t *square2bit;
 
 /*
  *  Functions 
  */
 
-static inline void add_piece(state_s *state, pos_t pos, piece_e piece, int index)
+static inline void add_piece(state_s *state, square_e square, piece_e piece, int index)
 {
   ASSERT(piece != EMPTY);
   ASSERT(index != EMPTY);
-  ASSERT(state->piece_at[pos] == EMPTY);
+  ASSERT(state->piece_at[square] == EMPTY);
   piece_e player = piece_player[piece];
-  bitboard_t a_mask = pos2mask[pos];
-  bitboard_t b_mask = pos2mask[pos_a2b[pos]];
-  bitboard_t c_mask = pos2mask[pos_a2c[pos]];
-  bitboard_t d_mask = pos2mask[pos_a2d[pos]];
+  bitboard_t a_mask = square2bit[square];
+  bitboard_t b_mask = square2bit[square_a2b[square]];
+  bitboard_t c_mask = square2bit[square_a2c[square]];
+  bitboard_t d_mask = square2bit[square_a2d[square]];
   state->a[piece] |= a_mask;
   state->b[piece] |= b_mask;
   state->c[piece] |= c_mask;
@@ -103,20 +103,20 @@ static inline void add_piece(state_s *state, pos_t pos, piece_e piece, int index
   state->total_b |= b_mask;
   state->total_c |= c_mask;
   state->total_d |= d_mask;
-  state->piece_pos[(int)index] = pos;
-  state->piece_at[pos] = piece;
-  state->index_at[pos] = index;
+  state->piece_square[(int)index] = square;
+  state->piece_at[square] = piece;
+  state->index_at[square] = index;
 }
 
-static inline void remove_piece(state_s *state, pos_t pos)
+static inline void remove_piece(state_s *state, square_e square)
 {
-  ASSERT(state->piece_at[pos] != EMPTY);
-  int8_t piece = state->piece_at[pos];
+  ASSERT(state->piece_at[square] != EMPTY);
+  int8_t piece = state->piece_at[square];
   piece_e player = piece_player[piece];
-  bitboard_t a_mask = pos2mask[pos];
-  bitboard_t b_mask = pos2mask[pos_a2b[pos]];
-  bitboard_t c_mask = pos2mask[pos_a2c[pos]];
-  bitboard_t d_mask = pos2mask[pos_a2d[pos]];
+  bitboard_t a_mask = square2bit[square];
+  bitboard_t b_mask = square2bit[square_a2b[square]];
+  bitboard_t c_mask = square2bit[square_a2c[square]];
+  bitboard_t d_mask = square2bit[square_a2d[square]];
   state->a[piece] &= ~a_mask;
   state->b[piece] &= ~b_mask;
   state->c[piece] &= ~c_mask;
@@ -129,15 +129,15 @@ static inline void remove_piece(state_s *state, pos_t pos)
   state->total_b &= ~b_mask;
   state->total_c &= ~c_mask;
   state->total_d &= ~d_mask;
-  state->piece_pos[(int)state->index_at[pos]] = NO_POS;
-  state->piece_at[pos] = EMPTY;
-  state->index_at[pos] = EMPTY;
+  state->piece_square[(int)state->index_at[square]] = NO_SQUARE;
+  state->piece_at[square] = EMPTY;
+  state->index_at[square] = EMPTY;
 }
 
-static inline void clear_rook_castling_rights(state_s *state, pos_t pos, player_e player)
+static inline void clear_rook_castling_rights(state_s *state, square_e square, player_e player)
 {
   for(int side = 0; side < 2; side++) {
-    if(pos == rook_start_pos[player][side]) {
+    if(square == rook_start_square[player][side]) {
       state->castling_rights &= ~castling_rights[player][side];
     }
   }
@@ -149,19 +149,19 @@ static inline void clear_king_castling_rights(state_s *state, player_e player)
 }
 
 static inline void do_rook_castling_move(state_s *state, 
-  pos_t king_pos, pos_t from_offset, pos_t to_offset)
+  square_e king_square, square_e from_offset, square_e to_offset)
 {
-  uint8_t rook_piece = state->piece_at[king_pos + from_offset];
-  int8_t rook_index = state->index_at[king_pos + from_offset];
-  remove_piece(state, king_pos + from_offset);
-  add_piece(state, king_pos + to_offset, rook_piece, rook_index);
+  uint8_t rook_piece = state->piece_at[king_square + from_offset];
+  int8_t rook_index = state->index_at[king_square + from_offset];
+  remove_piece(state, king_square + from_offset);
+  add_piece(state, king_square + to_offset, rook_piece, rook_index);
 }
 
 /* Alters the game state to effect a move.  There is no validity checking. */
 void make_move(state_s *state, move_s *move)
 {
-  ASSERT(is_valid_pos(move->from));
-  ASSERT(is_valid_pos(move->to));
+  ASSERT(is_valid_square(move->from));
+  ASSERT(is_valid_square(move->to));
   ASSERT(move->from != move->to);
 
   move->result = 0;
@@ -212,13 +212,13 @@ void make_move(state_s *state, move_s *move)
       move->result |= PROMOTED;
     }
     /* If pawn has been taken en-passant */
-    if(pos2mask[move->to] == state->en_passant) {
-      pos_t target_pos = move->to;
-      if(state->turn == WHITE) target_pos -= 8;
-      else target_pos += 8;
-      ASSERT(state->piece_at[target_pos] != EMPTY);
-      ASSERT(piece_player[state->piece_at[target_pos]] != state->turn);
-      remove_piece(state, target_pos);
+    if(square2bit[move->to] == state->en_passant) {
+      square_e target_square = move->to;
+      if(state->turn == WHITE) target_square -= 8;
+      else target_square += 8;
+      ASSERT(state->piece_at[target_square] != EMPTY);
+      ASSERT(piece_player[state->piece_at[target_square]] != state->turn);
+      remove_piece(state, target_square);
       move->result |= EN_PASSANT | CAPTURED;
     }
     break;
@@ -230,10 +230,10 @@ void make_move(state_s *state, move_s *move)
   /* If pawn has jumped, set en passant square */
   if(piece_type[moving_piece] == PAWN) {
     if(move->from - move->to == 16) {
-      state->en_passant = pos2mask[move->from - 8];
+      state->en_passant = square2bit[move->from - 8];
     }
     if(move->from - move->to == -16) {
-      state->en_passant = pos2mask[move->from + 8];
+      state->en_passant = square2bit[move->from + 8];
     }
   }
 
@@ -242,8 +242,8 @@ void make_move(state_s *state, move_s *move)
   
   /* Check testing */
   for(player_e player = 0; player < N_PLAYERS; player++) {
-    int king_pos = mask2pos(state->a[KING + player * N_PIECE_T]);
-    if(get_attacks(state, king_pos, opponent[player])) {
+    int king_square = bit2square(state->a[KING + player * N_PIECE_T]);
+    if(get_attacks(state, king_square, opponent[player])) {
       state->check[player] = 1;
     } else {
       state->check[player] = 0;
@@ -264,16 +264,16 @@ void setup_board(state_s *state, const int *pieces,
   state->castling_rights = castling_rights;
   state->en_passant = en_passant;
 
-  memset(state->piece_pos, NO_POS, N_PIECES * sizeof(state->piece_pos[0]));
-  memset(state->index_at, EMPTY, N_POS * sizeof(state->index_at[0]));
-  memset(state->piece_at, EMPTY, N_POS * sizeof(state->piece_at[0]));
+  memset(state->piece_square, NO_SQUARE, N_PIECES * sizeof(state->piece_square[0]));
+  memset(state->index_at, EMPTY, N_SQUARES * sizeof(state->index_at[0]));
+  memset(state->piece_at, EMPTY, N_SQUARES * sizeof(state->piece_at[0]));
   
   /* Iterate through positions */
   int index = 0;
-  for(pos_t pos = 0; pos < N_POS; pos++) {
-    int piece = pieces[pos];
+  for(square_e square = 0; square < N_SQUARES; square++) {
+    int piece = pieces[square];
     if(piece != EMPTY) {
-      add_piece(state, pos, piece, index);
+      add_piece(state, square, piece, index);
       index++;
     }
   }  
@@ -290,12 +290,12 @@ void reset_board(state_s *state)
 /* Initialises the module */
 void init_board(void)
 {
-  pos2mask = _pos2mask + 1;
-  pos2mask[NO_POS] = 0;
-  for(pos_t pos = 0; pos < N_POS; pos++) {
-    pos2mask[pos] = 1ull << pos;
-    pos_a2b[pos] = (pos / 8) + (pos % 8) * 8;
-    pos_a2d[pos] = pos_a2c[(pos / 8) * 8 + (7 - pos % 8)];
+  square2bit = _square2bit + 1;
+  square2bit[NO_SQUARE] = 0;
+  for(square_e square = 0; square < N_SQUARES; square++) {
+    square2bit[square] = 1ull << square;
+    square_a2b[square] = (square / 8) + (square % 8) * 8;
+    square_a2d[square] = square_a2c[(square / 8) * 8 + (7 - square % 8)];
   }
   init_moves();
 }

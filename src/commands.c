@@ -142,25 +142,25 @@ void ui_print(engine_s *e) {
 }
 
 void ui_attacks(engine_s *e) {
-  pos_t target;
-  if(parse_pos(get_input(), &target)) {
+  square_e target;
+  if(parse_square(get_input(), &target)) {
     return;
   }
-  if(no_piece_at_pos(e, target)) {
+  if(no_piece_at_square(e, target)) {
     return;
   }
   print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
   
 void ui_moves(engine_s *e) {
-  pos_t from;
-  if(parse_pos(get_input(), &from)) {
+  square_e from;
+  if(parse_square(get_input(), &from)) {
     return;
   }
-  if(no_piece_at_pos(e, from)) {
+  if(no_piece_at_square(e, from)) {
     return;
   }
-  print_board(stdout, &(e->game), get_moves(&(e->game), from), pos2mask[from]);
+  print_board(stdout, &(e->game), get_moves(&(e->game), from), square2bit[from]);
 }
 
 void ui_eval(engine_s *e) {

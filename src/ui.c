@@ -143,14 +143,14 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result)
   }
 }
 
-static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
+static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e to) {
   if(!engine->xboard_mode) {
     if(from >= 0) {
       char from_buf[POS_BUF_SIZE];
-      format_pos(from_buf, from);
+      format_square(from_buf, from);
       if(to >= 0) {
         char to_buf[POS_BUF_SIZE];
-        format_pos(to_buf, to);
+        format_square(to_buf, to);
         printf(fmt, from_buf, to_buf);
       } else {
         printf(fmt, from_buf);
@@ -164,10 +164,10 @@ static void print_msg(engine_s *engine, const char *fmt, pos_t from, pos_t to) {
 /* 
  *  Move Checking 
  */
-int no_piece_at_pos(engine_s *engine, pos_t pos) 
+int no_piece_at_square(engine_s *engine, square_e square) 
 {
-  if((pos2mask[pos] & engine->game.total_a) == 0) {
-    print_msg(engine, "There is no piece at %s.\n", pos, -1);
+  if((square2bit[square] & engine->game.total_a) == 0) {
+    print_msg(engine, "There is no piece at %s.\n", square, -1);
     return 1;
   }
   return 0;
@@ -175,18 +175,18 @@ int no_piece_at_pos(engine_s *engine, pos_t pos)
 
 int move_is_illegal(engine_s *engine, move_s *move)
 {
-  if(no_piece_at_pos(engine, move->from)) {
+  if(no_piece_at_square(engine, move->from)) {
     return 1;
   }
   if(move->from == move->to) {
     print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[move->from] & get_my_pieces(&engine->game)) == 0) {
+  if((square2bit[move->from] & get_my_pieces(&engine->game)) == 0) {
     print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
     return 1;
   } 
-  if((pos2mask[move->to] & get_moves(&engine->game, move->from)) == 0) { 
+  if((square2bit[move->to] & get_moves(&engine->game, move->from)) == 0) { 
     print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
     return 1;
   } 
@@ -234,7 +234,7 @@ static inline void do_ai_move(engine_s *engine)
 
   if(engine->resign_delayed) {
     resign = 1;
-  } else if(result.move.from == NO_POS) {
+  } else if(result.move.from == NO_SQUARE) {
     if(engine->game.check) {
       /* Checkmate */
       resign = 1;

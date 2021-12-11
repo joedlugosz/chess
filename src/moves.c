@@ -8,9 +8,9 @@
 
 typedef unsigned char rank_t;
 
-/* For each A-pos, the amount that the C-stack must be
+/* For each A-square, the amount that the C-stack must be
    shifted to get the start of a diagonal row */
-const pos_t shift_c[N_POS] = {
+const square_e shift_c[N_SQUARES] = {
    0,  1,  3,  6, 10, 15, 21, 28,
    1,  3,  6, 10, 15, 21, 28, 36,
    3,  6, 10, 15, 21, 28, 36, 43,
@@ -20,9 +20,9 @@ const pos_t shift_c[N_POS] = {
   21, 28, 36, 43, 49, 54, 58, 61,
   28, 36, 43, 49, 54, 58, 61, 63
 };
-/* For each A-pos, the mask that must be applied to 
+/* For each A-square, the mask that must be applied to 
    obtain a single diagonal row */
-const rank_t mask_c[N_POS] = {
+const rank_t mask_c[N_SQUARES] = {
   0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff,
   0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff, 0x7f,
   0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff, 0x7f, 0x3f,
@@ -34,7 +34,7 @@ const rank_t mask_c[N_POS] = {
 };
 /* Amount that occupancy mask occ_c2a[occ] must 
    be shifted to get to the correct diagonal */
-const pos_t shift_c2a[N_POS] = {
+const square_e shift_c2a[N_SQUARES] = {
   0,  1,  2,  3,  4,  5,  6,  7,
   1,  2,  3,  4,  5,  6,  7, 15,
   2,  3,  4,  5,  6,  7, 15, 23,
@@ -45,7 +45,7 @@ const pos_t shift_c2a[N_POS] = {
   7, 15, 23, 31, 39, 47, 55, 63,
 };
 /* Ditto D-stack */
-const pos_t shift_d2a[N_POS] = {
+const square_e shift_d2a[N_SQUARES] = {
   0,  1,  2,  3,  4,  5,  6,  7,
   8,  0,  1,  2,  3,  4,  5,  6,
   16,  8,  0,  1,  2,  3,  4,  5,
@@ -69,9 +69,9 @@ const bitboard_t king_castle_slides[N_PLAYERS][2] = { { 0x0cull, 0x60ull }, { 0x
 const bitboard_t rook_castle_slides[N_PLAYERS][2] = { { 0x0eull, 0x60ull }, { 0x0eull << 56, 0x60ull << 56 } };
 const bitboard_t castle_destinations[N_PLAYERS][2] = { { 0x04ull, 0x40ull }, { 0x04ull << 56, 0x40ull << 56 } };
 
-extern const pos_t pos_a2b[N_POS];
-extern const pos_t pos_a2c[N_POS];
-extern const pos_t pos_a2d[N_POS];
+extern const square_e square_a2b[N_SQUARES];
+extern const square_e square_a2c[N_SQUARES];
+extern const square_e square_a2d[N_SQUARES];
 extern const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE];
 
 /* Rank blocking table for Rook, Bishop and Queen moves */
@@ -80,26 +80,26 @@ unsigned int blocking[8][256];
    diagonal in A-plane */
 bitboard_t occ_b2a[256], occ_c2a[256], occ_d2a[256];
 
-/* These are reflections in the vertical axis of their C-pos counterparts 
+/* These are reflections in the vertical axis of their C-square counterparts 
    which are calculated at run-time */
-rank_t shift_d[N_POS];
-rank_t mask_d[N_POS];
+rank_t shift_d[N_SQUARES];
+rank_t mask_d[N_SQUARES];
 
 /* Knight and king moves */
-bitboard_t knight_moves[N_POS], king_moves[N_POS];
+bitboard_t knight_moves[N_SQUARES], king_moves[N_SQUARES];
 /* Pawn advances and takes */
-bitboard_t pawn_advances[N_PLAYERS][N_POS], pawn_takes[N_PLAYERS][N_POS];
+bitboard_t pawn_advances[N_PLAYERS][N_SQUARES], pawn_takes[N_PLAYERS][N_SQUARES];
 
 /* Returns the valid rook moves for a given position, taking into account 
    blockages by other pieces.  Also returns moves where rooks can take their 
    own side's pieces (these are filtered out elsewhere). */
-bitboard_t get_rook_moves(state_s *state, pos_t a_pos)
+bitboard_t get_rook_moves(state_s *state, square_e a_square)
 {
   /* A-stack */
-  /* The shift that is required to move the rank containing pos down to rank zero */
-  int a_shift = a_pos & ~7ul;
+  /* The shift that is required to move the rank containing square down to rank zero */
+  int a_shift = a_square & ~7ul;
   /* Position within that rank */
-  int a_file = a_pos & 7ul;
+  int a_file = a_square & 7ul;
   /* Piece occupancy of the rank in the A-stack */
   rank_t a_occ = (rank_t)((state->total_a >> a_shift) & 0xfful);
   /* Permitted moves within the rank */
@@ -108,10 +108,10 @@ bitboard_t get_rook_moves(state_s *state, pos_t a_pos)
   bitboard_t h_mask = (bitboard_t)a_moves << a_shift;  
   /* B-stack */
   /* B-position */
-  int b_pos = pos_a2b[a_pos];
-  /* Shift required to shift the B-rank containing pos down to rank zero */
-  int b_shift = b_pos & ~7ul;
-  int b_file = b_pos & 7ul;
+  int b_square = square_a2b[a_square];
+  /* Shift required to shift the B-rank containing square down to rank zero */
+  int b_shift = b_square & ~7ul;
+  int b_file = b_square & 7ul;
   rank_t b_occ = (rank_t)((state->total_b >> b_shift) & 0xfful);
   rank_t b_moves = blocking[b_file][b_occ];
   /* A-mask (note) of permitted vertical moves in file 0 */
@@ -125,39 +125,39 @@ bitboard_t get_rook_moves(state_s *state, pos_t a_pos)
 /* Returns the valid bishop moves for a given position, taking into account 
    blockages by other pieces.  Also returns moves where bishops can take their
    own side's pieces (these are filtered out elsewhere). */
-bitboard_t get_bishop_moves(state_s *state, pos_t a_pos)
+bitboard_t get_bishop_moves(state_s *state, square_e a_square)
 {
-  /* C-pos */
-  /* Shift required to shift the rank containing pos down to rank zero */
-  int c_shift = shift_c[a_pos];
-  rank_t c_mask = mask_c[a_pos];
-  /* Effective file within C-rank is calculated from the pos and the shift */
-  int c_file = pos_a2c[a_pos] - c_shift;
+  /* C-square */
+  /* Shift required to shift the rank containing square down to rank zero */
+  int c_shift = shift_c[a_square];
+  rank_t c_mask = mask_c[a_square];
+  /* Effective file within C-rank is calculated from the square and the shift */
+  int c_file = square_a2c[a_square] - c_shift;
   /* Piece occupancy of the rank in the C-stack */
   rank_t c_occ = (rank_t)((state->total_c) >> c_shift) & c_mask;
   /* Permitted moves within the rank */
   rank_t c_moves = blocking[c_file][c_occ] & c_mask;
   /* A-mask of permitted C moves */
-  bitboard_t c_ret = occ_c2a[c_moves] << shift_c2a[a_pos];
-  /* D-pos */
-  /* Shift required to shift the rank containing pos down to rank zero */
-  int d_shift = shift_d[a_pos];
-  rank_t d_mask = mask_d[a_pos];
-  /* Effective file within C-rank is calculated from the pos and the shift */
-  int d_file = pos_a2d[a_pos] - d_shift;
+  bitboard_t c_ret = occ_c2a[c_moves] << shift_c2a[a_square];
+  /* D-square */
+  /* Shift required to shift the rank containing square down to rank zero */
+  int d_shift = shift_d[a_square];
+  rank_t d_mask = mask_d[a_square];
+  /* Effective file within C-rank is calculated from the square and the shift */
+  int d_file = square_a2d[a_square] - d_shift;
   /* Piece occupancy of the rank in the D-stack */
   rank_t d_occ = (rank_t)((state->total_d) >> d_shift) & d_mask;
   /* Permitted moves within the rank */
   rank_t d_moves = blocking[d_file][d_occ] & d_mask;
   /* A-mask of permitted D moves */
-  bitboard_t d_ret = occ_d2a[d_moves] << shift_d2a[a_pos];
+  bitboard_t d_ret = occ_d2a[d_moves] << shift_d2a[a_square];
 
   return (c_ret | d_ret); 
 }
 
 /* Returns the valid king moves for a given position, including king 
    destinations for castling if possible */
-bitboard_t get_king_moves(state_s *state, pos_t from, player_e player)
+bitboard_t get_king_moves(state_s *state, square_e from, player_e player)
 {
   /* All non-castling king moves minus any that would lead into check */
   bitboard_t moves = king_moves[from] & ~state->claim[opponent[player]];
@@ -186,7 +186,7 @@ bitboard_t get_king_moves(state_s *state, pos_t from, player_e player)
       bitboard_t king_slides = king_castle_slides[player][side];
       while(king_slides) {
         bitboard_t mask = next_bit_from(&king_slides);
-        if(get_attacks(state, mask2pos(mask), opponent[player])) {
+        if(get_attacks(state, bit2square(mask), opponent[player])) {
           blocked |= mask;
         }
       }
@@ -200,10 +200,10 @@ bitboard_t get_king_moves(state_s *state, pos_t from, player_e player)
 }
 
 /* Returns the set of all pieces that can attack a given position */
-bitboard_t get_attacks(state_s *state, pos_t target, player_e attacking)
+bitboard_t get_attacks(state_s *state, square_e target, player_e attacking)
 {
   bitboard_t attacks = 0;
-  bitboard_t target_mask = pos2mask[target];
+  bitboard_t target_mask = square2bit[target];
   int base = attacking * N_PIECE_T;
   /* Check player is not trying to attack own piece (checking an empty square is ok because
    * it needs to be done for castling) */
@@ -216,7 +216,7 @@ bitboard_t get_attacks(state_s *state, pos_t target, player_e attacking)
   bitboard_t sliders = state->a[base + ROOK] | state->a[base + BISHOP] | state->a[base + QUEEN];
   while(sliders) {
     bitboard_t attacker = next_bit_from(&sliders);
-    if(target_mask & state->moves[(int)state->index_at[mask2pos(attacker)]]) attacks |= attacker;
+    if(target_mask & state->moves[(int)state->index_at[bit2square(attacker)]]) attacks |= attacker;
   }
   return attacks;
 }
@@ -229,12 +229,12 @@ void calculate_moves(state_s *state)
   state->claim[1] = 0;
 
   for(int8_t index = 0; index < N_PIECES; index++) {
-    pos_t pos = state->piece_pos[index];      
-    if(pos == NO_POS) {
+    square_e square = state->piece_square[index];      
+    if(square == NO_SQUARE) {
       continue;
     }
-    ASSERT(state->index_at[pos] == index);
-    int piece = state->piece_at[pos];
+    ASSERT(state->index_at[square] == index);
+    int piece = state->piece_at[square];
     /* King handled at the end */
     if(piece_type[piece] == KING) 
       continue;
@@ -248,7 +248,7 @@ void calculate_moves(state_s *state)
         bitboard_t block = state->total_a;
         /* Special case for double advance to prevent jumping */
         /* Remove the pawn so it does not block itself */
-        block &= ~pos2mask[pos];
+        block &= ~square2bit[square];
         /* Blocking piece does not just block its own square but also the next */
         if(player == WHITE) {
           block |= block << 8;
@@ -256,28 +256,28 @@ void calculate_moves(state_s *state)
           block |= block >> 8;
         }
         /* Apply block to pawn advances */
-        moves = pawn_advances[player][pos] & ~block;
+        moves = pawn_advances[player][square] & ~block;
         /* Add actual taking moves */
-        moves |= pawn_takes[player][pos] & (state->player_a[opponent[player]] | state->en_passant);
+        moves |= pawn_takes[player][square] & (state->player_a[opponent[player]] | state->en_passant);
         /* Claim for pawns is only taking moves */
-        state->claim[player] |= pawn_takes[player][pos] & ~state->player_a[player];
+        state->claim[player] |= pawn_takes[player][square] & ~state->player_a[player];
       }
       break;
     case ROOK:
-      moves = get_rook_moves(state, pos);
+      moves = get_rook_moves(state, square);
       break;
     case KNIGHT:
-      moves = knight_moves[pos];
+      moves = knight_moves[square];
       break;
     case BISHOP:
-      moves = get_bishop_moves(state, pos);
+      moves = get_bishop_moves(state, square);
       break;
     case QUEEN:
-      moves = get_bishop_moves(state, pos) | get_rook_moves(state, pos);
+      moves = get_bishop_moves(state, square) | get_rook_moves(state, square);
       break;
     case KING:
     /* Player info is required for castling checking */
-      moves = get_king_moves(state, pos, player);
+      moves = get_king_moves(state, square, player);
       break;
     default:
       moves = 0;
@@ -293,16 +293,16 @@ void calculate_moves(state_s *state)
   }
   
   for(int8_t index = 0; index < N_PIECES; index++) {
-    pos_t pos = state->piece_pos[index];      
-    if(pos == NO_POS) {
+    square_e square = state->piece_square[index];      
+    if(square == NO_SQUARE) {
       continue;
     }
-    ASSERT(state->index_at[pos] == index);
-    int piece = state->piece_at[pos];
+    ASSERT(state->index_at[square] == index);
+    int piece = state->piece_at[square];
     if(piece_type[piece] != KING) 
       continue;
     player_e player = piece_player[piece];
-    bitboard_t moves = get_king_moves(state, state->piece_pos[index], player);
+    bitboard_t moves = get_king_moves(state, state->piece_square[index], player);
     /* You can't take your own piece */
     moves &= ~state->player_a[player];
     state->moves[index] = moves;
@@ -314,10 +314,10 @@ void calculate_moves(state_s *state)
 void init_moves(void)
 {
   /* Position-indexed tables */
-  for(pos_t pos = 0; pos < N_POS; pos++) {
-    int mirror = (pos / 8) * 8 + (7 - pos % 8);
-    shift_d[pos] = shift_c[mirror];
-    mask_d[pos] = mask_c[mirror];
+  for(square_e square = 0; square < N_SQUARES; square++) {
+    int mirror = (square / 8) * 8 + (7 - square % 8);
+    shift_d[square] = shift_c[mirror];
+    mask_d[square] = mask_c[mirror];
   }
 
   /* Table of file 0 occupancies */
@@ -327,9 +327,9 @@ void init_moves(void)
     occ_d2a[i] = 0;
     for(int bit = 0; bit < 8; bit++) {
       if(i & (1 << bit)) {
-      occ_b2a[i] |= pos2mask[pos_a2b[bit]]; 
-      occ_c2a[i] |= pos2mask[bit * 7];
-      occ_d2a[i] |= pos2mask[bit * 9];
+      occ_b2a[i] |= square2bit[square_a2b[bit]]; 
+      occ_c2a[i] |= square2bit[bit * 7];
+      occ_d2a[i] |= square2bit[bit * 9];
       }
     }
   }
@@ -338,19 +338,19 @@ void init_moves(void)
    *  Sliding Moves
    */
 
-  for(pos_t pos = 0; pos < 8; pos++) {
+  for(square_e square = 0; square < 8; square++) {
     unsigned int rank;
     for(rank = 0; rank < 256; rank++) {
       unsigned int l_mask, r_mask;
       unsigned int l_squares, r_squares, l_pieces, r_pieces;
       int l_first_occupied, r_first_occupied;
 
-      /* 1. Set of all squares to the left of pos */
-      l_squares = 0xff << (pos + 1);
-      /* 2. Set of all pieces to the left of pos */
+      /* 1. Set of all squares to the left of square */
+      l_squares = 0xff << (square + 1);
+      /* 2. Set of all pieces to the left of square */
       l_pieces = l_squares & rank;
       if(l_pieces) {
-	    /* 3. First occupied square to the left of pos (count trailing zeroes) */
+	    /* 3. First occupied square to the left of square (count trailing zeroes) */
 	    l_first_occupied = ctz(l_pieces);
 	    /* 4. Set of all squares to the left of the first occupied */
 	    l_mask = 0xff << (l_first_occupied + 1);
@@ -360,7 +360,7 @@ void init_moves(void)
       }
 		 
       /* Ditto right hand side, shift the other way and count leading zeroes  */
-      r_squares = 0xff >> (8 - pos);
+      r_squares = 0xff >> (8 - square);
       r_pieces = r_squares & rank;
       if(r_pieces) {
 	    /* Adjust the shift for the size of the word */
@@ -372,7 +372,7 @@ void init_moves(void)
 
       /* Combine left and right masks and negate to get set of all possible 
 	     moves on the rank. */
-      blocking[pos][rank] = ~(r_mask | l_mask);	  
+      blocking[square][rank] = ~(r_mask | l_mask);	  
     }
   }
 
@@ -381,8 +381,8 @@ void init_moves(void)
    *  Knight and King moves 
    */
 
-  for(pos_t pos = 0; pos < N_POS; pos++) {
-    bitboard_t pos_mask = pos2mask[pos];
+  for(square_e square = 0; square < N_SQUARES; square++) {
+    bitboard_t square_mask = square2bit[square];
 
     /* Possible knight moves: A-H
      * Possible king moves: I-P
@@ -394,34 +394,34 @@ void init_moves(void)
      */
 
     /* BE, KLM */
-    if(pos_mask & 0x7f7f7f7f7f7f7f7full) {
-      knight_moves[pos] |= pos_mask >> 15;
-      knight_moves[pos] |= pos_mask << 17;
-      king_moves[pos] |= pos_mask << 1;
-      king_moves[pos] |= pos_mask >> 7;
-      king_moves[pos] |= pos_mask << 9;
+    if(square_mask & 0x7f7f7f7f7f7f7f7full) {
+      knight_moves[square] |= square_mask >> 15;
+      knight_moves[square] |= square_mask << 17;
+      king_moves[square] |= square_mask << 1;
+      king_moves[square] |= square_mask >> 7;
+      king_moves[square] |= square_mask << 9;
     }
     /* CD */
-    if(pos_mask & 0x3f3f3f3f3f3f3f3full) {
-      knight_moves[pos] |= pos_mask >> 6;
-      knight_moves[pos] |= pos_mask << 10;
+    if(square_mask & 0x3f3f3f3f3f3f3f3full) {
+      knight_moves[square] |= square_mask >> 6;
+      knight_moves[square] |= square_mask << 10;
     }
     /* AF, IOP */
-    if(pos_mask & 0xfefefefefefefefeull) {
-      knight_moves[pos] |= pos_mask >> 17;
-      knight_moves[pos] |= pos_mask << 15;
-      king_moves[pos] |= pos_mask >> 1;
-      king_moves[pos] |= pos_mask << 7;
-      king_moves[pos] |= pos_mask >> 9;
+    if(square_mask & 0xfefefefefefefefeull) {
+      knight_moves[square] |= square_mask >> 17;
+      knight_moves[square] |= square_mask << 15;
+      king_moves[square] |= square_mask >> 1;
+      king_moves[square] |= square_mask << 7;
+      king_moves[square] |= square_mask >> 9;
     }
     /* GH */
-    if(pos_mask & 0xfcfcfcfcfcfcfcfcull) {
-      knight_moves[pos] |= pos_mask >> 10;
-      knight_moves[pos] |= pos_mask << 6;
+    if(square_mask & 0xfcfcfcfcfcfcfcfcull) {
+      knight_moves[square] |= square_mask >> 10;
+      knight_moves[square] |= square_mask << 6;
     }
     /* JN */
-    king_moves[pos] |= pos_mask >> 8;
-    king_moves[pos] |= pos_mask << 8;
+    king_moves[square] |= square_mask >> 8;
+    king_moves[square] |= square_mask << 8;
   }
 
 
@@ -430,10 +430,10 @@ void init_moves(void)
    */
 
   for(player_e player = 0; player < N_PLAYERS; player++) {
-    for(pos_t pos = 0; pos < N_POS; pos++) {
+    for(square_e square = 0; square < N_SQUARES; square++) {
       bitboard_t current, advance, jump, take;
       /* Mask for pawn */
-      current = pos2mask[pos];
+      current = square2bit[square];
       advance = current;
       /* White and black advance in different directions */
       if(player == WHITE) {
@@ -450,7 +450,7 @@ void init_moves(void)
       jump >>= 16;
       }
       /* Set of all possible advance or jump moves */		 
-      pawn_advances[player][pos] = advance | jump;
+      pawn_advances[player][square] = advance | jump;
 	  
       /* Taking moves */
       take = 0;
@@ -463,7 +463,7 @@ void init_moves(void)
 	      take |= advance >> 1;
       }
       /* Set of all possible taking moves */		 
-      pawn_takes[player][pos] = take;
+      pawn_takes[player][square] = take;
     }
   }
 }

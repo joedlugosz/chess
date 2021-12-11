@@ -34,7 +34,7 @@ int load_fen( state_s *state,
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
-  int board[N_POS];
+  int board[N_SQUARES];
   int file = 0;
   int rank = 7;
   const char *ptr = placement_text;
@@ -126,12 +126,12 @@ int load_fen( state_s *state,
   if(*ptr == '-') {
     en_passant = 0;
   } else {
-    pos_t ep_pos;
-    if(parse_pos(en_passant_text, &ep_pos)) {
+    square_e ep_square;
+    if(parse_square(en_passant_text, &ep_square)) {
       printf("FEN: Invalid en-passant input\n");
       goto error;
     }
-    en_passant = pos2mask[ep_pos];
+    en_passant = square2bit[ep_square];
   }
   /* Success - write the new positions to state */
   setup_board(state, board, turn, castling_rights, en_passant);
@@ -190,7 +190,7 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   if(state->en_passant == 0) {
     *ptr++ = '-';
   } else {
-    format_pos(ptr, mask2pos(state->en_passant));
+    format_square(ptr, bit2square(state->en_passant));
     ptr += 2;
   }
   *ptr = 0;
