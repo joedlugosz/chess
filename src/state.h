@@ -93,7 +93,7 @@ typedef struct state_s_ {
   status_t to_move : 1;      /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
-  pos_t en_passant;        /* En-passant squares */
+  plane_t en_passant;        /* En-passant squares */
 } state_s;
 
 /* move_s holds the game state as well as info about moves */
@@ -114,7 +114,7 @@ typedef struct move_s_ {
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *, const int *, player_e, castle_rights_t, pos_t);
+void setup_board(state_s *, const int *, player_e, castle_rights_t, plane_t);
 
 plane_t get_attacks(state_s *state, pos_t target, player_e attacking);
 void make_move(state_s *state, move_s *move);

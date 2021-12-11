@@ -122,14 +122,16 @@ int load_fen( state_s *state,
   }
 
   ptr = en_passant_text;
-  pos_t en_passant;
+  plane_t en_passant;
   if(*ptr == '-') {
-    en_passant = NO_POS;
+    en_passant = 0;
   } else {
-    if(parse_pos(en_passant_text, &en_passant)) {
+    pos_t ep_pos;
+    if(parse_pos(en_passant_text, &ep_pos)) {
       printf("FEN: Invalid en-passant input\n");
       goto error;
     }
+    en_passant = pos2mask[ep_pos];
   }
   /* Success - write the new positions to state */
   setup_board(state, board, to_move, castling_rights, en_passant);
@@ -170,9 +172,11 @@ int get_fen(const state_s *state, char *out, size_t outsize)
     }
   }
   *ptr++ = ' ';
+
   /* Moving player */
   *ptr++ = (state->to_move == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
+  
   /* Castling rights */
   for(int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
     if(state->castling_rights & castling_rights_letter[i].mask) {
@@ -181,17 +185,14 @@ int get_fen(const state_s *state, char *out, size_t outsize)
   }
   if(!state->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
+
   /* En passant */
-  if(state->en_passant == NO_POS) {
+  if(state->en_passant == 0) {
     *ptr++ = '-';
   } else {
-    format_pos(ptr, state->en_passant);
+    format_pos(ptr, mask2pos(state->en_passant));
     ptr += 2;
   }
-  //*ptr++ = ' ';
-  //*ptr++ = '0';
-  //*ptr++ = ' ';
-  //*ptr++ = '0';
   *ptr = 0;
   return 0;
 }

@@ -211,7 +211,7 @@ void make_move(state_s *state, move_s *move)
       move->result |= PROMOTED;
     }
     /* If pawn has been taken en-passant */
-    if(move->to == state->en_passant) {
+    if(pos2mask[move->to] == state->en_passant) {
       pos_t target_pos = move->to;
       if(state->to_move == WHITE) target_pos -= 8;
       else target_pos += 8;
@@ -225,14 +225,14 @@ void make_move(state_s *state, move_s *move)
     break;
   }
   /* Clear previous en passant state */
-  state->en_passant = NO_POS;
+  state->en_passant = 0;
   /* If pawn has jumped, set en passant square */
   if(piece_type[moving_piece] == PAWN) {
     if(move->from - move->to == 16) {
-      state->en_passant = move->from - 8;
+      state->en_passant = pos2mask[move->from - 8];
     }
     if(move->from - move->to == -16) {
-      state->en_passant = move->from + 8;
+      state->en_passant = pos2mask[move->from + 8];
     }
   }
 
@@ -256,7 +256,7 @@ void make_move(state_s *state, move_s *move)
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const int *pieces, 
-  player_e to_move, castle_rights_t castling_rights, pos_t en_passant)
+  player_e to_move, castle_rights_t castling_rights, plane_t en_passant)
 {
   memset(state, 0, sizeof(*state));
   state->to_move = to_move;
@@ -287,7 +287,7 @@ void setup_board(state_s *state, const int *pieces,
 /* Resets the board to the starting position */
 void reset_board(state_s *state)
 {
-  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, NO_POS);
+  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0);
 }
 
 /* Initialises the module */
