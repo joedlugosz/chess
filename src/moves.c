@@ -185,7 +185,7 @@ bitboard_t get_king_moves(state_s *state, square_e from, player_e player)
     if(!blocked) {
       bitboard_t king_slides = king_castle_slides[player][side];
       while(king_slides) {
-        bitboard_t mask = next_bit_from(&king_slides);
+        bitboard_t mask = take_next_bit_from(&king_slides);
         if(get_attacks(state, bit2square(mask), opponent[player])) {
           blocked |= mask;
         }
@@ -215,7 +215,7 @@ bitboard_t get_attacks(state_s *state, square_e target, player_e attacking)
   attacks |= king_moves[target] & state->a[base + KING];
   bitboard_t sliders = state->a[base + ROOK] | state->a[base + BISHOP] | state->a[base + QUEEN];
   while(sliders) {
-    bitboard_t attacker = next_bit_from(&sliders);
+    bitboard_t attacker = take_next_bit_from(&sliders);
     if(target_mask & state->moves[(int)state->index_at[bit2square(attacker)]]) attacks |= attacker;
   }
   return attacks;

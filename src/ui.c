@@ -4,6 +4,7 @@
 
 #include "commands.h"
 #include "engine.h"
+#include "info.h"
 #include "log.h"
 #include "os.h"
 #include "search.h"

@@ -19,6 +19,9 @@
 #ifndef LOG_DIR
 # define LOG_DIR ""
 #endif
+#ifndef PROGRAM_NAME
+# define PROGRAM_NAME "chess"
+#endif
 
 /*
  *  Options
