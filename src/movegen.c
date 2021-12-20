@@ -84,10 +84,10 @@ int generate_search_movelist(state_s *state, movelist_s **move_buf)
   int count = 0; 
   bitboard_t pieces = get_my_pieces(state);
   while(pieces) {
-    square_e from = bit2square(next_bit_from(&pieces));
+    square_e from = bit2square(take_next_bit_from(&pieces));
     bitboard_t moves = get_moves(state, from);
     while(moves) {
-      bitboard_t to_mask = next_bit_from(&moves);
+      bitboard_t to_mask = take_next_bit_from(&moves);
       square_e to = bit2square(to_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }
@@ -103,11 +103,11 @@ int generate_quiescence_movelist(state_s *state, movelist_s **move_buf)
   int count = 0;
   bitboard_t victims = state->claim[state->turn] & get_opponents_pieces(state);
   while(victims) {
-    bitboard_t to_mask = next_bit_from(&victims);
+    bitboard_t to_mask = take_next_bit_from(&victims);
     square_e to = bit2square(to_mask);
     bitboard_t attackers = get_attacks(state, to, state->turn);
     while(attackers) {
-      bitboard_t from_mask = next_bit_from(&attackers);
+      bitboard_t from_mask = take_next_bit_from(&attackers);
       square_e from = bit2square(from_mask);
       add_movelist_entries(state, from, to, *move_buf, &prev, &count);
     }

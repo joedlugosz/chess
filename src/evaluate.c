@@ -64,7 +64,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
   /* Mobility - for each piece count the number of moves */
   pieces = state->player_a[player];
   while(pieces) {
-    square_e pos = bit2square(next_bit_from(&pieces));
+    square_e pos = bit2square(take_next_bit_from(&pieces));
     score += mobility * pop_count(get_moves(state, pos));
   }
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
@@ -78,7 +78,7 @@ static inline score_t evaluate_player(state_s *state, player_e player)
   /* Blocked pawns - look for pawns with no moves */
   pieces = state->a[PAWN + pt_first];
   while(pieces) {
-    square_e pos = bit2square(next_bit_from(&pieces));
+    square_e pos = bit2square(take_next_bit_from(&pieces));
     if(pop_count(get_moves(state, pos) == 0ull)) {
       score -= blocked;
     }
