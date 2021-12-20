@@ -4,7 +4,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_compile_options (
 
     -std=c99
-    -Wfatal-errors -Wall -Werror
+
+    -Wfatal-errors
+    -Wall
+    -Werror
+
     -msse4
 
     $<$<CONFIG:Gprof>:-pg>
@@ -44,11 +48,17 @@ set (
     movegen.c
     moves.c
     options.c
-    posix.c
     search.c
     state.c
     ui.c
 )
 
+# OS-dependent stuff
+if (WIN32)
+  list (APPEND SOURCES win.c)
+else ()
+  list (APPEND SOURCES posix.c)
+endif ()
+
 add_executable (chess ${SOURCES})
-target_link_libraries(chess info)
+target_link_libraries (chess info)
