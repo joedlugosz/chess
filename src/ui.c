@@ -344,6 +344,11 @@ int main(int argc, char *argv[])
   engine_s engine;
   init_engine(&engine);
   parse_command_line_args(&engine, argc, argv);
+
+  print_program_info();
   print_game_state(&engine);
+
   main_loop(&engine);
+
+  return 0;
 }
