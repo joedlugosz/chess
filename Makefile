@@ -44,9 +44,7 @@ MODULES		+= posix
 endif
 
 COMPNAME	:= $(shell gcc --version | grep 'gcc')
-BUILDFLAGS	:= -DCOMPILER_NAME="\"$(COMPNAME)\""  \
-		  -DPROGRAM_NAME="\"$(PROJNAME)\"" \
-			-DLOG_DIR="\"$(LOGDIR)\""
+BUILDFLAGS	:= -DLOG_DIR="\"$(LOGDIR)\""
 
 # 	Output file names
 RELOUTPATH	= $(OUTDIR)$(PROJNAME)
