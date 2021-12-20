@@ -1,5 +1,5 @@
 # Project output name
-PROJNAME	= 5.0-movegen
+PROJNAME	= chess
 
 # Project directory structure
 SRCDIR		= ./src/
@@ -12,7 +12,7 @@ LSTDIR		= ./lst/
 ARCHDIR		= ../arch/src/
 LOGDIR		= ./test/log/
 
-MODULES		= build commands evaluate fen history io log moves movegen options search state ui
+MODULES		= commands evaluate fen history io info log moves movegen options search state ui
 
 #	Build tools
 TOOLCHAIN	= 
@@ -44,10 +44,7 @@ MODULES		+= posix
 endif
 
 COMPNAME	:= $(shell gcc --version | grep 'gcc')
-TARGETNAME	:= $(shell gcc -dumpmachine)
-BUILDFLAGS	:= -DCOMPILER_NAME="\"$(COMPNAME)\"" -DTARGET_NAME="\"$(TARGETNAME)\"" \
-			-DOS_NAME="\"$(OS)\"" -DPROGRAM_NAME="\"$(PROJNAME)\"" \
-			-DLOG_DIR="\"$(LOGDIR)\""
+BUILDFLAGS	:= -DLOG_DIR="\"$(LOGDIR)\""
 
 # 	Output file names
 RELOUTPATH	= $(OUTDIR)$(PROJNAME)
@@ -103,17 +100,22 @@ $(DBGOBJDIR) $(RELOBJDIR) $(PRFOBJDIR) $(OUTDIR):
 	$(MKDIR) $@
 
 # Build rules
+# Release
 $(RELOUTPATH): $(RELOBJPATHS) 
 	$(LD) -o $@ $(RELOBJPATHS) $(RELLFLAGS)
+$(RELOBJDIR)info.o: $(SRCDIR)info.c $(SRCDIR)version.h
+	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -DCONFIG="release" -o $@ $<
 $(RELOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(RELCFLAGS) $(BUILDFLAGS) -o $@ $<
-# Output
+# Debug
 $(DBGOUTPATH): $(DBGOBJPATHS) 
 	$(LD) -o $@ $(DBGOBJPATHS) $(DBGLFLAGS)
 $(DBGOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(DBGCFLAGS) $(BUILDFLAGS) -o $@ $<
-# Output
+# Profiler
 $(PRFOUTPATH): $(PRFOBJPATHS) 
 	$(LD) -o $@ $(PRFOBJPATHS) $(PRFLFLAGS)
 $(PRFOBJDIR)%.o: $(SRCDIR)%.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(PRFCFLAGS) $(BUILDFLAGS) -o $@ $< >> $(@:.o=.lst)
+$(SRCDIR)version.h:
+	./version.sh $@
