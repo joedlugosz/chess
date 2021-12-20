@@ -2,9 +2,9 @@
  *  Build information
  */
 
-#ifndef BUILD_H
-#define BUILD_H
+#ifndef INFO_H
+#define INFO_H
 
 void print_program_info();
 
-#endif /* BUILD_H */
+#endif /* INFO_H */
