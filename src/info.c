@@ -66,7 +66,7 @@ void print_program_info()
         printf("%-15s", buf);
         printf("%-60s", lines[i].value);
       } else {
-        printf("%-75s", lines[i].value);
+        printf("%-75s", lines[i].key);
       }
     } else {
       printf("%75s", "");
