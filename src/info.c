@@ -2,8 +2,6 @@
  *  Program information
  */
 
-//#include "compiler.h"
-//#include "os.h"
 #include "version.h"
 #include <stdio.h>
 
