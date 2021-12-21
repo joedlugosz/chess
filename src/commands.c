@@ -17,27 +17,29 @@ typedef void (*ui_fn)(engine_s *);
 
 /* -- Game Control */
 
-/* Permenently switch to XBoard mode */
-void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
+/* Permanently switch to XBoard mode */
+void ui_xboard(engine_s *e) {
+  e->xboard_mode = 1;
+}
 
 /* Quit the program */
 void ui_quit(engine_s *e) { 
   e->mode = ENGINE_QUIT; 
 }
 
-/* Enter force mode */
+/* "Set the engine to play neither color ("force mode")." */
 void ui_force(engine_s *e) { 
   e->mode = ENGINE_FORCE_MODE; 
 }
 
-/* AI to play */
+/* "Leave force mode and set the engine to play the color that is on move."
+ * Can also be used in game mode to switch sides and make AI play the current turn */
 void ui_go(engine_s *e) {
   e->mode = e->game.turn; 
 }
-
-void ui_playother(engine_s *e) {
-  e->mode = ENGINE_PLAYING_AS_WHITE + ENGINE_PLAYING_AS_BLACK - e->game.turn;
-}
+/* "Leave force mode and set the engine to play the color that is not on move."
+ * Currently not enabled as a feature */
+void ui_playother(engine_s *e) {}
 
 /* Not used by CECP v2 */
 void ui_black(engine_s *e) {}

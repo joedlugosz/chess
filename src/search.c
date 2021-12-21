@@ -9,7 +9,7 @@
 
 #include <time.h>
 
-int search_depth = 6;
+int search_depth = 7;
 int search_best = 5;
 int boundary = 1000000;
 int log_search = 1;
@@ -19,16 +19,14 @@ log_s think_log = {
 };
 
 /* Options */
-enum {
-  N_SEARCH_OPTS = 4
-};
 static const option_s options[] = {
+  { "Search depth", INT_OPT,   &search_depth,     1, 10,          0 },
   { "Boundary score", INT_OPT,   &boundary,     0, 2000000,          0 },
   { "Show thinking",  BOOL_OPT,  &show,         0, 0,                0 },
   { "New Thinking log every", COMBO_OPT, &(think_log.new_every), 0, 0, &newevery_combo },
 };
 const options_s search_opts = { 
-  sizeof(options)/sizeof(options[0]), options 
+  sizeof(options)/sizeof(options[0]), options
 };
 
 /*
@@ -37,8 +35,9 @@ const options_s search_opts = {
 /* Thoughts shown by XBoard */
 void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes)
 {
-  fprintf(f, "\n%2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes); 
+  fprintf(f, "  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
   print_thought_moves(f, depth, job->search_history);
+  fprintf(f, "\n");
 }
 /* Thought logging stuff */
 #ifndef LOGGING

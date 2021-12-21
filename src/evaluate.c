@@ -27,22 +27,19 @@ int blocked = 50;
 int randomness = 0;
 
 /* All the options can be changed */
-enum { 
-  N_EVAL_OPTS = N_PIECE_T + 4
+const option_s _eval_opts[] = { 
+  { "Pawn value",            INT_OPT,  &piece_weights[PAWN],    0, 0, 0 },
+  { "Rook value",            INT_OPT,  &piece_weights[ROOK],    0, 0, 0 },
+  { "Bishop value",          INT_OPT,  &piece_weights[BISHOP],  0, 0, 0 },
+  { "Knight value",          INT_OPT,  &piece_weights[KNIGHT],  0, 0, 0 },
+  { "Queen value",           INT_OPT,  &piece_weights[QUEEN],   0, 0, 0 },
+  { "King value",            INT_OPT,  &piece_weights[KING],    0, 0, 0 },
+  { "Mobility bonus",        INT_OPT,  &mobility,               0, 0, 0 },
+  { "Blocked pawn penalty",  INT_OPT,  &blocked,                0, 0, 0 },
+  { "Doubled pawn penalty",  INT_OPT,  &doubled,                0, 0, 0 },
+  { "Randomness",            SPIN_OPT, &randomness,          0, 2000, 0 },
 };
-const option_s _eval_opts[N_EVAL_OPTS] = { 
-  { "Pawn value",            INT_OPT,  piece_weights + PAWN,    0, 0, 0 },
-  { "Rook value",            INT_OPT,  piece_weights + ROOK,    0, 0, 0 },
-  { "Bishop value",          INT_OPT,  piece_weights + BISHOP,  0, 0, 0 },
-  { "Knight value",          INT_OPT,  piece_weights + KNIGHT,  0, 0, 0 },
-  { "Queen value",           INT_OPT,  piece_weights + QUEEN,   0, 0, 0 },
-  { "King value",            INT_OPT,  piece_weights + KING,    0, 0, 0 },
-  { "Mobility bonus",        INT_OPT,  &mobility,   0, 0    , 0 },
-  { "Blocked pawn penalty",  INT_OPT,  &blocked,    0, 0    , 0 },
-  { "Doubled pawn penalty",  INT_OPT,  &doubled,    0, 0    , 0 },
-  { "Randomness",            SPIN_OPT, &randomness, 0, 2000 , 0 },
-};
-const options_s eval_opts = { N_EVAL_OPTS, _eval_opts };
+const options_s eval_opts = { sizeof(_eval_opts)/sizeof(_eval_opts[0]), _eval_opts };
 
 /*
  *  Functions

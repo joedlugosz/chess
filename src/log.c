@@ -35,11 +35,7 @@ const combo_val_s newevery_vals[NE_N] = {
 };
 const combo_s newevery_combo = { NE_N, newevery_vals };
 
-enum {
-  N_LOG_OPTS = 0,
-};
-const options_s log_opts = { N_LOG_OPTS, 0 };
-
+const options_s log_opts = { 0, 0 };
 
 void start_log(log_s *log, newevery_e new_log, const char *fmt, ...)
 {
