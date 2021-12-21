@@ -184,12 +184,25 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2)
 #define INPUT_BUF_SIZE 1024
 char input_buf[INPUT_BUF_SIZE];
 
-/* Get text from stdin up to the next whitespace */
+/* Trip leading whitespace then get text from stdin up to the next whitespace 
+ * If text is enclosed by brackets {} return all enclosed text */
 const char *get_input(void) {
   char *ptr = input_buf;
   char *end = input_buf + sizeof(input_buf) - 1;
   /* Read input until first non whitespace character */
   while (isspace(*ptr = fgetc(stdin)));
+  /* Handle brackets */
+  if (*ptr == '{') {
+    while (++ptr < end) {
+      *ptr = fgetc(stdin);
+      if (*ptr == '}') {
+        ptr++;
+        break;
+      }
+    }
+    *ptr = 0;
+    return input_buf;
+  }
   /* Read input until first whitespace character */
   while (++ptr < end) {
     *ptr = fgetc(stdin);
