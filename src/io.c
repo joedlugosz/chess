@@ -183,98 +183,33 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2)
  */
 #define INPUT_BUF_SIZE 1024
 char input_buf[INPUT_BUF_SIZE];
-int input_buf_size = 0;
-char *token_start, *token_end;
-int input_available = 0;
 
-#include <errno.h>
-#include <fcntl.h>
-const struct timespec sleep_time = { 0, 1000000 };
-
-
-void read_input(void)
-{
-  input_buf_size = 0;
-  input_available = 0;
-  token_start = 0;
-  token_end = 0;
-  
-  while ((input_buf_size = conn_read_nb(get_stdin(), input_buf, INPUT_BUF_SIZE - 1)) == 0);
-  //nanosleep(&sleep_time, 0);
-  if(input_buf_size <= 0) {
-    input_buf_size = 0;
-    input_available = 0;
-    token_start = 0;
-    token_end = 0;
-  } else {
-    input_available = 1;
-    token_start = input_buf;
-  }
-  input_buf[input_buf_size] = 0;
-}
-
-const char *get_input(void)
-{
-  char *ptr, *ret;
-  /* Imitate blocking read even if the stream is non-blocking */
-  input_buf[0] = 0;
-  //  while(input_buf[0] == 0 || token_start == 0) {
-  //while(token_start == 0) {
-  if(token_start == 0) {
-    read_input();
-    //nanosleep(&sleep_time, 0);
-  }
-  while(*token_start && isspace(*token_start)) {
-    token_start++;
-  }
-
-  ptr = token_start;
-  if(*token_start == '{') {
-    while(*ptr && *ptr != '}') {
-      ptr++;
-    }
-  } else {
-    while(*ptr && !isspace(*ptr) && *ptr != '=') {
-      ptr++;
-    }
+/* Get text from stdin up to the next whitespace */
+const char *get_input(void) {
+  char *ptr = input_buf;
+  char *end = input_buf + sizeof(input_buf) - 1;
+  /* Read input until first non whitespace character */
+  while (isspace(*ptr = fgetc(stdin)));
+  /* Read input until first whitespace character */
+  while (++ptr < end) {
+    *ptr = fgetc(stdin);
+    if (isspace(*ptr)) break;
   }
   *ptr = 0;
-  ret = token_start;
-  if(ptr < input_buf + input_buf_size - 1) {
-    token_start = ptr + 1;
-  } else {
-    token_start = 0;
-  }
-  PRINT_LOG(&xboard_log, "> %s", ret);
-  return ret;
+  return input_buf;
 }
 
-const char *get_delim(char delim)
-{
-  char *ptr, *end, *ret;
-  if(!token_start) {
-    read_input();
-  }
-  while(*token_start && isspace(*token_start)) {
-    token_start++;
-  }
-  ptr = token_start;
-  while(*ptr && *ptr != delim && *ptr != '\n') {
+/* Get text from stdin up to a delimiter char */
+const char *get_delim(char delim) {
+  char *ptr = input_buf;
+  while (ptr < input_buf + sizeof(input_buf) - 1) {
+    *ptr = fgetc(stdin);
+    if (*ptr == delim) {
+      *ptr = 0;
+      return input_buf;
+    }
     ptr++;
   }
-  
-  end = ptr;
-  
-  *ptr-- = 0;
-  while(isspace(*ptr)) {
-    *ptr-- = 0;
-  }
-  
-  ret = token_start;
-  if(end < input_buf + input_buf_size - 1) {
-    token_start = end + 1;
-  } else {
-    token_start = 0;
-  }
-  return ret;
+  *ptr = 0;
+  return input_buf;
 }
