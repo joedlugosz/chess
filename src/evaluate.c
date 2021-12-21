@@ -39,7 +39,7 @@ const option_s _eval_opts[] = {
   { "Doubled pawn penalty",  INT_OPT,  &doubled,                0, 0, 0 },
   { "Randomness",            SPIN_OPT, &randomness,          0, 2000, 0 },
 };
-const options_s eval_opts = { sizeof(_eval_opts)/sizeof(*_eval_opts), _eval_opts };
+const options_s eval_opts = { sizeof(_eval_opts)/sizeof(_eval_opts[0]), _eval_opts };
 
 /*
  *  Functions

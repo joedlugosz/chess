@@ -26,7 +26,7 @@ static const option_s options[] = {
   { "New Thinking log every", COMBO_OPT, &(think_log.new_every), 0, 0, &newevery_combo },
 };
 const options_s search_opts = { 
-  sizeof(options)/sizeof(*options), options
+  sizeof(options)/sizeof(options[0]), options
 };
 
 /*
