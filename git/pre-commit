@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Git pre-commit hook
+
+clang-format -i src/*.c src/*.h
