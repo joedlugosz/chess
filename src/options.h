@@ -3,9 +3,7 @@
 
 struct engine_s_;
 
-enum {
-  NAME_LENGTH = 50
-};
+enum { NAME_LENGTH = 50 };
 
 typedef struct combo_val_s_ {
   char name[NAME_LENGTH];
@@ -18,7 +16,13 @@ typedef struct combo_s_ {
 } combo_s;
 
 typedef enum option_type_e_ {
-  BOOL_OPT = 0, SPIN_OPT, INT_OPT, TEXT_OPT, CMD_OPT, COMBO_OPT, N_OPTION_T
+  BOOL_OPT = 0,
+  SPIN_OPT,
+  INT_OPT,
+  TEXT_OPT,
+  CMD_OPT,
+  COMBO_OPT,
+  N_OPTION_T
 } option_type_e;
 
 typedef struct option_s_ {

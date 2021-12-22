@@ -4,11 +4,11 @@
 
 #include "engine.h"
 #include "fen.h"
-#include "log.h"
 #include "info.h"
-#include "search.h"
-#include "movegen.h"
 #include "io.h"
+#include "log.h"
+#include "movegen.h"
+#include "search.h"
 #include "ui.h"
 
 typedef void (*ui_fn)(engine_s *);
@@ -18,25 +18,18 @@ typedef void (*ui_fn)(engine_s *);
 /* -- Game Control */
 
 /* Permanently switch to XBoard mode */
-void ui_xboard(engine_s *e) {
-  e->xboard_mode = 1;
-}
+void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
 
 /* Quit the program */
-void ui_quit(engine_s *e) { 
-  e->mode = ENGINE_QUIT; 
-}
+void ui_quit(engine_s *e) { e->mode = ENGINE_QUIT; }
 
 /* "Set the engine to play neither color ("force mode")." */
-void ui_force(engine_s *e) { 
-  e->mode = ENGINE_FORCE_MODE; 
-}
+void ui_force(engine_s *e) { e->mode = ENGINE_FORCE_MODE; }
 
 /* "Leave force mode and set the engine to play the color that is on move."
  * Can also be used in game mode to switch sides and make AI play the current turn */
-void ui_go(engine_s *e) {
-  e->mode = e->game.turn; 
-}
+void ui_go(engine_s *e) { e->mode = e->game.turn; }
+
 /* "Leave force mode and set the engine to play the color that is not on move."
  * Currently not enabled as a feature */
 void ui_playother(engine_s *e) {}
@@ -49,9 +42,7 @@ void ui_white(engine_s *e) {}
 void ui_computer(engine_s *e) {}
 
 /* XBoard notifies a result */
-void ui_result(engine_s *e) {
-  PRINT_LOG(&xboard_log, "%s ", get_input());
-}
+void ui_result(engine_s *e) { PRINT_LOG(&xboard_log, "%s ", get_input()); }
 
 /* New game */
 void ui_new(engine_s *e) {
@@ -83,16 +74,14 @@ void ui_level(engine_s *e) {
 }
 
 /* v1 otim command - not implemented */
-void ui_otim(engine_s *e) {
-  sscanf(get_input(), "%lu", &e->otim);
-}
+void ui_otim(engine_s *e) { sscanf(get_input(), "%lu", &e->otim); }
 
 /* XBoard sets protocol version */
 void ui_protover(engine_s *e) {
   int ver;
   sscanf(get_input(), "%d", &ver);
   PRINT_LOG(&xboard_log, "%d", ver);
-  if(ver > 1) {
+  if (ver > 1) {
     list_features();
     list_options();
   }
@@ -107,7 +96,7 @@ void ui_option(engine_s *e) {
   PRINT_LOG(&xboard_log, "%s=", name);
 
   reject = set_option(e, name);
-  if(reject == 0) {
+  if (reject == 0) {
     printf("accept\n");
     PRINT_LOG(&xboard_log, "%s", "\naccept");
   } else {
@@ -120,16 +109,14 @@ void ui_option(engine_s *e) {
 void ui_accepted(engine_s *e) {
   const char *arg;
   arg = get_input();
-  if(strcmp(arg, "option") == 0) {
+  if (strcmp(arg, "option") == 0) {
   } else {
     feature_accepted(arg);
   }
 }
 
 /* XBoard accepts an option or feature */
-int accept(void) {
-  return (strcmp(get_input(), "accepted") == 0);
-}
+int accept(void) { return (strcmp(get_input(), "accepted") == 0); }
 
 /* -- FEN input and output */
 
@@ -139,7 +126,7 @@ void ui_fen(engine_s *e) {
   const char *active = get_input();
   const char *castling = get_input();
   const char *enpassant = get_input();
-  if(load_fen(&e->game, placement, active, castling, enpassant)) {
+  if (load_fen(&e->game, placement, active, castling, enpassant)) {
     printf("FEN string not recognised\n");
   }
 }
@@ -154,17 +141,15 @@ void ui_getfen(engine_s *e) {
 /* -- Debugging */
 
 /* Print board */
-void ui_print(engine_s *e) {
-  print_board(stdout, &(e->game), 0, 0);
-}
+void ui_print(engine_s *e) { print_board(stdout, &(e->game), 0, 0); }
 
 /* Print board showing pieces attacking a target square */
 void ui_attacks(engine_s *e) {
   square_e target;
-  if(parse_square(get_input(), &target)) {
+  if (parse_square(get_input(), &target)) {
     return;
   }
-  if(no_piece_at_square(e, target)) {
+  if (no_piece_at_square(e, target)) {
     return;
   }
   print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
@@ -173,24 +158,22 @@ void ui_attacks(engine_s *e) {
 /* Print board showing squares a piece can move to */
 void ui_moves(engine_s *e) {
   square_e from;
-  if(parse_square(get_input(), &from)) {
+  if (parse_square(get_input(), &from)) {
     return;
   }
-  if(no_piece_at_square(e, from)) {
+  if (no_piece_at_square(e, from)) {
     return;
   }
   print_board(stdout, &(e->game), get_moves(&(e->game), from), square2bit[from]);
 }
 
 /* Evaluate the position and print the score */
-void ui_eval(engine_s *e) {
-  printf("%d\n", evaluate(&(e->game)));
-}
+void ui_eval(engine_s *e) { printf("%d\n", evaluate(&(e->game))); }
 
 /* Run perft to a specified depth */
 void ui_perft(engine_s *e) {
   int depth;
-  if(!sscanf(get_input(), "%d", &depth)) {
+  if (!sscanf(get_input(), "%d", &depth)) {
     return;
   }
   perft_total(&e->game, depth);
@@ -199,35 +182,25 @@ void ui_perft(engine_s *e) {
 /* Run perft-divide */
 void ui_perftd(engine_s *e) {
   int depth;
-  if(!sscanf(get_input(), "%d", &depth)) {
+  if (!sscanf(get_input(), "%d", &depth)) {
     return;
   }
   perft_divide(&e->game, depth);
 }
 
 /* Print program info */
-void ui_info(engine_s *e) {
-  print_program_info();
-}
+void ui_info(engine_s *e) { print_program_info(); }
 
 /* No Operation */
-void ui_noop(engine_s *e) {
-}
-void ui_noop_1arg(engine_s *e) {
-  get_input();
-}
+void ui_noop(engine_s *e) {}
+void ui_noop_1arg(engine_s *e) { get_input(); }
 
 /*
  *  Command Table
  */
 
 /* Type of command - help display sorts commands by these types */
-typedef enum ui_cmd_type_e {
-  CT_GAMECTL,
-  CT_DISPLAY,
-  CT_XBOARD,
-  CT_UNIMP
-} ui_cmd_type_e;
+typedef enum ui_cmd_type_e { CT_GAMECTL, CT_DISPLAY, CT_XBOARD, CT_UNIMP } ui_cmd_type_e;
 
 /* Entry in the table of commands */
 typedef struct ui_cmd_s_ {
@@ -241,6 +214,7 @@ void ui_help(engine_s *e);
 
 /* Table of commands */
 const ui_cmd_s cmds[] = {
+    /* clang-format off */
   { CT_DISPLAY, "attacks",  ui_attacks,    "POS  - Display all pieces that can attack POS" },
   { CT_XBOARD,  "accepted", ui_accepted,   "     - ???" },
   { CT_GAMECTL, "black",    ui_black,      "     - AI to play as black" },
@@ -272,40 +246,41 @@ const ui_cmd_s cmds[] = {
   { CT_UNIMP,   "variant",  ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "white",    ui_white,      "     - AI to play as white (enter 'go' to start)" },
   { CT_GAMECTL, "xboard",   ui_xboard,     "     - Enter XBoard mode" }
+    /* clang-format on */
 };
 
 /* Number of commands */
-enum {
-  N_UI_CMDS = sizeof(cmds)/sizeof(*cmds)
-};
+enum { N_UI_CMDS = sizeof(cmds) / sizeof(*cmds) };
 
 /* Help command - display a list of all commands, grouped by type */
 void ui_help(engine_s *e) {
   printf("\n  Command List\n");
   printf("\n   The following commands are used for starting and controlling games:\n");
-  for(int i = 0; i < N_UI_CMDS; i++) {
-    if(cmds[i].type == CT_GAMECTL) {
+  for (int i = 0; i < N_UI_CMDS; i++) {
+    if (cmds[i].type == CT_GAMECTL) {
       printf("    %-10s%s\n", cmds[i].cmd, cmds[i].desc);
     }
   }
   printf("\n   The following commands are used to display the state of the game:\n");
-  for(int i = 0; i < N_UI_CMDS; i++) {
-    if(cmds[i].type == CT_DISPLAY) {
+  for (int i = 0; i < N_UI_CMDS; i++) {
+    if (cmds[i].type == CT_DISPLAY) {
       printf("    %-10s%s\n", cmds[i].cmd, cmds[i].desc);
     }
   }
   printf("\n   The following commands are used by XBoard:\n");
-  for(int i = 0; i < N_UI_CMDS; i++) {
-    if(cmds[i].type == CT_XBOARD) {
+  for (int i = 0; i < N_UI_CMDS; i++) {
+    if (cmds[i].type == CT_XBOARD) {
       printf("    %-10s%s\n", cmds[i].cmd, cmds[i].desc);
     }
   }
-  printf("\n   The following commands are accepted for compatibility with XBoard, but have no effect:");
+  printf(
+      "\n   The following commands are accepted for compatibility with XBoard, but have no "
+      "effect:");
   int j = 0;
-  for(int i = 0; i < N_UI_CMDS; i++) {
-    if(cmds[i].type == CT_UNIMP) {
-      if((j % 6) == 0) {
-	printf("\n    ");
+  for (int i = 0; i < N_UI_CMDS; i++) {
+    if (cmds[i].type == CT_UNIMP) {
+      if ((j % 6) == 0) {
+        printf("\n    ");
       }
       printf("%-10s", cmds[i].cmd);
       j++;
@@ -314,13 +289,11 @@ void ui_help(engine_s *e) {
   printf("\n");
 }
 
-
-int accept_command(engine_s *e, const char *in)
-{
+int accept_command(engine_s *e, const char *in) {
   int i;
   /* Search commands and call function if found */
-  for(i = 0; i < N_UI_CMDS; i++) {
-    if(strcmp(in, cmds[i].cmd) == 0) {
+  for (i = 0; i < N_UI_CMDS; i++) {
+    if (strcmp(in, cmds[i].cmd) == 0) {
       (*cmds[i].fn)(e);
       PRINT_LOG(&xboard_log, "Cmd %s", in);
       /* Success */
