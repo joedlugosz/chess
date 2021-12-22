@@ -201,10 +201,9 @@ void finished_move(engine_s *engine) {
   }
 }
 
-static inline void log_ai_move(move_s *move, int captured, int check) {
 #ifdef DEBUG
+static inline void log_ai_move(move_s *move, int captured, int check) {}
 #endif
-}
 
 static inline void do_ai_move(engine_s *engine) {
   start_move_log(engine);
@@ -217,7 +216,7 @@ static inline void do_ai_move(engine_s *engine) {
   if (engine->resign_delayed) {
     resign = 1;
   } else if (result.move.from == NO_SQUARE) {
-    if (engine->game.check) {
+    if (engine->game.check[engine->game.turn]) {
       /* Checkmate */
       resign = 1;
     } else {
