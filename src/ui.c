@@ -312,7 +312,7 @@ void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   start_session_log();
   setbuf(stdout, NULL);
-  init_os();
+  setup_signal_handlers();
   init_board();
   srand(clock());
 
