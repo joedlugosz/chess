@@ -1,9 +1,9 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "state.h"
-
 #include <time.h>
+
+#include "state.h"
 
 typedef struct engine_s_ {
   enum {
@@ -19,11 +19,11 @@ typedef struct engine_s_ {
   int resign_delayed;
   clock_t start_time;
   clock_t elapsed_time;
-  
+
   unsigned long otim;
   int move_n;
   int game_n;
-  
+
   state_s game;
 
   int depth;

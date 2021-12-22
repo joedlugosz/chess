@@ -2,15 +2,18 @@
  *  Game state
  */
 
-#include "moves.h"
 #include "state.h"
+
 #include "log.h"
+#include "moves.h"
 
 void init_moves(void);
 
-/* 
+/*
  *  Lookup tables
  */
+
+/* clang-format off */
 
 /* Mapping from A-square to B-square
    Calculated at init using a formula */
@@ -73,16 +76,17 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
   BLACK, BLACK, BLACK, BLACK, BLACK, BLACK
 };
 
-const player_e opponent[N_PLAYERS] = { BLACK, WHITE };
-bitboard_t _square2bit[N_SQUARES+1];
+/* clang-format on */
+
+const player_e opponent[N_PLAYERS] = {BLACK, WHITE};
+bitboard_t _square2bit[N_SQUARES + 1];
 bitboard_t *square2bit;
 
 /*
- *  Functions 
+ *  Functions
  */
 
-static inline void add_piece(state_s *state, square_e square, piece_e piece, int index)
-{
+static inline void add_piece(state_s *state, square_e square, piece_e piece, int index) {
   ASSERT(piece != EMPTY);
   ASSERT(index != EMPTY);
   ASSERT(state->piece_at[square] == EMPTY);
@@ -108,8 +112,7 @@ static inline void add_piece(state_s *state, square_e square, piece_e piece, int
   state->index_at[square] = index;
 }
 
-static inline void remove_piece(state_s *state, square_e square)
-{
+static inline void remove_piece(state_s *state, square_e square) {
   ASSERT(state->piece_at[square] != EMPTY);
   int8_t piece = state->piece_at[square];
   piece_e player = piece_player[piece];
@@ -134,23 +137,20 @@ static inline void remove_piece(state_s *state, square_e square)
   state->index_at[square] = EMPTY;
 }
 
-static inline void clear_rook_castling_rights(state_s *state, square_e square, player_e player)
-{
-  for(int side = 0; side < 2; side++) {
-    if(square == rook_start_square[player][side]) {
+static inline void clear_rook_castling_rights(state_s *state, square_e square, player_e player) {
+  for (int side = 0; side < 2; side++) {
+    if (square == rook_start_square[player][side]) {
       state->castling_rights &= ~castling_rights[player][side];
     }
   }
 }
 
-static inline void clear_king_castling_rights(state_s *state, player_e player)
-{
+static inline void clear_king_castling_rights(state_s *state, player_e player) {
   state->castling_rights &= ~castling_rights[player][BOTHSIDES];
 }
 
-static inline void do_rook_castling_move(state_s *state, 
-  square_e king_square, square_e from_offset, square_e to_offset)
-{
+static inline void do_rook_castling_move(state_s *state, square_e king_square, square_e from_offset,
+                                         square_e to_offset) {
   uint8_t rook_piece = state->piece_at[king_square + from_offset];
   int8_t rook_index = state->index_at[king_square + from_offset];
   remove_piece(state, king_square + from_offset);
@@ -158,8 +158,7 @@ static inline void do_rook_castling_move(state_s *state,
 }
 
 /* Alters the game state to effect a move.  There is no validity checking. */
-void make_move(state_s *state, move_s *move)
-{
+void make_move(state_s *state, move_s *move) {
   ASSERT(is_valid_square(move->from));
   ASSERT(is_valid_square(move->to));
   ASSERT(move->from != move->to);
@@ -168,14 +167,14 @@ void make_move(state_s *state, move_s *move)
 
   /* Taking */
   int8_t victim_piece = state->piece_at[move->to];
-  if(victim_piece != EMPTY) {
+  if (victim_piece != EMPTY) {
     ASSERT(piece_type[victim_piece] != KING);
     player_e victim_player = piece_player[victim_piece];
     ASSERT(victim_player != state->turn);
     remove_piece(state, move->to);
     move->result |= CAPTURED;
     /* If a rook has been captured, treat it as moved to prevent castling */
-    if(piece_type[victim_piece] == ROOK) {
+    if (piece_type[victim_piece] == ROOK) {
       clear_rook_castling_rights(state, move->to, victim_player);
     }
   }
@@ -188,77 +187,77 @@ void make_move(state_s *state, move_s *move)
   add_piece(state, move->to, moving_piece, moving_index);
 
   /* Castling, pawn promotion and other special stuff */
-  switch(piece_type[moving_piece]) {
-  case KING:
-    /* If this is a castling move (2 spaces each direction) */
-    if(move->from == move->to + 2) {
-      do_rook_castling_move(state, move->to, -2, +1);
-      move->result |= CASTLED;
-    } else if(move->from == move->to - 2) {
-      do_rook_castling_move(state, move->to, +1, -1);
-      move->result |= CASTLED;
-    }
-    clear_king_castling_rights(state, piece_player[moving_piece]);
-    break;
-  case ROOK:
-    clear_rook_castling_rights(state, move->from, state->turn);
-    break;
-  case PAWN:
-    if(is_promotion_move(state, move->from, move->to)) {
-      ASSERT(move->promotion > PAWN);
-      remove_piece(state, move->to);
-      add_piece(state, move->to, moving_piece + move->promotion - PAWN,
-        moving_index);
-      move->result |= PROMOTED;
-    }
-    /* If pawn has been taken en-passant */
-    if(square2bit[move->to] == state->en_passant) {
-      square_e target_square = move->to;
-      if(state->turn == WHITE) target_square -= 8;
-      else target_square += 8;
-      ASSERT(state->piece_at[target_square] != EMPTY);
-      ASSERT(piece_player[state->piece_at[target_square]] != state->turn);
-      remove_piece(state, target_square);
-      move->result |= EN_PASSANT | CAPTURED;
-    }
-    break;
-  default:
-    break;
+  switch (piece_type[moving_piece]) {
+    case KING:
+      /* If this is a castling move (2 spaces each direction) */
+      if (move->from == move->to + 2) {
+        do_rook_castling_move(state, move->to, -2, +1);
+        move->result |= CASTLED;
+      } else if (move->from == move->to - 2) {
+        do_rook_castling_move(state, move->to, +1, -1);
+        move->result |= CASTLED;
+      }
+      clear_king_castling_rights(state, piece_player[moving_piece]);
+      break;
+    case ROOK:
+      clear_rook_castling_rights(state, move->from, state->turn);
+      break;
+    case PAWN:
+      if (is_promotion_move(state, move->from, move->to)) {
+        ASSERT(move->promotion > PAWN);
+        remove_piece(state, move->to);
+        add_piece(state, move->to, moving_piece + move->promotion - PAWN, moving_index);
+        move->result |= PROMOTED;
+      }
+      /* If pawn has been taken en-passant */
+      if (square2bit[move->to] == state->en_passant) {
+        square_e target_square = move->to;
+        if (state->turn == WHITE)
+          target_square -= 8;
+        else
+          target_square += 8;
+        ASSERT(state->piece_at[target_square] != EMPTY);
+        ASSERT(piece_player[state->piece_at[target_square]] != state->turn);
+        remove_piece(state, target_square);
+        move->result |= EN_PASSANT | CAPTURED;
+      }
+      break;
+    default:
+      break;
   }
   /* Clear previous en passant state */
   state->en_passant = 0;
   /* If pawn has jumped, set en passant square */
-  if(piece_type[moving_piece] == PAWN) {
-    if(move->from - move->to == 16) {
+  if (piece_type[moving_piece] == PAWN) {
+    if (move->from - move->to == 16) {
       state->en_passant = square2bit[move->from - 8];
     }
-    if(move->from - move->to == -16) {
+    if (move->from - move->to == -16) {
       state->en_passant = square2bit[move->from + 8];
     }
   }
 
   /* Calculate moves for all pieces */
   calculate_moves(state);
-  
+
   /* Check testing */
-  for(player_e player = 0; player < N_PLAYERS; player++) {
+  for (player_e player = 0; player < N_PLAYERS; player++) {
     int king_square = bit2square(state->a[KING + player * N_PIECE_T]);
-    if(get_attacks(state, king_square, opponent[player])) {
+    if (get_attacks(state, king_square, opponent[player])) {
       state->check[player] = 1;
     } else {
       state->check[player] = 0;
     }
   }
-  if(state->check[state->turn]) {
+  if (state->check[state->turn]) {
     move->result |= CHECK;
   }
 }
 
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
-void setup_board(state_s *state, const int *pieces, 
-  player_e turn, castle_rights_t castling_rights, bitboard_t en_passant)
-{
+void setup_board(state_s *state, const int *pieces, player_e turn, castle_rights_t castling_rights,
+                 bitboard_t en_passant) {
   memset(state, 0, sizeof(*state));
   state->turn = turn;
   state->castling_rights = castling_rights;
@@ -267,32 +266,28 @@ void setup_board(state_s *state, const int *pieces,
   memset(state->piece_square, NO_SQUARE, N_PIECES * sizeof(state->piece_square[0]));
   memset(state->index_at, EMPTY, N_SQUARES * sizeof(state->index_at[0]));
   memset(state->piece_at, EMPTY, N_SQUARES * sizeof(state->piece_at[0]));
-  
+
   /* Iterate through positions */
   int index = 0;
-  for(square_e square = 0; square < N_SQUARES; square++) {
+  for (square_e square = 0; square < N_SQUARES; square++) {
     int piece = pieces[square];
-    if(piece != EMPTY) {
+    if (piece != EMPTY) {
       add_piece(state, square, piece, index);
       index++;
     }
-  }  
+  }
   /* Generate moves */
   calculate_moves(state);
 }
 
 /* Resets the board to the starting position */
-void reset_board(state_s *state)
-{
-  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0);
-}
+void reset_board(state_s *state) { setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0); }
 
 /* Initialises the module */
-void init_board(void)
-{
+void init_board(void) {
   square2bit = _square2bit + 1;
   square2bit[NO_SQUARE] = 0;
-  for(square_e square = 0; square < N_SQUARES; square++) {
+  for (square_e square = 0; square < N_SQUARES; square++) {
     square2bit[square] = 1ull << square;
     square_a2b[square] = (square / 8) + (square % 8) * 8;
     square_a2d[square] = square_a2c[(square / 8) * 8 + (7 - square % 8)];

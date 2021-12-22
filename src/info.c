@@ -2,8 +2,9 @@
  *  Program information
  */
 
-#include "version.h"
 #include <stdio.h>
+
+#include "version.h"
 
 #define str(a) #a
 #define stringify(a) str(a)
@@ -29,39 +30,34 @@ const char compiler[] = "Unknown";
 #endif
 
 /* Program info data */
-enum {
-  COL_WIDTH = 50
-};
+enum { COL_WIDTH = 50 };
 
 typedef struct info_line_s_ {
   char key[COL_WIDTH];
   const char *value;
 } info_line_s;
 
-const info_line_s lines[] = {
-  { "",         0                           },
-  { "Joe's Chess Engine", 0                 },
-  { "",         0                           },
-  { "Version",  version                     },
-  { "Config",   config                      },
-  { "Built",    date                        },
-  { "",         0                           },
-  { "Compiler", compiler                    },
-  { "Target",   target                      },
-  { "OS",       os                          },
-  { "",         0                           },
-  { "Type 'help' for a list of commands", 0 },
-  { "",         0                           }
-};
+const info_line_s lines[] = {{"", 0},
+                             {"Joe's Chess Engine", 0},
+                             {"", 0},
+                             {"Version", version},
+                             {"Config", config},
+                             {"Built", date},
+                             {"", 0},
+                             {"Compiler", compiler},
+                             {"Target", target},
+                             {"OS", os},
+                             {"", 0},
+                             {"Type 'help' for a list of commands", 0},
+                             {"", 0}};
 
 /* Prints a program info banner */
-void print_program_info()
-{
-  char buf[COL_WIDTH+1];
+void print_program_info() {
+  char buf[COL_WIDTH + 1];
   printf("\n");
-  for(int i = 0; i < sizeof(lines)/sizeof(*lines); i++) {
-    if(lines[i].key[0]) {
-      if(lines[i].value) {
+  for (int i = 0; i < sizeof(lines) / sizeof(*lines); i++) {
+    if (lines[i].key[0]) {
+      if (lines[i].value) {
         sprintf(buf, "%s:", lines[i].key);
         printf("%-15s", buf);
         printf("%-60s", lines[i].value);

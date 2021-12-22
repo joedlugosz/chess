@@ -5,10 +5,10 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#include <time.h>
+
 #include "evaluate.h"
 #include "log.h"
-
-#include <time.h>
 
 /* linked list */
 typedef struct movelist_s_ {
@@ -21,21 +21,17 @@ typedef struct search_result_s_ {
   score_t score;
   int n_searched;
   int n_possible;
-  int n_beta;       /* Number of beta cutoffs */ 
+  int n_beta; /* Number of beta cutoffs */
   double cutoff;
   move_s move;
 } search_result_s;
 
-enum {
-  SEARCH_DEPTH_MAX = 30,
-  REPEAT_HISTORY_SIZE = 300,
-  N_MOVES = 218
-};
+enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
 
 typedef struct search_job_s_ {
   /* Parameters */
-  int depth;   /* Search depth before quiescence */
-  int halt;    /* Halt search */
+  int depth; /* Search depth before quiescence */
+  int halt;  /* Halt search */
   /* State */
   clock_t start_time;
   move_s search_history[SEARCH_DEPTH_MAX];
@@ -46,4 +42,4 @@ typedef struct search_job_s_ {
 
 void search(int, state_s *, search_result_s *);
 
-#endif // SEARCH_H
+#endif  // SEARCH_H
