@@ -6,21 +6,19 @@
 
 #include "version.h"
 
-#define str(a) #a
-#define stringify(a) str(a)
-
 /* Defined in version.h */
 const char version[] = GIT_VERSION;
 const char date[] = __DATE__;
 const char target[] = TARGET_NAME;
 const char os[] = OS_NAME;
 
-/* Defined at invocation */
-const char config[] = stringify(CONFIG);
+/* Defined at invocation - as quoted strings */
+const char config[] = BUILD_CONFIG;
+const char options[] = BUILD_FLAGS;
 
 /* Compiler name and version */
 #if defined(__clang__)
-const char compiler[] = "clang " __VERSION__;
+const char compiler[] = __VERSION__;
 #elif defined(__GNUC__)
 const char compiler[] = "gcc " __VERSION__;
 #elif defined(_MSC_VER)
@@ -37,6 +35,7 @@ typedef struct info_line_s_ {
   const char *value;
 } info_line_s;
 
+<<<<<<< HEAD
 const info_line_s lines[] = {{"", 0},
                              {"Joe's Chess Engine", 0},
                              {"", 0},
@@ -50,6 +49,24 @@ const info_line_s lines[] = {{"", 0},
                              {"", 0},
                              {"Type 'help' for a list of commands", 0},
                              {"", 0}};
+=======
+const info_line_s lines[] = {
+  { "",         0                           },
+  { "Joe's Chess Engine", 0                 },
+  { "",         0                           },
+  { "Version",  version                     },
+  { "Config",   config                      },
+  { "Built",    date                        },
+  { "",         0                           },
+  { "Compiler", compiler                    },
+  { "Options",  options                     },
+  { "Target",   target                      },
+  { "OS",       os                          },
+  { "",         0                           },
+  { "Type 'help' for a list of commands", 0 },
+  { "",         0                           }
+};
+>>>>>>> ADD: build options displayed in info.c
 
 /* Prints a program info banner */
 void print_program_info() {
