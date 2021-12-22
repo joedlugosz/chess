@@ -5,8 +5,6 @@
 #ifndef LOWLEVEL_H
 #define LOWLEVEL_H
 
-#include "compiler.h"
-
 /* Remove the least significant bit from `bits` and return a word with
  * that bit set, or zero if `bits` is zero.
  * Can be used in a while loop to iterate over all set bits in a word */

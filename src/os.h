@@ -1,8 +1,6 @@
 #ifndef OS_H
 #define OS_H
 
-#include "compiler.h"
-
 #define POSIX 0
 #define WIN 1
 
@@ -27,15 +25,6 @@
 #    define BLACK_PIECE ""
 #  endif
 
-/* For fileno() in stdio */
-#  define _POSIX_SOURCE
-#  include <sys/types.h>
-#  include <unistd.h>
-typedef int file_t; /* Int file descriptor */
-typedef ssize_t filesize_t;
-typedef pid_t procid_t;
-#  define FD_STDIN 0
-
 #elif (OS == WIN)
 #  include <wincon.h>
 #  include <windows.h>
@@ -53,10 +42,6 @@ typedef pid_t procid_t;
 #    define HLITE_SQUARE BACKGROUND_BLACK
 #  endif
 
-typedef HANDLE file_t;
-typedef DWORD filesize_t;
-typedef DWORD procid_t;
-
 #endif /* OS */
 
 /* Configuration logic */
@@ -72,18 +57,15 @@ typedef DWORD procid_t;
  *    posix.c
  *    win32.c
  */
-void init_os(void);
-file_t get_stdin(void);
-unsigned int get_process_id(void);
-filesize_t conn_read_nb(file_t file, char *buf, filesize_t buf_size);
+void setup_signal_handlers(void);
 int is_terminal(FILE *f);
-void print_backtrace(FILE *out);
-void set_sigsegv_handler(void);
 void set_console_hilight1(void);
 void set_console_hilight2(void);
 void set_console_white_square(void);
 void set_console_black_square(void);
 void set_console_white_piece(void);
 void set_console_black_piece(void);
+unsigned int get_process_id(void);
+void print_backtrace(FILE *out);
 
 #endif /* OS_H */
