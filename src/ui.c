@@ -100,6 +100,15 @@ static inline void print_ai_resign(struct engine *engine) {
   }
 }
 
+static inline void print_ai_stalemate(struct engine *engine) {
+  // PRINT_LOG(&xboard_log, "%s", "\nAI > stalemate");
+  if (engine->xboard_mode) {
+    printf("RESULT 1/2-1/2 {Stalemate}\n");
+  } else {
+    printf("Stalemate - %s offers a draw.", player_text[engine->game.turn]);
+  }
+}
+
 /* Print the AI's move. */
 static inline void print_ai_move(struct engine *engine,
                                  struct search_result *result) {
@@ -208,10 +217,12 @@ static inline void do_ai_turn(struct engine *engine) {
       mark_time(engine);
       print_checkmate_message(engine);
       print_ai_resign(engine);
+      engine->mode = ENGINE_FORCE_MODE;
     } else {
-      print_stalemate_message();
+      /* Stalemate - delay resign to see if draw is given */
+      engine->resign_delayed = 1;
+      print_ai_stalemate(engine);
     }
-    engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
