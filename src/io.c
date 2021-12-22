@@ -6,7 +6,6 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "compiler.h"
 #include "log.h"
 #include "os.h"
 #include "search.h"
