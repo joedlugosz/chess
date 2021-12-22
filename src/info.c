@@ -35,21 +35,7 @@ typedef struct info_line_s_ {
   const char *value;
 } info_line_s;
 
-<<<<<<< HEAD
-const info_line_s lines[] = {{"", 0},
-                             {"Joe's Chess Engine", 0},
-                             {"", 0},
-                             {"Version", version},
-                             {"Config", config},
-                             {"Built", date},
-                             {"", 0},
-                             {"Compiler", compiler},
-                             {"Target", target},
-                             {"OS", os},
-                             {"", 0},
-                             {"Type 'help' for a list of commands", 0},
-                             {"", 0}};
-=======
+/* clang-format off */
 const info_line_s lines[] = {
   { "",         0                           },
   { "Joe's Chess Engine", 0                 },
@@ -66,7 +52,7 @@ const info_line_s lines[] = {
   { "Type 'help' for a list of commands", 0 },
   { "",         0                           }
 };
->>>>>>> ADD: build options displayed in info.c
+/* clang-format on */
 
 /* Prints a program info banner */
 void print_program_info() {
