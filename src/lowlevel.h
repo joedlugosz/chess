@@ -18,11 +18,8 @@ static inline unsigned long long take_next_bit_from(unsigned long long *bits) {
 
 /* Compiler intrinsics */
 
-#if defined(__clang__)
-/* TODO */
-#  error "clang is not supported yet"
+#if defined(__clang__) || defined(__GNUC__)
 
-#elif defined(__GNUC__)
 /* Count trailing zero bits in word */
 static inline int ctz(unsigned long long bits) { return (int)__builtin_ctzll(bits); }
 
