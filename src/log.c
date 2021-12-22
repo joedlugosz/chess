@@ -2,6 +2,7 @@
  *  Debug logging
  */
 
+#include "log.h"
 
 #include <errno.h>
 #include <inttypes.h>
@@ -12,7 +13,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "log.h"
 #include "options.h"
 #include "os.h"
 
