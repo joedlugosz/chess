@@ -314,6 +314,8 @@ int main(int argc, char *argv[]) {
   setbuf(stdout, NULL);
   setup_signal_handlers();
   init_board();
+
+  /* Genuine(ish) random numbers are used where repeatability is not desirable */
   srand(clock());
 
   engine_s engine;
