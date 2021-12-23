@@ -12,7 +12,7 @@ echo '#define VERSION_H'
 echo ''
 
 echo -n '#define GIT_VERSION "'
-git rev-parse HEAD | tr -d '\n'
+git rev-parse --verify HEAD --short | tr -d '\n'
 echo '"'
 
 echo -n '#define OS_NAME "'
