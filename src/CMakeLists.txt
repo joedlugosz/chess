@@ -21,6 +21,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     -Wfatal-errors
     -Wall
     -Werror
+    -Wpedantic
 
     $<$<CONFIG:Gprof>:-pg>
     $<$<CONFIG:Gprof>:-g>
@@ -45,6 +46,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
     -Wfatal-errors
     -Wall
     -Werror
+    -Wpedantic
   )
 
   add_link_options (
