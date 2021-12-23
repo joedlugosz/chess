@@ -96,7 +96,7 @@ target_link_libraries (chess info)
 
 # Generate a string containing the compiler flags that are used in the build,
 # separated by spaces.
-# flags_list is a combination of MAKE_C_FLAGS_<BUILD> and whatever flags are added
+# flags_list is a combination of MAKE_CXX_FLAGS_<BUILD> and whatever flags are added
 # using add_compile_options
 string (TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" type_name)
 set (cflags ${${type_name}})
