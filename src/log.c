@@ -27,10 +27,10 @@
  *  Options
  */
 
-const combo_val_s newevery_vals[NE_N] = {{"Never", (void *)NE_NEVER},
-                                         {"Every session", (void *)NE_SESSION},
-                                         {"Every game", (void *)NE_GAME},
-                                         {"Every move", (void *)NE_MOVE}};
+const combo_val_s newevery_vals[NE_N] = {{"Never", NE_NEVER},
+                                         {"Every session", NE_SESSION},
+                                         {"Every game", NE_GAME},
+                                         {"Every move", NE_MOVE}};
 const combo_s newevery_combo = {NE_N, newevery_vals};
 
 const options_s log_opts = {0, 0};
