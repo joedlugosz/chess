@@ -11,8 +11,6 @@
 #include "search.h"
 #include "ui.h"
 
-typedef void (*ui_fn)(engine_s *);
-
 /* --- Commands */
 
 /* -- Game Control */
@@ -114,9 +112,6 @@ void ui_accepted(engine_s *e) {
     feature_accepted(arg);
   }
 }
-
-/* XBoard accepts an option or feature */
-int accept(void) { return (strcmp(get_input(), "accepted") == 0); }
 
 /* -- FEN input and output */
 

@@ -1,3 +1,7 @@
+/*
+ *    Options and features interface to XBoard
+ */
+
 #include <ctype.h>
 #include <stdint.h>
 
@@ -8,52 +12,59 @@
 #include "search.h"
 
 /* Options */
-enum {
-  N_MODULES = 4,
-};
 
+/* Arrays of options are declared in other modules */
 extern const options_s engine_options;
 extern const options_s search_opts;
 extern const options_s eval_opts;
 extern const options_s log_opts;
 
-const options_s *const module_opts[N_MODULES] = {&search_opts, &eval_opts, &engine_options,
-                                                 &log_opts};
+const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
+enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
-/* See chess.h - option_type_e */
+/* Names passed to XBoard describing option types - see definition of option_type_e */
 const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
                                               "string", "button", "combo"};
 
+/* List available options in response to a `protover` request from XBoard */
 void list_options(void) {
-  int i, j;
-  for (i = 0; i < N_MODULES; i++) {
+  /* For each program module */
+  for (int i = 0; i < N_MODULES; i++) {
     const options_s *const mod = module_opts[i];
-    for (j = 0; j < mod->n_opts; j++) {
-      const option_s *opt = mod->opts + j;
+    /* For each option within the module */
+    for (int j = 0; j < mod->n_opts; j++) {
+      const option_s *opt = &mod->opts[j];
+
+      /* Describe option to XBoard */
       printf("feature option=\"%s -%s", opt->name, option_controls[opt->type]);
+
       switch (opt->type) {
         case SPIN_OPT:
-          printf(" %d %d %d", *(int *)(opt->value), opt->min, opt->max);
+          /* e.g. `feature option="foo -spin 50 1 100"\n` */
+          printf(" %d %d %d", *opt->value.integer, opt->min, opt->max);
           break;
         case BOOL_OPT:
+          /* e.g. `feature option="foo -check 0"\n` */
         case INT_OPT:
-          printf(" %d", *(int *)(opt->value));
+          /* e.g. `feature option="foo -string 100"\n` */
+          printf(" %d", *opt->value.integer);
           break;
         case TEXT_OPT:
-          printf(" %s", (char *)(opt->value));
+          /* e.g. `feature option="foo -string abcde"\n` */
+          printf(" %s", opt->value.text);
           break;
         case CMD_OPT:
+          /* e.g. `feature option="foo -button"\n` */
           break;
         case COMBO_OPT: {
-          int k;
-          printf(" ");
-          for (k = 0; k < opt->combo_vals->n_vals; k++) {
-            const combo_val_s *val = opt->combo_vals->vals + k;
-            printf("%s%s %s", ((*((int *)(opt->value)) == k) ? "*" : ""), val->name,
-                   (k < opt->combo_vals->n_vals - 1) ? "/// " : "");
+          /* e.g. `feature option="foo -combo *opt1///opt2///opt3"\n` */
+          for (int k = 0; k < opt->combo_vals->n_vals; k++) {
+            const combo_val_s *val = &opt->combo_vals->vals[k];
+            printf(" %s%s%s", (k == 0) ? "" : "/// ", ((*opt->value.integer) == k) ? "*" : "",
+                   val->name);
           }
         }
-        case N_OPTION_T:
+        default:
           break;
       }
       printf("\"\n");
@@ -62,13 +73,12 @@ void list_options(void) {
 }
 
 void read_option_text(char *buf) {
-  char in, *ptr;
-
+  char in = 0;
   /* Skip any whitespace at the start */
   while (isspace(in = fgetc(stdin)))
     ;
   /* Read option text into buf up to newline */
-  ptr = buf;
+  char *ptr = buf;
   while (in != '\n') {
     *ptr++ = in;
     in = fgetc(stdin);
@@ -85,87 +95,95 @@ int set_option(engine_s *e, const char *name) {
   int i, j;
   int val;
   int err = 0;
-  // char buf[NAME_LENGTH];
   const char *val_txt = "";
   /* Go through all options for all modules to look for one that matches name */
-  for (i = 0; i < N_MODULES; i++) {
+  for (i = 0; i < N_MODULES && !err; i++) {
     const options_s *const mod = module_opts[i];
-    for (j = 0; j < mod->n_opts; j++) {
-      const option_s *opt = mod->opts + j;
-      /* If a match is found */
+    for (j = 0; j < mod->n_opts && !err; j++) {
+      const option_s *opt = &mod->opts[j];
+      /* If a match is found... */
       if (strcmp(name, opt->name) == 0) {
-        /* Try to read in arguments depending on option type */
+        /* Read arguments */
         switch (opt->type) {
           default:
+            break;
+          case CMD_OPT:
+            /* No arguments */
             break;
           case SPIN_OPT:
           case BOOL_OPT:
           case INT_OPT:
           case TEXT_OPT:
           case COMBO_OPT:
+            /* Arguments are passed as a string terminated by newline */
             val_txt = get_delim('\n');
             break;
         }
+
+        /* Interpretation */
         switch (opt->type) {
           default:
             break;
           case SPIN_OPT:
           case BOOL_OPT:
           case INT_OPT:
-
-            /* Try to read a number, opt->value will be
-               updated later after checking  */
+            /* Integer  */
             if (sscanf(val_txt, "%d", &val) != 1) {
               err = 1;
             }
             break;
           case TEXT_OPT:
             /* Read text into opt->value */
-            strcpy((char *)opt->value, val_txt);
-            printf("%s", (char *)(opt->value));
+            strcpy(opt->value.text, val_txt);
+            printf("%s", opt->value.text);
             break;
           case CMD_OPT:
             /* Call the function pointed to by opt->value */
-            (*(ui_fn)(opt->value))(e);
+            (opt->value.function)(e);
             break;
         }
-        /* Try to interpret and store the arguments depending on type */
-        if (!err) {
-          switch (opt->type) {
-            default:
-              break;
-            case SPIN_OPT:
-              if (val > opt->max || val < opt->min) {
-                return 1;
-              } else {
-                *(int *)opt->value = val;
-                break;
-              }
-            case BOOL_OPT:
-              if (val > 1 || val < 0) {
-                return 1;
-              } else {
-                *(int *)opt->value = val;
-              }
-              break;
-            case INT_OPT:
-              *(int *)opt->value = val;
-              break;
-            case COMBO_OPT: {
-              int found_val = 0;
-              int i;
-              for (i = 0; i < opt->combo_vals->n_vals; i++) {
-                if (strcmp(opt->combo_vals->vals[i].name, val_txt) == 0) {
-                  *((intptr_t *)(opt->value)) = (intptr_t)(opt->combo_vals->vals[i].value);
-                  found_val = 1;
-                }
-              }
-              if (!found_val) return 1;
+
+        if (err) continue;
+
+        /* Validation */
+        switch (opt->type) {
+          default:
+            break;
+          case TEXT_OPT:
+            /* Text is not validated */
+            break;
+          case SPIN_OPT:
+            if (val > opt->max || val < opt->min) {
+              return 1;
+            } else {
+              *opt->value.integer = val;
               break;
             }
+          case BOOL_OPT:
+            if (val > 1 || val < 0) {
+              return 1;
+            } else {
+              *opt->value.integer = val;
+            }
+            break;
+          case INT_OPT:
+            *opt->value.integer = val;
+            break;
+          case COMBO_OPT: {
+            /* Look up option value by name */
+            int found_val = 0;
+            for (int k = 0; k < opt->combo_vals->n_vals; k++) {
+              if (strcmp(opt->combo_vals->vals[k].name, val_txt) == 0) {
+                *opt->value.integer = k;
+                found_val = 1;
+                break;
+              }
+            }
+            if (!found_val) return 1;
+            break;
           }
-          found = 1;
         }
+        found = 1;
       }
     }
   }
@@ -174,10 +192,6 @@ int set_option(engine_s *e, const char *name) {
 }
 
 /* Features */
-
-enum {
-  N_FEATURES = 7,
-};
 
 typedef enum feature_type_e_ { INT_FEAT = 0, TEXT_FEAT } feature_type_e;
 
@@ -188,25 +202,30 @@ typedef struct feature_s_ {
   const char text_val[NAME_LENGTH];
 } feature_s;
 
-const feature_s features[N_FEATURES] = {{"myname", TEXT_FEAT, 0, "JoeChess 0.1"},
-                                        {"setboard", INT_FEAT, 0, ""},
-                                        {"name", INT_FEAT, 0, ""},
-                                        {"ping", INT_FEAT, 0, ""},
-                                        {"done", INT_FEAT, 0, ""},
-                                        {"variants", TEXT_FEAT, 0, "normal"},
-                                        {"done", INT_FEAT, 1, ""}};
+const feature_s features[] = {{"myname", TEXT_FEAT, 0, "JoeChess 0.1"},
+                              {"setboard", INT_FEAT, 0, ""},
+                              {"name", INT_FEAT, 0, ""},
+                              {"ping", INT_FEAT, 0, ""},
+                              {"done", INT_FEAT, 0, ""},
+                              {"variants", TEXT_FEAT, 0, "normal"},
+                              {"done", INT_FEAT, 1, ""}};
 
+enum { N_FEATURES = sizeof(features) / sizeof(features[0]) };
+
+/* Feature accepted - currently these values are set but not used */
 int feature_acc[N_FEATURES];
 
+/* List features in response to a `protover` request from XBoard */
 void list_features(void) {
-  int i;
-  for (i = 0; i < N_FEATURES; i++) {
+  for (int i = 0; i < N_FEATURES; i++) {
     printf("feature %s=", features[i].name);
     switch (features[i].type) {
       case INT_FEAT:
+        /* e.g. `feature foo=1\n` */
         printf("%d", features[i].int_val);
         break;
       case TEXT_FEAT:
+        /* e.g. `feature variants="normal"\n` */
         printf("\"%s\"", features[i].text_val);
         break;
     }
@@ -214,10 +233,10 @@ void list_features(void) {
   }
 }
 
-void feature_accepted(const char *buf) {
-  int i;
-  for (i = 0; i < N_FEATURES; i++) {
-    if (strcmp(buf, features[i].name) == 0) {
+/* XBoard has notified that a named feature has been accepted */
+void feature_accepted(const char *name) {
+  for (int i = 0; i < N_FEATURES; i++) {
+    if (strcmp(name, features[i].name) == 0) {
       feature_acc[i] = 1;
       PRINT_LOG(&xboard_log, "%s", buf);
       break;

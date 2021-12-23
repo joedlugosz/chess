@@ -19,10 +19,11 @@ log_s think_log = {.new_every = NE_MOVE};
 
 /* Options */
 static const option_s options[] = {
-    {"Search depth", INT_OPT, &search_depth, 1, 10, 0},
-    {"Boundary score", INT_OPT, &boundary, 0, 2000000, 0},
-    {"Show thinking", BOOL_OPT, &show, 0, 0, 0},
-    {"New Thinking log every", COMBO_OPT, &(think_log.new_every), 0, 0, &newevery_combo},
+    {"Search depth", INT_OPT, .value.integer = &search_depth, 1, 10, 0},
+    {"Boundary score", INT_OPT, .value.integer = &boundary, 0, 2000000, 0},
+    {"Show thinking", BOOL_OPT, .value.integer = &show, 0, 0, 0},
+    {"New Thinking log every", COMBO_OPT, .value.integer = (int *)&(think_log.new_every), 0, 0,
+     &newevery_combo},
 };
 const options_s search_opts = {sizeof(options) / sizeof(options[0]), options};
 

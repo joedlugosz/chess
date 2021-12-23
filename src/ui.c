@@ -22,7 +22,8 @@ log_s xboard_log = {.new_every = NE_SESSION};
 log_s error_log = {.new_every = NE_SESSION};
 
 static const option_s options[] = {
-    {"New XBoard log", COMBO_OPT, &(xboard_log.new_every), 0, 0, &newevery_combo},
+    {"New XBoard log", COMBO_OPT, .value.integer = (int *)&(xboard_log.new_every), 0, 0,
+     &newevery_combo},
 };
 const options_s engine_options = {sizeof(options) / sizeof(options[0]), options};
 
@@ -312,8 +313,10 @@ void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   start_session_log();
   setbuf(stdout, NULL);
-  init_os();
+  setup_signal_handlers();
   init_board();
+
+  /* Genuine(ish) random numbers are used where repeatability is not desirable */
   srand(clock());
 
   engine_s engine;

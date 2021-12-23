@@ -1,25 +1,27 @@
 
 # The default build type for this project is Release
 # Gprof - generate information for gprof
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE "Release" CACHE STRING
     "Choose the type of build, options are: Debug Release
     RelWithDebInfo MinSizeRel Gprof."
     FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif (NOT CMAKE_BUILD_TYPE)
 
 # Compiler options
+
+set (CMAKE_C_STANDARD 99)
+set (CMAKE_C_STANDARD_REQUIRED True)
+set (CMAKE_C_EXTENSIONS False)
+
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   add_compile_options (
-
     -msse4
-
-    -std=c99
-
     -Wfatal-errors
     -Wall
     -Werror
+    -Wpedantic
 
     $<$<CONFIG:Gprof>:-pg>
     $<$<CONFIG:Gprof>:-g>
@@ -40,14 +42,11 @@ endif ()
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
   add_compile_options (
-
     -msse4
-
-    -std=c99
-
     -Wfatal-errors
     -Wall
     -Werror
+    -Wpedantic
   )
 
   add_link_options (
@@ -96,7 +95,7 @@ target_link_libraries (chess info)
 
 # Generate a string containing the compiler flags that are used in the build,
 # separated by spaces.
-# flags_list is a combination of MAKE_C_FLAGS_<BUILD> and whatever flags are added
+# flags_list is a combination of MAKE_CXX_FLAGS_<BUILD> and whatever flags are added
 # using add_compile_options
 string (TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" type_name)
 set (cflags ${${type_name}})

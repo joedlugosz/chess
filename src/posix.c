@@ -1,41 +1,45 @@
-#include "compiler.h"
-#include "log.h"
-#include "os.h"
-//#include "chess.h"
+/*
+ *    POSIX-only functions defined in os.h
+ */
+
+/* For siginfo_t */
+#define _POSIX_C_SOURCE 200809L
 
 #include <execinfo.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <sys/select.h>
-#include <time.h>
+#include <string.h>
 #include <unistd.h>
 
-void init_os(void) { signal(SIGINT, SIG_IGN); }
+#include "log.h"
+#include "os.h"
 
-file_t get_stdin(void) { return FD_STDIN; }
+void init_os(void) {}
 
-unsigned int get_process_id(void) { return (unsigned int)getpid(); }
+/* SIGSEGV handler */
+static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
+  PRINT_LOG(&xboard_log, "%s", "Received sigsegv");
+  print_backtrace(0);
+  abort();
+}
 
-/* Non-blocking read from connection */
-ssize_t conn_read_nb(file_t file, char *buf, ssize_t buf_size) {
-  ssize_t n_read;
-  struct timeval tv;
-  fd_set fds;
-  tv.tv_sec = 0;
-  tv.tv_usec = 1000;
+/* Setup signal handlers - SIGSEGV is handled and SIGINT is ignored */
+void setup_signal_handlers(void) {
+  struct sigaction sa;
+  sa.sa_flags = SA_SIGINFO;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_sigaction = sigsegv_handler;
 
-  n_read = 0;
-  buf[0] = 0;
-  FD_SET(file, &fds);
-  if (select(file + 1, &fds, 0, 0, &tv) > 0) {
-    if (FD_ISSET(file, &fds)) {
-      n_read = read(file, buf, buf_size);
-      if (n_read == -1) n_read = 0;
-    }
+  if (sigaction(SIGSEGV, &sa, 0) == -1) {
+    printf("Can't set sigsegv handler");
   }
 
-  return n_read;
+  signal(SIGINT, SIG_IGN);
 }
+
+/*
+ *    Terminal
+ */
 
 /* Check whether an input FILE is a terminal or a file */
 int is_terminal(FILE *f) {
@@ -44,68 +48,6 @@ int is_terminal(FILE *f) {
 #else
   return 0;
 #endif
-}
-
-#include <string.h>
-void print_backtrace(FILE *out) {
-  void *bt[1024];
-  char **bt_syms;
-  int n_bt, i;
-  n_bt = backtrace(bt, 1024);
-  bt_syms = backtrace_symbols(bt, n_bt);
-  fprintf(out, "\nCall stack:\n");
-  printf("\n{Call stack:}\n");
-
-  char bt_function[1000][1024];
-  char bt_line[1000][1024];
-  for (i = 1; i < n_bt; i++) {
-    char exename[256];
-    sscanf(bt_syms[i], "%s", exename);
-    exename[strlen(exename) - 9] = ' ';
-    exename[strlen(exename) - 1] = 0;
-    char cmd[1000];
-    snprintf(cmd, 1000, "addr2line -f -e %s", ((const char *)exename));
-    printf("%s\n", cmd);
-
-    FILE *out;
-    out = popen(cmd, "r");
-    if (out) {
-      if (!fgets(bt_function[i], 1024, out)) sprintf(bt_function[i], "%s", "???");
-      bt_function[i][strlen(bt_function[i]) - 1] = 0;
-      if (!fgets(bt_line[i], 1024, out)) sprintf(bt_line[i], "%s", "???");
-      bt_line[i][strlen(bt_line[i]) - 1] = 0;
-      pclose(out);
-    }
-  }
-
-  for (i = 2; i < n_bt; i++) {
-    fprintf(out, "%s %-20s %s\n", bt_syms[i], bt_function[i], bt_line[i]);
-    printf("{%s %20s %s}\n", bt_syms[i], bt_function[i], bt_line[i]);
-  }
-}
-
-static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
-  PRINT_LOG(&xboard_log, "%s", "Received sigsegv");
-  abort();
-}
-
-static void sigint_handler(int sig, siginfo_t *si, void *unused) {
-  // char buf[100];
-  // buf[0]=0;
-  //(void)scanf("%s", buf);
-  // log_error(&xboard_log, "Interrupt: ", buf);
-}
-
-void set_sigsegv_handler(void) {
-  struct sigaction sa;
-  sa.sa_flags = SA_SIGINFO;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_sigaction = sigsegv_handler;
-  if (sigaction(SIGSEGV, &sa, 0) == -1) {
-  }
-  sa.sa_sigaction = sigint_handler;
-  if (sigaction(SIGINT, &sa, 0) == -1) {
-  }
 }
 
 void set_console_hilight1(void) { printf("%s", HLITE1_SQUARE); }
@@ -121,27 +63,52 @@ void set_console_white_piece(void) { printf("%s", WHITE_PIECE); }
 void set_console_black_piece(void) { printf("%s", BLACK_PIECE); }
 
 /*
-  void sigint_handler(int dummy)
-  {
-  signal(SIGINT, SIG_IGN);
-  stop_search();
-  signal(SIGINT, sigint_handler);
+ *    Debugging
+ */
+
+/* Get OS process ID of this process */
+unsigned int get_process_id(void) { return (unsigned int)getpid(); }
+
+/* Print backtrace to stdout in XBoard format and to a file */
+void print_backtrace(FILE *out) {
+  /* Get backtrace symbols */
+  void *bt[1024];
+  int n_bt = backtrace(bt, 1024);
+  char **bt_syms = backtrace_symbols(bt, n_bt);
+
+  /* Look up function names and line numbers */
+  char bt_function[1000][1024];
+  char bt_line[1000][1024];
+
+  for (int i = 1; i < n_bt; i++) {
+    /* Symbol in name(offset) format is at the start of each backtrace line */
+    char symbol[256];
+    sscanf(bt_syms[i], "%s", symbol);
+
+    /* Convert address to format for addr2line
+     *     name(+0x1234).
+     *  -> name +0x1234..  */
+    symbol[strlen(symbol) - 9] = ' ';
+    symbol[strlen(symbol) - 1] = 0;
+
+    /* Run addr2line to get function names and line numbers */
+    char cmd[1000];
+    snprintf(cmd, sizeof(cmd), "addr2line -f -e %s", ((const char *)symbol));
+    FILE *out = popen(cmd, "r");
+    if (out) {
+      if (!fgets(bt_function[i], sizeof(bt_function[i]), out)) sprintf(bt_function[i], "%s", "???");
+      bt_function[i][strlen(bt_function[i]) - 1] = 0;
+      if (!fgets(bt_line[i], sizeof(bt_line[i]), out)) sprintf(bt_line[i], "%s", "???");
+      bt_line[i][strlen(bt_line[i]) - 1] = 0;
+      pclose(out);
+    }
   }
-  int check_input()
-  {
-  fd_set fds;
-  FD_SET(0, &fds);
-  select(0, &fds, 0, 0, 0);
-  if(FD_ISSET(0, &fds)) {
-  return 1;
+
+  /* Print backtrace */
+  if (out) fprintf(out, "\nCall stack:\n");
+  printf("\n{Call stack:}\n");
+  for (int i = 2; i < n_bt; i++) {
+    if (out) fprintf(out, "%s %-20s %s\n", bt_syms[i], bt_function[i], bt_line[i]);
+    printf("{%s %20s %s}\n", bt_syms[i], bt_function[i], bt_line[i]);
   }
-  return 0;
-  }
-  void sigterm_handler(int dummy)
-  {
-  signal(SIGTERM, SIG_IGN);
-  stop_search();
-  run = 0;
-  signal(SIGTERM, sigterm_handler);
-  }
-*/
+}
