@@ -7,7 +7,7 @@
 #include "version.h"
 
 /* Defined in version.h */
-const char version[] = GIT_VERSION;
+const char app_version[] = GIT_VERSION;
 const char date[] = __DATE__;
 const char target[] = TARGET_NAME;
 const char os[] = OS_NAME;
@@ -40,7 +40,7 @@ const info_line_s lines[] = {
   { "",         0                           },
   { "Joe's Chess Engine", 0                 },
   { "",         0                           },
-  { "Version",  version                     },
+  { "Version",  app_version                 },
   { "Config",   config                      },
   { "Built",    date                        },
   { "",         0                           },
