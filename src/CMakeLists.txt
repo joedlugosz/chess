@@ -1,22 +1,23 @@
 
 # The default build type for this project is Release
 # Gprof - generate information for gprof
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE "Release" CACHE STRING
     "Choose the type of build, options are: Debug Release
     RelWithDebInfo MinSizeRel Gprof."
     FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif (NOT CMAKE_BUILD_TYPE)
 
 # Compiler options
+
+set (CMAKE_C_STANDARD 99)
+set (CMAKE_C_STANDARD_REQUIRED True)
+set (CMAKE_C_EXTENSIONS False)
+
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   add_compile_options (
-
     -msse4
-
-    -std=c99
-
     -Wfatal-errors
     -Wall
     -Werror
@@ -40,11 +41,7 @@ endif ()
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
   add_compile_options (
-
     -msse4
-
-    -std=c99
-
     -Wfatal-errors
     -Wall
     -Werror
