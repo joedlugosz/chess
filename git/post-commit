@@ -1,6 +1,6 @@
 #!/bin/sh
 
 # Git post-commit hook
-# Delete src/version.h so it will be regenerated at the next build with updated git info
+# Delete version info so it will be regenerated at the next build with updated git info
 
-rm -f src/version.h
+cmake -E remove src/build/build.c
