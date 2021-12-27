@@ -1,6 +1,4 @@
-src/version.h
-src/build/build.c
-out/
+src/buildinfo/buildinfo.c
 test/log/
 .#*
 .vscode/*
