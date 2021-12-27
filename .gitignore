@@ -1,4 +1,5 @@
 src/version.h
+src/build/build.c
 out/
 test/log/
 .#*
