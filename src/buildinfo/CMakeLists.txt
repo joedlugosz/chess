@@ -1,13 +1,17 @@
-# Generate build info file
+# Generate a source file containing build information in the binary dir from a
+# template in the source dir. `cmake -P` sets all directory variables to the working
+# dir, so the binary dir is supplied as an argument, and the working directory
+# is the source dir to access git features etc.
 add_custom_command (
-  PRE_BUILD
-  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/buildinfo.c
-  COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake
+  PRE_BUILD OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c dummy
+  #OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
+  COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake -- ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_library (buildinfo STATIC buildinfo.c)
-set_target_properties (buildinfo PROPERTIES LINKER_LANGUAGE C)
+# Target to build libbuildinfo
+add_library (buildinfo STATIC ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c)
+include_directories(buildinfo ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Generate a string containing the compiler flags that are used in the build,
 # separated by spaces.
@@ -38,3 +42,11 @@ string (STRIP ${flags} flags)
 
 target_compile_definitions (buildinfo PUBLIC -DBUILD_FLAGS="${flags}")
 target_compile_definitions (buildinfo PUBLIC -DBUILD_CONFIG="${CMAKE_BUILD_TYPE}")
+
+# Target to clean build info
+add_custom_command (
+  PRE_BUILD
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
+  COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake -- ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
