@@ -4,28 +4,7 @@
 
 #include <stdio.h>
 
-#include "version.h"
-
-/* Defined in version.h */
-const char app_version[] = GIT_VERSION;
-const char date[] = __DATE__;
-const char target[] = TARGET_NAME;
-const char os[] = OS_NAME;
-
-/* Defined at invocation - as quoted strings */
-const char config[] = BUILD_CONFIG;
-const char options[] = BUILD_FLAGS;
-
-/* Compiler name and version */
-#if defined(__clang__)
-const char compiler[] = __VERSION__;
-#elif defined(__GNUC__)
-const char compiler[] = "gcc " __VERSION__;
-#elif defined(_MSC_VER)
-const char compiler[] = "MSVC " _MSC_VER;
-#else
-const char compiler[] = "Unknown";
-#endif
+#include "buildinfo/buildinfo.h"
 
 /* Program info data */
 enum { COL_WIDTH = 50 };
@@ -40,14 +19,14 @@ const info_line_s lines[] = {
   { "",         0                           },
   { "Joe's Chess Engine", 0                 },
   { "",         0                           },
-  { "Version",  app_version                 },
-  { "Config",   config                      },
-  { "Built",    date                        },
+  { "Version",  git_version                 },
+  { "Config",   build_config                },
+  { "Built",    build_date                  },
   { "",         0                           },
-  { "Compiler", compiler                    },
-  { "Options",  options                     },
-  { "Target",   target                      },
-  { "OS",       os                          },
+  { "Compiler", compiler_name               },
+  { "Options",  compiler_options            },
+  { "Target",   target_name                 },
+  { "OS",       os_name                     },
   { "",         0                           },
   { "Type 'help' for a list of commands", 0 },
   { "",         0                           }
