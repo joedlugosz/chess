@@ -168,12 +168,58 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
 /*
  *  Tokeniser
  */
+
+/* Strip leading whitespace then get text from stdin up to the next whitespace
+ * If text is enclosed by brackets {} return all enclosed text */
+void get_input_to_buf(char *buf, size_t buf_size)
+{
+  char *ptr = buf;
+  char *end = buf + buf_size - 1;
+  /* Read input until first non whitespace character */
+  while (isspace(*ptr = fgetc(stdin)))
+    ;
+  /* Handle brackets */
+  if (*ptr == '{') {
+    while (++ptr < end) {
+      *ptr = fgetc(stdin);
+      if (*ptr == '}') {
+        ptr++;
+        break;
+      }
+    }
+    *ptr = 0;
+    return;
+  }
+  /* Read input until first whitespace character */
+  while (++ptr < end) {
+    *ptr = fgetc(stdin);
+    if (isspace(*ptr)) break;
+  }
+  *ptr = 0;
+}
+
 #define INPUT_BUF_SIZE 1024
 char input_buf[INPUT_BUF_SIZE];
 
-/* Trip leading whitespace then get text from stdin up to the next whitespace
+/* Get text from stdin up to a delimiter char */
+const char *get_delim(char delim) {
+  char *ptr = input_buf;
+  while (ptr < input_buf + sizeof(input_buf) - 1) {
+    *ptr = fgetc(stdin);
+    if (*ptr == delim) {
+      *ptr = 0;
+      return input_buf;
+    }
+    ptr++;
+  }
+  *ptr = 0;
+  return input_buf;
+}
+
+/* Strip leading whitespace then get text from stdin up to the next whitespace
  * If text is enclosed by brackets {} return all enclosed text */
 const char *get_input(void) {
+#if 0
   char *ptr = input_buf;
   char *end = input_buf + sizeof(input_buf) - 1;
   /* Read input until first non whitespace character */
@@ -197,20 +243,7 @@ const char *get_input(void) {
     if (isspace(*ptr)) break;
   }
   *ptr = 0;
-  return input_buf;
-}
-
-/* Get text from stdin up to a delimiter char */
-const char *get_delim(char delim) {
-  char *ptr = input_buf;
-  while (ptr < input_buf + sizeof(input_buf) - 1) {
-    *ptr = fgetc(stdin);
-    if (*ptr == delim) {
-      *ptr = 0;
-      return input_buf;
-    }
-    ptr++;
-  }
-  *ptr = 0;
+#endif
+  get_input_to_buf(input_buf, sizeof(input_buf));
   return input_buf;
 }

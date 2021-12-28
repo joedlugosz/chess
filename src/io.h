@@ -7,11 +7,14 @@
 
 #include "state.h"
 
+#include <sys/types.h>
+
 void print_board(FILE *f, state_s *state, bitboard_t hl1, bitboard_t hl2);
 void print_plane(FILE *f, bitboard_t plane, bitboard_t indicator);
 void print_plane_rank(FILE *f, unsigned char rank, unsigned char indicator);
 void print_thought_moves(FILE *f, int depth, move_s *moves);
 const char *get_input(void);
+void get_input_to_buf(char *buf, size_t buf_size);
 const char *get_delim(char delim);
 int parse_square(const char *, square_e *);
 int parse_move(const char *, move_s *);
