@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
   init_engine(&engine);
   parse_command_line_args(&engine, argc, argv);
 
-  print_program_info();
+  if (!engine.xboard_mode) print_program_info();
   print_game_state(&engine);
 
   main_loop(&engine);
