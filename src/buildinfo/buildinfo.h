@@ -1,6 +1,7 @@
 #ifndef BUILD_H
 #define BUILD_H
 
+extern const char app_name[];
 extern const char git_version[];
 extern const char os_name[];
 extern const char target_name[];

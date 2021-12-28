@@ -10,6 +10,7 @@ const char target_name[] = "@target_name@";
 const char build_date[] = __DATE__;
 
 /* Supplied at compiler invocation - as quoted strings */
+const char app_name[] = PROJECT_NAME"-@git_version@";
 const char build_config[] = BUILD_CONFIG;
 const char compiler_options[] = BUILD_FLAGS;
 
