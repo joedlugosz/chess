@@ -302,9 +302,19 @@ void main_loop(engine_s *engine) {
   }
 }
 
+/* Permanently enter XBoard mode and disable Ctrl-C */
+void enter_xboard_mode(engine_s *e) {
+  e->xboard_mode = 1;
+  ignore_sigint();
+}
+
 void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
   for (int arg = 1; arg < argc; arg++) {
     if (strcmp(argv[arg], "x") == 0) {
+      enter_xboard_mode(e);
+    }
+    if (strcmp(argv[arg], "t") == 0) {
+      /* For testing - like XBoard mode but with Ctrl-C */
       e->xboard_mode = 1;
     }
   }
