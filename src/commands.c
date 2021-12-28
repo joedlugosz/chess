@@ -117,10 +117,14 @@ void ui_accepted(engine_s *e) {
 
 /* Set game state from FEN input */
 void ui_fen(engine_s *e) {
-  const char *placement = get_input();
-  const char *active = get_input();
-  const char *castling = get_input();
-  const char *enpassant = get_input();
+  char placement[100];
+  get_input_to_buf(placement, sizeof(placement));
+  char active[100];
+  get_input_to_buf(active, sizeof(active));
+  char castling[100];
+  get_input_to_buf(castling, sizeof(castling));
+  char enpassant[100];
+  get_input_to_buf(enpassant, sizeof(enpassant));
   if (load_fen(&e->game, placement, active, castling, enpassant)) {
     printf("FEN string not recognised\n");
   }
