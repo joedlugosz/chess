@@ -16,7 +16,7 @@
 /* -- Game Control */
 
 /* Permanently switch to XBoard mode */
-void ui_xboard(engine_s *e) { e->xboard_mode = 1; }
+void ui_xboard(engine_s *e) { enter_xboard_mode(e); }
 
 /* Quit the program */
 void ui_quit(engine_s *e) { e->mode = ENGINE_QUIT; }
