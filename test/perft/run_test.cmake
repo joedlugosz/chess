@@ -28,7 +28,7 @@ file (WRITE test.in ${input})
 
 # Run test
 execute_process(
-  COMMAND ${exename} x
+  COMMAND ${exename} t
   INPUT_FILE test.in
   OUTPUT_FILE ${test_out_file}
 )
