@@ -171,8 +171,7 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
 
 /* Strip leading whitespace then get text from stdin up to the next whitespace
  * If text is enclosed by brackets {} return all enclosed text */
-void get_input_to_buf(char *buf, size_t buf_size)
-{
+void get_input_to_buf(char *buf, size_t buf_size) {
   char *ptr = buf;
   char *end = buf + buf_size - 1;
   /* Read input until first non whitespace character */

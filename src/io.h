@@ -5,9 +5,9 @@
 #ifndef IO_H
 #define IO_H
 
-#include "state.h"
-
 #include <sys/types.h>
+
+#include "state.h"
 
 void print_board(FILE *f, state_s *state, bitboard_t hl1, bitboard_t hl2);
 void print_plane(FILE *f, bitboard_t plane, bitboard_t indicator);
