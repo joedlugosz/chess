@@ -2,9 +2,16 @@
 # template in the source dir. `cmake -P` sets all directory variables to the working
 # dir, so the binary dir is supplied as an argument, and the working directory
 # is the source dir to access git features etc.
-add_custom_command (
-  PRE_BUILD OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c dummy
+#add_custom_command (
+#  PRE_BUILD OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c dummy
   #OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
+#  COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake -- ${CMAKE_CURRENT_BINARY_DIR}
+#  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#)
+
+add_custom_target (
+  buildinfo_src ALL
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
   COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake -- ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
