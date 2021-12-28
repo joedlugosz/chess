@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# Git post-commit hook
-# Delete version info so it will be regenerated at the next build with updated git info
-
-cmake -E remove src/build/build.c
