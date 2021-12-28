@@ -1,3 +1,5 @@
+# Perft tests
+
 set (
   tests
     starting
