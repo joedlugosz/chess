@@ -1,13 +1,13 @@
 # Generate build info file
 add_custom_command (
   PRE_BUILD
-  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/build.c
-  COMMAND ${CMAKE_COMMAND} -P build.cmake
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/buildinfo.c
+  COMMAND ${CMAKE_COMMAND} -P buildinfo.cmake
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_library (build STATIC build.c)
-set_target_properties (build PROPERTIES LINKER_LANGUAGE C)
+add_library (buildinfo STATIC buildinfo.c)
+set_target_properties (buildinfo PROPERTIES LINKER_LANGUAGE C)
 
 # Generate a string containing the compiler flags that are used in the build,
 # separated by spaces.
@@ -21,7 +21,7 @@ else ()
   string (REPLACE " " ";" flags_list ${cflags})
 endif ()
 set (flags_list "${flags_list}${CMAKE_C_COMPILER_ARG1}")
-get_target_property (value build COMPILE_OPTIONS)
+get_target_property (value buildinfo COMPILE_OPTIONS)
 if (value)
   list (APPEND flags_list "${value}")
 endif ()
@@ -36,5 +36,5 @@ foreach (flag ${flags_list})
 endforeach ()
 string (STRIP ${flags} flags)
 
-target_compile_definitions (build PUBLIC -DBUILD_FLAGS="${flags}")
-target_compile_definitions (build PUBLIC -DBUILD_CONFIG="${CMAKE_BUILD_TYPE}")
+target_compile_definitions (buildinfo PUBLIC -DBUILD_FLAGS="${flags}")
+target_compile_definitions (buildinfo PUBLIC -DBUILD_CONFIG="${CMAKE_BUILD_TYPE}")

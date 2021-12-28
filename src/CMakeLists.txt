@@ -55,7 +55,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
 endif ()
 
-add_subdirectory(build)
+add_subdirectory(buildinfo)
 
 # The rest of the app
 set (
@@ -84,4 +84,4 @@ endif ()
 
 # Executable target
 add_executable (chess ${SOURCES})
-target_link_libraries (chess build)
+target_link_libraries (chess buildinfo)

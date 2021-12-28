@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-#include "build/build.h"
+#include "buildinfo/buildinfo.h"
 
 /* Program info data */
 enum { COL_WIDTH = 50 };

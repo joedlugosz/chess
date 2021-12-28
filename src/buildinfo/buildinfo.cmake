@@ -32,4 +32,4 @@ else ()
 endif ()
 
 # Generate build info source
-configure_file("${CMAKE_SOURCE_DIR}/build.c.in" "${CMAKE_BINARY_DIR}/build.c" @ONLY)
+configure_file("${CMAKE_SOURCE_DIR}/buildinfo.c.in" "${CMAKE_SOURCE_DIR}/buildinfo.c" @ONLY)
