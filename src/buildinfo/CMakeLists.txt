@@ -42,3 +42,4 @@ string (STRIP ${flags} flags)
 
 target_compile_definitions (buildinfo PUBLIC -DBUILD_FLAGS="${flags}")
 target_compile_definitions (buildinfo PUBLIC -DBUILD_CONFIG="${CMAKE_BUILD_TYPE}")
+target_compile_definitions (buildinfo PUBLIC -DPROJECT_NAME="${CMAKE_PROJECT_NAME}")
