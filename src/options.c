@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
+#include "buildinfo/buildinfo.h"
 #include "commands.h"
 #include "engine.h"
 #include "io.h"
@@ -199,10 +200,10 @@ typedef struct feature_s_ {
   char name[NAME_LENGTH];
   feature_type_e type;
   int int_val;
-  const char text_val[NAME_LENGTH];
+  const char *text_val;
 } feature_s;
 
-const feature_s features[] = {{"myname", TEXT_FEAT, 0, "JoeChess 0.1"},
+const feature_s features[] = {{"myname", TEXT_FEAT, 0, git_version},
                               {"setboard", INT_FEAT, 0, ""},
                               {"name", INT_FEAT, 0, ""},
                               {"ping", INT_FEAT, 0, ""},
