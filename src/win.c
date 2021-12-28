@@ -9,8 +9,9 @@
 
 void init_os(void) {}
 
-/* Setup signal handlers - SIGSEGV is handled and SIGINT is ignored */
+/* TODO */
 void setup_signal_handlers(void) {}
+void ignore_sigint(void) {}
 
 /*
  *    Terminal
