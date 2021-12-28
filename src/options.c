@@ -203,13 +203,11 @@ typedef struct feature_s_ {
   const char *text_val;
 } feature_s;
 
-const feature_s features[] = {{"myname", TEXT_FEAT, 0, git_version},
-                              {"setboard", INT_FEAT, 0, ""},
-                              {"name", INT_FEAT, 0, ""},
-                              {"ping", INT_FEAT, 0, ""},
-                              {"done", INT_FEAT, 0, ""},
-                              {"variants", TEXT_FEAT, 0, "normal"},
-                              {"done", INT_FEAT, 1, ""}};
+const feature_s features[] = {
+    {"myname", TEXT_FEAT, 0, app_name}, {"setboard", INT_FEAT, 0, ""},
+    {"name", INT_FEAT, 0, ""},          {"ping", INT_FEAT, 0, ""},
+    {"done", INT_FEAT, 0, ""},          {"variants", TEXT_FEAT, 0, "normal"},
+    {"done", INT_FEAT, 1, ""}};
 
 enum { N_FEATURES = sizeof(features) / sizeof(features[0]) };
 
