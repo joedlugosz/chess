@@ -292,7 +292,10 @@ static inline void get_user_input(engine_s *engine) {
 /*
  *  UI Main Loop
  */
-void main_loop(engine_s *engine) {
+void run_engine(engine_s *engine) {
+  if (!engine->xboard_mode) print_program_info();
+  print_game_state(engine);
+
   while (engine->mode != ENGINE_QUIT) {
     if (ai_turn(engine)) {
       do_ai_move(engine);
@@ -302,31 +305,8 @@ void main_loop(engine_s *engine) {
   }
 }
 
-void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
-  for (int arg = 1; arg < argc; arg++) {
-    if (strcmp(argv[arg], "x") == 0) {
-      e->xboard_mode = 1;
-    }
-  }
-}
-
-int main(int argc, char *argv[]) {
-  start_session_log();
-  setbuf(stdout, NULL);
-  setup_signal_handlers();
-  init_board();
-
-  /* Genuine(ish) random numbers are used where repeatability is not desirable */
-  srand(clock());
-
-  engine_s engine;
-  init_engine(&engine);
-  parse_command_line_args(&engine, argc, argv);
-
-  if (!engine.xboard_mode) print_program_info();
-  print_game_state(&engine);
-
-  main_loop(&engine);
-
-  return 0;
+/* Permanently enter XBoard mode and disable Ctrl-C */
+void enter_xboard_mode(engine_s *e) {
+  e->xboard_mode = 1;
+  ignore_sigint();
 }

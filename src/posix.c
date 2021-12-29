@@ -23,7 +23,7 @@ static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
   abort();
 }
 
-/* Setup signal handlers - SIGSEGV is handled and SIGINT is ignored */
+/* Setup signal handlers - SIGSEGV is handled */
 void setup_signal_handlers(void) {
   struct sigaction sa;
   sa.sa_flags = SA_SIGINFO;
@@ -33,9 +33,10 @@ void setup_signal_handlers(void) {
   if (sigaction(SIGSEGV, &sa, 0) == -1) {
     printf("Can't set sigsegv handler");
   }
-
-  signal(SIGINT, SIG_IGN);
 }
+
+/* SIGINT is ignored for XBoard mode */
+void ignore_sigint(void) { signal(SIGINT, SIG_IGN); }
 
 /*
  *    Terminal

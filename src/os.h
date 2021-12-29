@@ -58,6 +58,7 @@
  *    win32.c
  */
 void setup_signal_handlers(void);
+void ignore_sigint(void);
 int is_terminal(FILE *f);
 void set_console_hilight1(void);
 void set_console_hilight2(void);
