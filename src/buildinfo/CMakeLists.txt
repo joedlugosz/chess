@@ -1,3 +1,5 @@
+# Build information
+
 # Generate a source file containing build information in the binary dir from a
 # template in the source dir. `cmake -P` sets all directory variables to the working
 # dir, so the binary dir is supplied as an argument, and the working directory
