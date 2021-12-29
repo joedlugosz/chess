@@ -292,7 +292,10 @@ static inline void get_user_input(engine_s *engine) {
 /*
  *  UI Main Loop
  */
-void main_loop(engine_s *engine) {
+void run_engine(engine_s *engine) {
+  if (!engine->xboard_mode) print_program_info();
+  print_game_state(engine);
+
   while (engine->mode != ENGINE_QUIT) {
     if (ai_turn(engine)) {
       do_ai_move(engine);
