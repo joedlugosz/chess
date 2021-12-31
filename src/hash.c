@@ -17,6 +17,7 @@ void prng_seed(hash_t seed) { srand(seed); }
 hash_t prng_rand(void) { return rand(); }
 
 void hash_init(void) {
+  prng_seed(123);
   init_key = prng_rand();
   turn_key = prng_rand();
   for (int i = 0; i < N_PLANES; i++) {
