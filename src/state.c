@@ -5,6 +5,8 @@
 #include "state.h"
 
 #include "debug.h"
+#include "fen.h"
+#include "hash.h"
 #include "moves.h"
 
 void init_moves(void);
@@ -110,6 +112,7 @@ static inline void add_piece(state_s *state, square_e square, piece_e piece, int
   state->piece_square[(int)index] = square;
   state->piece_at[square] = piece;
   state->index_at[square] = index;
+  state->hash ^= placement_key[piece][square];
 }
 
 static inline void remove_piece(state_s *state, square_e square) {
@@ -135,18 +138,27 @@ static inline void remove_piece(state_s *state, square_e square) {
   state->piece_square[(int)state->index_at[square]] = NO_SQUARE;
   state->piece_at[square] = EMPTY;
   state->index_at[square] = EMPTY;
+  state->hash ^= placement_key[piece][square];
 }
 
 static inline void clear_rook_castling_rights(state_s *state, square_e square, player_e player) {
-  for (int side = 0; side < 2; side++) {
+  for (boardside_e side = QUEENSIDE; side <= KINGSIDE; side++) {
     if (square == rook_start_square[player][side]) {
-      state->castling_rights &= ~castling_rights[player][side];
+      if (state->castling_rights & castling_rights[player][side]) {
+        state->hash ^= castle_rights_key[player][side];
+        state->castling_rights &= ~castling_rights[player][side];
+      }
     }
   }
 }
 
 static inline void clear_king_castling_rights(state_s *state, player_e player) {
-  state->castling_rights &= ~castling_rights[player][BOTHSIDES];
+  for (boardside_e side = QUEENSIDE; side <= KINGSIDE; side++) {
+    if (state->castling_rights & castling_rights[player][side]) {
+      state->hash ^= castle_rights_key[player][side];
+      state->castling_rights &= ~castling_rights[player][side];
+    }
+  }
 }
 
 static inline void do_rook_castling_move(state_s *state, square_e king_square, square_e from_offset,
@@ -249,6 +261,7 @@ void make_move(state_s *state, move_s *move) {
       state->check[player] = 0;
     }
   }
+
   if (state->check[state->turn]) {
     move->result |= CHECK;
   }
@@ -268,6 +281,7 @@ int check_legality(state_s *state, move_s *move) {
 void setup_board(state_s *state, const piece_e *pieces, player_e turn,
                  castle_rights_t castling_rights, bitboard_t en_passant) {
   memset(state, 0, sizeof(*state));
+  state->hash = init_key;
   state->turn = turn;
   state->castling_rights = castling_rights;
   state->en_passant = en_passant;
