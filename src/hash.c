@@ -35,7 +35,7 @@ void hash_init(void) {
   }
 }
 
-enum { TT_SIZE = 1 << 11 };
+enum { TT_SIZE = 1 << 24 };
 ttentry_s tt[TT_SIZE];
 
 void tt_clear(void) { memset(tt, 0, sizeof(tt)); }
