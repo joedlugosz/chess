@@ -150,6 +150,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
     default:
       break;
   }
+  
   return result;
 }
 
