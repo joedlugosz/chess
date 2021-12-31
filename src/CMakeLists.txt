@@ -10,6 +10,7 @@ set (
     debug.c
     evaluate.c
     fen.c
+    hash.c
     history.c
     io.c
     info.c
