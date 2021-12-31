@@ -265,6 +265,25 @@ void make_move(state_s *state, move_s *move) {
   if (state->check[state->turn]) {
     move->result |= CHECK;
   }
+
+  state->ply++;
+}
+
+void change_player(state_s *state) {
+  state->turn = opponent[state->turn];
+  state->hash ^= turn_key;
+}
+
+int check_legality(state_s *state, move_s *move) {
+  if (no_piece_at_square(state, move->from)) return ERR_NO_PIECE;
+
+  if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
+
+  if ((square2bit[move->from] & get_my_pieces(state)) == 0) return ERR_NOT_MY_PIECE;
+
+  if ((square2bit[move->to] & get_moves(state, move->from)) == 0) return ERR_CANT_MOVE_THERE;
+
+  return 0;
 }
 
 int check_legality(state_s *state, move_s *move) {
@@ -304,7 +323,10 @@ void setup_board(state_s *state, const piece_e *pieces, player_e turn,
 }
 
 /* Resets the board to the starting position */
-void reset_board(state_s *state) { setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0); }
+void reset_board(state_s *state) {
+  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0);
+  // load_fen(state, "p6p/8/8/8/8/8/8/P6P", "w", "KQkq", "-");
+}
 
 /* Initialises the module */
 void init_board(void) {
