@@ -22,6 +22,7 @@ typedef struct ttentry_s_ {
   move_s best_move;
 } ttentry_s;
 
+void tt_init(void);
 void tt_clear(void);
 ttentry_s *tt_update(hash_t hash, int depth, score_t score, move_s *best_move);
 ttentry_s *tt_probe(hash_t hash);
