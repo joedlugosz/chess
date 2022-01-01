@@ -14,10 +14,11 @@ hash_t en_passant_key[N_FILES];
 
 void prng_seed(hash_t seed) { srand(seed); }
 
-hash_t prng_rand(void) { return rand(); }
+/* TODO: better prng scheme */
+hash_t prng_rand(void) { return ((hash_t)rand() << 32) + (hash_t)rand(); }
 
 void hash_init(void) {
-  prng_seed(123);
+  prng_seed(4587987);
   init_key = prng_rand();
   turn_key = prng_rand();
   for (int i = 0; i < N_PLANES; i++) {
