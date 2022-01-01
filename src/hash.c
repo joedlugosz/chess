@@ -36,8 +36,8 @@ void hash_init(void) {
   }
 }
 
-enum { TT_SIZE = 1 << 24 };
-ttentry_s tt[TT_SIZE];
+/* Transposition table size - prime number */
+enum { TT_SIZE = 15485867 };
 
 void tt_clear(void) { memset(tt, 0, sizeof(tt)); }
 
