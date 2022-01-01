@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
   setup_signal_handlers();
   init_board();
   hash_init();
+  tt_init();
 
   /* Genuine(ish) random numbers are used where repeatability is not desirable */
   srand(clock());
