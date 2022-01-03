@@ -6,7 +6,7 @@
 
 #define TERM_COLOURS 1
 
-#if (OS == POSIX)
+#if defined (_POSIX)
 #  define TERM_UNICODE 1
 
 #  if (TERM_COLOURS)
@@ -25,8 +25,7 @@
 #    define BLACK_PIECE ""
 #  endif
 
-#elif (OS == WIN)
-#  include <wincon.h>
+#elif defined (_WINDOWS)
 #  include <windows.h>
 #  define TERM_UNICODE 0
 
