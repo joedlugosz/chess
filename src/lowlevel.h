@@ -28,7 +28,6 @@ static inline int clz(unsigned long long bits) { return (int)__builtin_clzll(bit
 static inline int pop_count(unsigned long long bits) { return (int)__builtin_popcountll(bits); }
 
 #elif defined(_MSC_VER)
-#  include <intrin.h>
 
 /* Count trailing zero bits in word */
 static inline int ctz(unsigned long long bits) {
