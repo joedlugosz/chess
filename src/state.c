@@ -256,7 +256,7 @@ void make_move(state_s *state, move_s *move) {
 
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
-void setup_board(state_s *state, const int *pieces, player_e turn, castle_rights_t castling_rights,
+void setup_board(state_s *state, const piece_e *pieces, player_e turn, castle_rights_t castling_rights,
                  bitboard_t en_passant) {
   memset(state, 0, sizeof(*state));
   state->turn = turn;
@@ -270,7 +270,7 @@ void setup_board(state_s *state, const int *pieces, player_e turn, castle_rights
   /* Iterate through positions */
   int index = 0;
   for (square_e square = 0; square < N_SQUARES; square++) {
-    int piece = pieces[square];
+    piece_e piece = pieces[square];
     if (piece != EMPTY) {
       add_piece(state, square, piece, index);
       index++;

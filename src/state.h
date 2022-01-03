@@ -182,7 +182,7 @@ extern const player_e opponent[N_PLAYERS];
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *, const int *, player_e, castle_rights_t, bitboard_t);
+void setup_board(state_s *, const piece_e *, player_e, castle_rights_t, bitboard_t);
 
 bitboard_t get_attacks(state_s *state, square_e target, player_e attacking);
 void make_move(state_s *state, move_s *move);
