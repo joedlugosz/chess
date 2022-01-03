@@ -35,7 +35,8 @@ void set_console_attr(DWORD attr, DWORD mask) {
   SetConsoleTextAttribute(h, cbsi.wAttributes);
 }
 
-void set_console_hilight(void) { set_console_attr(HLITE_SQUARE, BG_MASK); }
+void set_console_hilight1(void) { set_console_attr(HLITE1_SQUARE, BG_MASK); }
+void set_console_hilight2(void) { set_console_attr(HLITE2_SQUARE, BG_MASK); }
 
 void set_console_white_square(void) { set_console_attr(WHITE_SQUARE, BG_MASK); }
 
