@@ -3,6 +3,7 @@
  */
 
 #include <conio.h>
+#include <io.h>
 #include <windows.h>
 
 #include "os.h"
@@ -19,8 +20,7 @@ void ignore_sigint(void) {}
 
 /* Check whether an input FILE is a terminal or a file */
 int is_terminal(FILE *f) {
-  /* Fancy terminal stuff is not supported under Windows */
-  return 0;
+  return _isatty(_fileno(f));
 }
 
 #define BG_MASK (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
