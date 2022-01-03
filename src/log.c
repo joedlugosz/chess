@@ -11,7 +11,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "options.h"
 #include "os.h"
