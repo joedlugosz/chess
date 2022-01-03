@@ -20,7 +20,11 @@ const char compiler_name[] = __VERSION__;
 #elif defined(__GNUC__)
 const char compiler_name[] = "gcc " __VERSION__;
 #elif defined(_MSC_VER)
-const char compiler_name[] = "MSVC " _MSC_VER;
+# define STR2(x) #x
+# define STR(x) STR2(x)
+const char compiler_name[] = "MSVC " STR(_MSC_FULL_VER);
+# undef STR2
+# undef STR
 #else
 const char compiler_name[] = "Unknown";
 #endif
