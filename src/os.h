@@ -44,13 +44,6 @@
 
 #endif /* OS */
 
-/* Configuration logic */
-#if ((TERM_UNICODE | TERM_COLOURS))
-#  define TERMINAL 1
-#else
-#  define TERMINAL 0
-#endif
-
 #include <stdio.h>
 
 /* These functions are all defined in an OS-specific module.
