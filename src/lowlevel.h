@@ -59,7 +59,17 @@ static inline int clz(unsigned long long bits) {
 }
 
 /* Count set bits in word */
-static inline int pop_count(unsigned long long bits) { return (int)__popcnt64(bits); }
-#endif /* defined (__clang__ _GNUC_ _MSC_VER) */
-
+#  if defined (_WIN64)
+#   include <nmmintrin.h>
+static inline int pop_count(unsigned long long bits) {
+  return (int)__popcnt64(bits);
+}
+#  else
+#   include <intrin.h>
+static inline int pop_count(unsigned long long bits) {
+  return (int)__popcnt((unsigned long)(bits & 0xffffffffull)) +
+    (int)__popcnt((unsigned long)(bits >> 32));
+}
+#  endif /* defined (_WIN64) */
+# endif /* defined (__clang__ _GNUC_ _MSC_VER) */
 #endif /* LOWLEVEL_H */
