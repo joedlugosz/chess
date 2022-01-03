@@ -61,6 +61,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
 endif ()
 
+if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+
+  add_compile_definitions (_CRT_SECURE_NO_WARNINGS)
+
+endif ()
+
 add_subdirectory (src)
 add_subdirectory (app)
 
