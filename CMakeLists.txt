@@ -1,6 +1,8 @@
 # The project
 
 cmake_minimum_required (VERSION 3.7)
+cmake_policy (SET CMP0115 NEW)
+
 project (chess)
 
 # The default build type for this project is Release
