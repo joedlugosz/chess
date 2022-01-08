@@ -3,11 +3,10 @@
  */
 
 #include <conio.h>
+#include <dbghelp.h>
 #include <io.h>
 #include <stdlib.h>
 #include <windows.h>
-
-#include <dbghelp.h>
 
 #include "os.h"
 
@@ -22,9 +21,7 @@ void ignore_sigint(void) {}
  */
 
 /* Check whether an input FILE is a terminal or a file */
-int is_terminal(FILE *f) {
-  return _isatty(_fileno(f));
-}
+int is_terminal(FILE *f) { return _isatty(_fileno(f)); }
 
 #define BG_MASK (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define FG_MASK (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
@@ -58,11 +55,11 @@ unsigned int get_process_id(void) { return (unsigned int)GetCurrentProcessId(); 
 
 /* Print backtrace to stdout in XBoard format and to a file */
 void print_backtrace(FILE *out) {
-  unsigned int   i;
-  void         * stack[ 100 ];
+  unsigned int i;
+  void *stack[100];
   unsigned short frames;
-  SYMBOL_INFO  * symbol;
-  HANDLE         process;
+  SYMBOL_INFO *symbol;
+  HANDLE process;
 
   process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
@@ -73,7 +70,7 @@ void print_backtrace(FILE *out) {
   symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
   /* First 2 entries before assert_fail will be log_error and print_backtrace */
-  for(i = 2; i < frames; i++) {
+  for (i = 2; i < frames; i++) {
     SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
     if (out != stdout) fprintf(out, "%s\n", symbol->Name);
     printf("{ %-20s 0x%016llx }\n", symbol->Name, symbol->Address);
