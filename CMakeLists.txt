@@ -1,6 +1,11 @@
 # The project
 
 cmake_minimum_required (VERSION 3.7)
+
+if (POLICY CMP0115)
+  cmake_policy (SET CMP0115 NEW)
+endif ()
+
 project (chess)
 
 # The default build type for this project is Release
@@ -56,6 +61,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
   add_link_options (
     -rdynamic
   )
+
+endif ()
+
+if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+
+  add_compile_definitions (_CRT_SECURE_NO_WARNINGS)
 
 endif ()
 

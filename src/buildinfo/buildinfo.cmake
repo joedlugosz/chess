@@ -22,7 +22,7 @@ endif ()
 if (WIN32)
   set (os_name "Windows")
   execute_process(
-    COMMAND set PROCESSOR_IDENTIFIER
+    COMMAND cmd.exe /c set PROCESSOR_IDENTIFIER
     OUTPUT_VARIABLE target_name
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
   )

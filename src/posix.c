@@ -43,13 +43,7 @@ void ignore_sigint(void) { signal(SIGINT, SIG_IGN); }
  */
 
 /* Check whether an input FILE is a terminal or a file */
-int is_terminal(FILE *f) {
-#if (TERMINAL)
-  return isatty(fileno(f));
-#else
-  return 0;
-#endif
-}
+int is_terminal(FILE *f) { return isatty(fileno(f)); }
 
 void set_console_hilight1(void) { printf("%s", HLITE1_SQUARE); }
 

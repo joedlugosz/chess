@@ -11,7 +11,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "options.h"
 #include "os.h"
@@ -56,6 +55,7 @@ void start_log(log_s *log, newevery_e new_log, const char *fmt, ...) {
 }
 
 int open_log(log_s *log) {
+  if (!log) return 1;
   if (log->logging) {
     log->file = fopen(log->path, "a");
     if (log->file) return 0;
@@ -91,9 +91,12 @@ void log_error(log_s *log, const char *file, const char *func, const int line, c
   } else {
     out = stdout;
   }
-  fprintf(out, "Process: %d\n", get_process_id());
-  fprintf(out, "At: %s %s:%d\n", file, func, line);
-  fprintf(out, "%s %s\n", msg1, msg2);
+
+  if (out != stdout) {
+    fprintf(out, "Process: %d\n", get_process_id());
+    fprintf(out, "At: %s %s:%d\n", file, func, line);
+    fprintf(out, "%s %s\n", msg1, msg2);
+  }
   printf("{Process: %d}\n", get_process_id());
   printf("{At: %s %s:%d}\n", file, func, line);
   printf("{%s %s}\n", msg1, msg2);

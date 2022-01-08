@@ -28,7 +28,6 @@ static inline int clz(unsigned long long bits) { return (int)__builtin_clzll(bit
 static inline int pop_count(unsigned long long bits) { return (int)__builtin_popcountll(bits); }
 
 #elif defined(_MSC_VER)
-#  include <intrin.h>
 
 /* Count trailing zero bits in word */
 static inline int ctz(unsigned long long bits) {
@@ -59,7 +58,15 @@ static inline int clz(unsigned long long bits) {
 }
 
 /* Count set bits in word */
+#  if defined(_WIN64)
+#    include <nmmintrin.h>
 static inline int pop_count(unsigned long long bits) { return (int)__popcnt64(bits); }
-#endif /* defined (__clang__ _GNUC_ _MSC_VER) */
-
-#endif /* LOWLEVEL_H */
+#  else
+#    include <intrin.h>
+static inline int pop_count(unsigned long long bits) {
+  return (int)__popcnt((unsigned long)(bits & 0xffffffffull)) +
+         (int)__popcnt((unsigned long)(bits >> 32));
+}
+#  endif /* defined (_WIN64) */
+#endif   /* defined (__clang__ _GNUC_ _MSC_VER) */
+#endif   /* LOWLEVEL_H */

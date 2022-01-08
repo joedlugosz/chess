@@ -25,11 +25,11 @@ extern log_s xboard_log;
 extern log_s think_log;
 extern log_s error_log;
 
+void assert_fail(log_s *log, const char *file, const char *func, const int line,
+                 const char *condition);
 #if (LOGGING == YES)
 void start_log(log_s *log, newevery_e new_log, const char *fmt, ...);
 void print_log(log_s *log, const char *fmt, ...);
-void assert_fail(log_s *log, const char *file, const char *func, const int line,
-                 const char *condition);
 #  define ASSERT(x)                                              \
     if (!(x)) {                                                  \
       assert_fail(&error_log, __FILE__, __func__, __LINE__, #x); \
@@ -37,7 +37,10 @@ void assert_fail(log_s *log, const char *file, const char *func, const int line,
 #  define START_LOG(l, n, f, ...) start_log(l, n, f, __VA_ARGS__)
 #  define PRINT_LOG(l, f, ...) print_log(l, f, __VA_ARGS__)
 #else
-#  define ASSERT(x)
+#  define ASSERT(x)                                     \
+    if (!(x)) {                                         \
+      assert_fail(0, __FILE__, __func__, __LINE__, #x); \
+    }
 #  define START_LOG(l, n, f, ...)
 #  define PRINT_LOG(l, f, ...)
 #endif /* LOGGING == YES */

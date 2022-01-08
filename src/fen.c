@@ -13,7 +13,7 @@ enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
 struct castle_rights_entry {
   char c;
-  bitboard_t mask;
+  castle_rights_t bits;
 };
 
 static const struct castle_rights_entry castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {
@@ -25,7 +25,7 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
-  int board[N_SQUARES];
+  piece_e board[N_SQUARES];
   int file = 0;
   int rank = 7;
   const char *ptr = placement_text;
@@ -59,7 +59,7 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
       for (piece = 0; piece < N_PLANES; piece++) {
         if (*ptr == piece_letter[piece]) {
           /* Set index, increment counters */
-          board[rank * 8 + file] = piece;
+          board[rank * 8 + file] = (piece_e)piece;
           count[piece]++;
           break;
         }
@@ -101,11 +101,11 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
   /* Castling rights */
   ptr = castling_text;
   error_text = castling_text;
-  bitboard_t castling_rights = 0;
+  castle_rights_t castling_rights = 0;
   while (*ptr) {
     for (int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
       if (*ptr == castling_rights_letter[i].c) {
-        castling_rights |= castling_rights_letter[i].mask;
+        castling_rights |= castling_rights_letter[i].bits;
       }
     }
     ptr++;
@@ -178,7 +178,7 @@ int get_fen(const state_s *state, char *out, size_t outsize) {
 
   /* Castling rights */
   for (int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if (state->castling_rights & castling_rights_letter[i].mask) {
+    if (state->castling_rights & castling_rights_letter[i].bits) {
       *ptr++ = castling_rights_letter[i].c;
     }
   }
