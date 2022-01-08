@@ -55,11 +55,11 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
       }
     } else {
       /* Otherwise, lookup the piece descriptor from the list */
-      piece_e piece;
+      int piece;
       for (piece = 0; piece < N_PLANES; piece++) {
         if (*ptr == piece_letter[piece]) {
           /* Set index, increment counters */
-          board[rank * 8 + file] = piece;
+          board[rank * 8 + file] = (piece_e)piece;
           count[piece]++;
           break;
         }
