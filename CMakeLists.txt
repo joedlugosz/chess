@@ -1,7 +1,10 @@
 # The project
 
 cmake_minimum_required (VERSION 3.7)
-cmake_policy (SET CMP0115 NEW)
+
+if (POLICY CMP0115)
+  cmake_policy (SET CMP0115 NEW)
+endif ()
 
 project (chess)
 
