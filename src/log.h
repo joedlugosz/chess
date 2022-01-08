@@ -37,8 +37,8 @@ void print_log(log_s *log, const char *fmt, ...);
 #  define START_LOG(l, n, f, ...) start_log(l, n, f, __VA_ARGS__)
 #  define PRINT_LOG(l, f, ...) print_log(l, f, __VA_ARGS__)
 #else
-#  define ASSERT(x)                                              \
-    if (!(x)) {                                                  \
+#  define ASSERT(x)                                     \
+    if (!(x)) {                                         \
       assert_fail(0, __FILE__, __func__, __LINE__, #x); \
     }
 #  define START_LOG(l, n, f, ...)
