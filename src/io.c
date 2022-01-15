@@ -186,9 +186,6 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
         break;
     }
 
-<<<<<<< HEAD
-    printf("\n");
-=======
     const char type[3][3] = {">=", "<=", "="};
     if (tte) {
       switch (rank) {
@@ -206,7 +203,6 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     }
 
     printf("\n");
->>>>>>> ADD: fen and tt info to print_board
   }
   printf("\n");
 }
