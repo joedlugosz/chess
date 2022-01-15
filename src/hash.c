@@ -56,11 +56,13 @@ static inline ttentry_s *tt_get(hash_t hash) {
 
 ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, move_s *best_move) {
   ttentry_s *ret = tt_get(hash);
-  ret->hash = hash;
-  ret->type = type;
-  ret->depth = depth;
-  ret->score = score;
-  memcpy(&ret->best_move, best_move, sizeof(ret->best_move));
+  if (ret->depth < depth) {
+    ret->hash = hash;
+    ret->type = type;
+    ret->depth = depth;
+    ret->score = score;
+    if (best_move) memcpy(&ret->best_move, best_move, sizeof(ret->best_move));
+  }
   return ret;
 }
 
