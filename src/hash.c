@@ -66,9 +66,6 @@ ttentry_s *tt_update(hash_t hash, int depth, score_t score, move_s *best_move) {
 ttentry_s *tt_probe(hash_t hash) {
   ttentry_s *ret = tt_get(hash);
   if (ret->hash != hash) {
-    if (ret->hash) {
-      printf("TT coll %llx %llx\n", ret->hash, hash);
-    }
     return 0;
   }
   return ret;
