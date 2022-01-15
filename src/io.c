@@ -8,6 +8,7 @@
 
 #include "debug.h"
 #include "fen.h"
+#include "hash.h"
 #include "os.h"
 #include "search.h"
 #include "state.h"
@@ -121,7 +122,17 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
 
   term = is_terminal(stdout);
 
+<<<<<<< HEAD
   printf("\n");
+=======
+  ttentry_s *tte = tt_probe(state->hash);
+
+  if (tte) {
+    mask1 = square2bit[tte->best_move.from];
+    mask2 = square2bit[tte->best_move.to];
+  }
+  fprintf(f, "\n");
+>>>>>>> ADD: fen and tt info to print_board
   for (rank = 7; rank >= 0; rank--) {
     printf("%s", "    ");
 #if (ORDER_BINARY)
@@ -168,11 +179,34 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
         get_fen(state, buf, sizeof(buf));
         printf("     %s", buf);
         break;
+      case 6:
+        fprintf(f, "     %016llx", state->hash);
+        break;
       default:
         break;
     }
 
+<<<<<<< HEAD
     printf("\n");
+=======
+    const char type[3][3] = {">=", "<=", "="};
+    if (tte) {
+      switch (rank) {
+        case 5:
+          format_move(buf, &tte->best_move, 0);
+          printf("     %s", buf);
+          break;
+        case 4:
+//          fprintf(f, "     %s %d (%d)", type[tte->type], tte->score, tte->depth);
+          printf("     %d (%d)", tte->score, tte->depth);
+          break;
+        default:
+          break;
+      }
+    }
+
+    printf("\n");
+>>>>>>> ADD: fen and tt info to print_board
   }
   printf("\n");
 }
