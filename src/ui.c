@@ -150,7 +150,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
     default:
       break;
   }
-  
+
   return result;
 }
 
@@ -209,7 +209,6 @@ static inline void do_ai_move(engine_s *engine) {
 
   make_move(&engine->game, &result.move);
   mark_time(engine);
-  print_ai_move(engine, &result);
   finished_move(engine);
   print_game_state(engine);
   reset_time(engine);
