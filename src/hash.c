@@ -49,7 +49,7 @@ void tt_init(void) {
   }
 }
 
-ttentry_s *tt_get(hash_t hash) {
+static inline ttentry_s *tt_get(hash_t hash) {
   hash_t index = hash % (hash_t)TT_SIZE;
   return &tt[index];
 }
