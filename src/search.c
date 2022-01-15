@@ -7,6 +7,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "hash.h"
 #include "history.h"
 #include "io.h"
 #include "movegen.h"
@@ -43,6 +44,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   if (score > *alpha) {
     write_search_history(job, depth, move);
     *alpha = score;
+    *best_move = move;
 
     /* Show the best move if it updates at root level */
     if (depth == job->depth) {
@@ -65,43 +67,6 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   return 0;
 }
 
-/* Search a single ply and all possible moves - call search_move for each move */
-static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
-                          score_t beta);
-
-static inline int search_move(search_job_s *job, state_s *state, int depth, score_t *alpha,
-                              score_t *beta, move_s *move) {
-  state_s next_state;
-  copy_state(&next_state, state);
-  make_move(&next_state, move);
-  /* Can't move into check */
-  if (in_check(&next_state)) return 0;
-
-  job->result.n_searched++;
-  change_player(&next_state);
-  score_t score = -search_ply(job, &next_state, depth - 1, -*beta, -*alpha);
-  /* Alpha update - best move found */
-  write_search_history(job, depth, move);
-  if (score > *alpha) {
-    *alpha = score;
-    /* Update the chosen move if found at the top level */
-    if (depth == job->depth) {
-      job->result.score = score;
-      memcpy(&job->result.move, move, sizeof(job->result.move));
-      xboard_thought(stdout, job, depth, score, clock() - job->start_time,
-                     job->result.n_searched++);
-    }
-  }
-  /* Beta cutoff */
-  if (score >= *beta) {
-    LOG_THOUGHT(job, depth, score, *alpha, *beta);
-    job->result.n_beta++;
-    return 1;
-  }
-  LOG_THOUGHT(job, depth, score, *alpha, *beta);
-  return 0;
-}
-
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta) {
   if (job->halt) return 0;
@@ -111,6 +76,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  /* If there are any moves, this will point to the best move by the end of the
+     function */
   score_t best_score = -BOUNDARY;
   move_s *best_move = 0;
 
@@ -127,6 +94,14 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
       search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
                   &best_move))
     return beta;
+    
+  ttentry_s *tte = tt_probe(state->hash);
+  if (tte) {
+    if (!check_legality(state, &tte->best_move)) {
+      if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move))
+        return beta;
+    }
+  }
 
   /* Generate the move list - list_entry will point to the first sorted item */
   movelist_s move_buf[N_MOVES];
@@ -154,6 +129,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     memcpy(&job->result.move, best_move, sizeof(job->result.move));
   }
 
+  tt_update(state->hash, TT_EXACT, depth, alpha, best_move);
   return alpha;
 }
 
