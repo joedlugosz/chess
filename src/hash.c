@@ -63,13 +63,6 @@ ttentry_s *tt_update(hash_t hash, int depth, score_t score, move_s *best_move) {
   return ret;
 }
 
-ttentry_s *tt_grab(hash_t hash) {
-  ttentry_s *ret = tt_get(hash);
-  memset(ret, 0, sizeof(*ret));
-  ret->hash = hash;
-  return ret;
-}
-
 ttentry_s *tt_probe(hash_t hash) {
   ttentry_s *ret = tt_get(hash);
   if (ret->hash != hash) {
