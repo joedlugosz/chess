@@ -99,10 +99,17 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (depth > 4) tte = tt_probe(state->hash);
 
   /* If there is a best move from the transposition table, try searching it
-     first. A beta cutoff will avoid move generation. */
+     first. A beta cutoff will avoid move generation, otherwise alpha will
+     get a good starting value. */
   if (tte && !check_legality(state, &tte->best_move)) {
     if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move))
       return beta;
+  }
+
+  int tt_score = 0;
+  if (tte && (depth == tte->depth)) {
+    tt_score = tte->score;
+    printf("tt score %d", tte->score);
   }
 
   /* Generate the move list - list_entry will point to the first sorted item */
@@ -128,6 +135,11 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (depth == job->depth) {
     job->result.score = alpha;
     memcpy(&job->result.move, best_move, sizeof(job->result.move));
+  }
+
+  if (tte && (depth == tte->depth)) {
+    printf(" %d\n", alpha);
+    ASSERT(tt_score == alpha);
   }
 
   /* Update the transposition table at higher levels */
