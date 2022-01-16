@@ -95,7 +95,12 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
                   &best_move))
     return beta;
     
-  ttentry_s *tte = tt_probe(state->hash);
+  /* Probe the transposition table, but only at higher levels */
+  ttentry_s *tte = 0;
+  if (depth > 4) tte = tt_probe(state->hash);
+
+  /* If there is a best move from the transposition table, try searching it
+     first. A beta cutoff will avoid move generation. */
   if (tte) {
     if (!check_legality(state, &tte->best_move)) {
       if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move))
@@ -129,7 +134,11 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     memcpy(&job->result.move, best_move, sizeof(job->result.move));
   }
 
-  tt_update(state->hash, TT_EXACT, depth, alpha, best_move);
+  /* Update the transposition table at higher levels */
+  if (depth > 4) {
+    tt_update(state->hash, TT_EXACT, depth, alpha, best_move);
+  }
+
   return alpha;
 }
 
