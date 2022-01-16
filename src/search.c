@@ -67,6 +67,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   return 0;
 }
 
+/* Search a single ply and all possible moves - call search_move for each move */
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta) {
   if (job->halt) return 0;
