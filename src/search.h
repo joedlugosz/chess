@@ -22,6 +22,7 @@ typedef struct search_result_s_ {
   score_t score;
   int n_leaf;
   double branching_factor;
+  double collisions;
   move_s move;
   clock_t time;
 } search_result_s;
