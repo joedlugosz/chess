@@ -115,10 +115,11 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   int n_moves;
   if (depth > 0) {
     n_moves = generate_search_movelist(state, &list_entry);
+    /* Checkmate or stalemate */
     if (n_moves == 0) return evaluate(state);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
-    /* Quiet node at depth */
+    /* A quiet node has been found at depth */
     if (n_moves == 0) return best_score;
   }
 
