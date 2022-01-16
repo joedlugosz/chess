@@ -151,9 +151,12 @@ void search(int depth, state_s *state, search_result_s *res) {
   job.depth = depth;
   job.start_time = clock();
 
+  tt_zero();
+
   search_ply(&job, state, depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
   res->time = clock() - job.start_time;
+  res->collisions = tt_collisions();
 }
