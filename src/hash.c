@@ -12,6 +12,9 @@ hash_t castle_rights_key[N_PLAYERS][N_BOARDSIDE];
 hash_t turn_key;
 hash_t en_passant_key[N_FILES];
 
+int updates;
+int update_collisions;
+
 void prng_seed(hash_t seed) { srand(seed); }
 
 /* TODO: better prng scheme */
@@ -49,6 +52,13 @@ void tt_init(void) {
   }
 }
 
+void tt_zero(void) {
+  updates = 0;
+  update_collisions = 0;
+}
+
+double tt_collisions(void) { return (double)update_collisions * 100.0 / (double)updates; }
+
 static inline ttentry_s *tt_get(hash_t hash) {
   hash_t index = hash % (hash_t)TT_SIZE;
   return &tt[index];
@@ -57,11 +67,13 @@ static inline ttentry_s *tt_get(hash_t hash) {
 ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, move_s *best_move) {
   ttentry_s *ret = tt_get(hash);
   if (ret->depth < depth) {
+    if (ret->hash != 0 && ret->hash != hash) update_collisions++;
     ret->hash = hash;
     ret->type = type;
     ret->depth = depth;
     ret->score = score;
     if (best_move) memcpy(&ret->best_move, best_move, sizeof(ret->best_move));
+    updates++;
   }
   return ret;
 }
