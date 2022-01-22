@@ -45,7 +45,6 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   if (score > *alpha) {
     write_search_history(job, depth, move);
     *alpha = score;
-    *best_move = move;
     *type = TT_EXACT;
 
     /* Show the best move if it updates at root level */
@@ -114,7 +113,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
      first. A beta cutoff will avoid move generation, otherwise alpha will
      get a good starting value. */
   if (tte && !check_legality(state, &tte->best_move)) {
-    if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move))
+    if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
+                    &type))
       return beta;
   }
 
@@ -134,7 +134,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
 
   /* Search each move */
   while (list_entry) {
-    if (search_move(job, state, depth, &alpha, beta, &list_entry->move, &best_move, &type))
+    if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
+                    &type))
       return beta;
     list_entry = list_entry->next;
 
