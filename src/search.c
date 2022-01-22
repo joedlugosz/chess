@@ -101,7 +101,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
 
   /* If the position has already been searched at the same or greater depth,
      use the result from the tt */
-  if (tte && (depth >= tte->depth)) {
+  if (tte && (tte->depth >= depth)) {
     if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
     if (tte->type == TT_BETA && tte->score > beta) return beta;
     if (tte->type == TT_EXACT) return tte->score;
