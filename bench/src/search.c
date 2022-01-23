@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "hash.c"
 #include "fen.h"
 #include "state.h"
 
@@ -50,6 +51,8 @@ int main(int argc, const char *argv[]) {
 
   setbuf(stdout, 0);
   init_board();
+  hash_init();
+  tt_init();
 
   for (int i = 1; i <= max_depth; i++) {
     bench_search(i);
