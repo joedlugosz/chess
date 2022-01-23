@@ -62,7 +62,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
     }
     *type = TT_BETA;
   }
-
+  
   return 0;
 }
 
@@ -136,12 +136,15 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (n_moves == 0) return best_score;
   }
 
-  /* Search each move */
+  /* Search each move, skipping the best move from the tt which has already been searched */
   while (list_entry) {
-    if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
-                    &type))
-      return beta;
+    if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
+      if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
+                      &type))
+        return beta;
+    }
     list_entry = list_entry->next;
+  }
 
   /* Update the result if at the top level */
   if (depth == job->depth) {
