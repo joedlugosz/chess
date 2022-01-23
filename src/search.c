@@ -97,7 +97,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     
   /* Probe the transposition table, but only at higher levels */
   ttentry_s *tte = 0;
-  if (depth > 4) tte = tt_probe(state->hash);
+  if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth,
      use the result from the tt */
@@ -146,7 +146,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   }
 
   /* Update the transposition table at higher levels */
-  if (depth > 4) {
+  if (depth > TT_MIN_DEPTH) {
     tt_update(state->hash, type, depth, alpha, best_move);
   }
 
