@@ -24,6 +24,7 @@ typedef struct search_result_s_ {
   int n_beta; /* Number of beta cutoffs */
   double cutoff;
   move_s move;
+  clock_t time;
 } search_result_s;
 
 enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
