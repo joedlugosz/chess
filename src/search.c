@@ -70,7 +70,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (job->halt) return 0;
 
   ASSERT(depth < SEARCH_DEPTH_MAX);
-  if (depth > search_depth) {
+  if (depth > job->depth) {
     /* Evaluate taking no action - i.e. not making any possible capture
       moves, this could be better than the consequences of taking the
       piece.  If this is better than the opponent's beta, it causes a
@@ -84,7 +84,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
   int n_moves;
-  if (depth < search_depth) {
+  if (depth < job->depth) {
     n_moves = generate_search_movelist(state, &list_entry);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
@@ -136,4 +136,5 @@ void search(int depth, state_s *state, search_result_s *res) {
   search_ply(&job, state, 0, -boundary, boundary);
   memcpy(res, &job.result, sizeof(*res));
   res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
+  res->time = clock() - job.start_time;
 }
