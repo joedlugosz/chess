@@ -72,6 +72,7 @@ endif ()
 
 add_subdirectory (src)
 add_subdirectory (app)
+add_subdirectory (bench)
 
 enable_testing ()
 add_subdirectory (test)
