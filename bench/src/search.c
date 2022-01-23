@@ -5,6 +5,8 @@
 #include "search.h"
 #include "state.h"
 
+int depth = 8;
+
 void bench_search(void) {
   
   state_s state;
@@ -16,7 +18,7 @@ void bench_search(void) {
 
     search_result_s res;
 
-    search(6, &state, &res);
+    search(depth, &state, &res);
     total += res.time;
     n_searched += res.n_searched;
 
@@ -37,7 +39,14 @@ void bench_search(void) {
 
 }
 
-int main(void) {
+int main(int argc, const char *argv[]) {
+
+  if (argc == 2) {
+    printf("%s\n", argv[1]);
+    if (sscanf(argv[1], "%d", &depth) != 1) {
+      return 1;
+    }
+  }
 
   setbuf(stdout, 0);
   init_board();
