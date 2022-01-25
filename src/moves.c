@@ -3,6 +3,7 @@
  */
 
 #include "debug.h"
+#include "evaluate.h"
 #include "io.h"
 #include "position.h"
 
@@ -311,6 +312,8 @@ void calculate_moves(struct position *position) {
    */
   position->claim[WHITE] = 0;
   position->claim[BLACK] = 0;
+  position->mobility[WHITE] = 0;
+  position->mobility[BLACK] = 0;
 
   for (int8_t index = 0; index < N_PIECES; index++) {
     enum square square = position->piece_square[index];
@@ -357,6 +360,7 @@ void calculate_moves(struct position *position) {
       position->claim[player] |=
           pawn_takes[player][square] & ~position->player_a[player];
     }
+    position->mobility[player] += pop_count(moves) * mobility;
   }
 
   for (int8_t index = 0; index < N_PIECES; index++) {
@@ -374,6 +378,7 @@ void calculate_moves(struct position *position) {
     moves &= ~position->player_a[player];
     position->moves[index] = moves;
     position->claim[player] |= moves;
+    position->mobility[player] += pop_count(moves) * mobility;
   }
 }
 

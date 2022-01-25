@@ -82,31 +82,17 @@ const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
 static inline score_t evaluate_player(const struct position *position,
                                       enum player player) {
   int score = 0;
-
-  enum piece player_first_piece = N_PIECE_T * player;
-  enum piece opponent_first_piece = N_PIECE_T * !player;
-
-  /* Materials - score the number of each piece type according to
-   * `piece_weights` */
-  for (int i = 0; i < N_PIECE_T; i++) {
-    score += piece_weights[i] * pop_count(position->a[i + player_first_piece]);
-  }
-
-  /* Mobility - a bonus for each possible move. */
-  bitboard_t pieces = position->player_a[player];
-  while (pieces) {
-    enum square square = bit2square(take_next_bit_from(&pieces));
-    score += mobility_bonus * pop_count(get_moves(position, square));
-  }
+  int player_first_piece = N_PIECE_T * player;
+  int opponent_first_piece = N_PIECE_T * !player;
 
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  pieces = position->b[PAWN + player_first_piece];
+  bitboard_t pieces = position->b[PAWN + player_first_piece];
   while (pieces) {
     if (pop_count(pieces & 0xffull) > 1) score -= doubled_pawn_penalty;
     pieces >>= 8;
   }
 
-  /* Blocked and passed pawns */
+  /* Blocked pawns - look for pawns with no moves */
   pieces = position->a[PAWN + player_first_piece];
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
@@ -125,10 +111,39 @@ static inline score_t evaluate_player(const struct position *position,
     }
   }
 
-  /* Random element */
-  if (randomness) {
-    score += rand() % randomness;
-  }
+  return score;
+}
+
+/* Evaluate one player's pieces */
+static inline score_t evaluate_player(struct position *position,
+                                      enum player player) {
+  int score = 0;
+  // bitboard_t pieces;
+
+  // /* Materials */
+  // for (int i = 0; i < N_PIECE_T; i++) {
+  //   score += piece_weights[i] * pop_count(position->a[i + pt_first]);
+  // }
+  // ASSERT(score == position->material[player]);
+
+  // /* Mobility - for each piece count the number of moves */
+  // int mobility_score = 0;
+  // pieces = position->player_a[player];
+  // while (pieces) {
+  //   square_e pos = bit2square(take_next_bit_from(&pieces));
+  //   mobility_score += mobility * pop_count(get_moves(position, pos));
+  // }
+  // ASSERT(mobility_score == position->mobility[player]);
+  // score += mobility_score;
+
+  score = position->material[player] + position->mobility[player] * mobility;
+  score_t pawns = evaluate_player_pawns(position, player);
+  ASSERT(pawns == position->pawns[player]);
+  score += pawns;
+  // /* Random element */
+  // if (randomness) {
+  //   score += rand() % randomness;
+  // }
 
   /* Penalise moving queen before other pieces */
   if (OPT_OPENING_GUIDE && position->phase == OPENING) {
