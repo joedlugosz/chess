@@ -22,3 +22,15 @@ add_test (
   NAME src-history
   COMMAND test_history
 )
+
+add_executable (test_size size.c)
+target_link_libraries (test_size common test_common)
+target_include_directories (test_size PRIVATE 
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/test
+)
+
+add_test(
+  NAME src-size
+  COMMAND test_size
+)

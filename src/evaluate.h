@@ -13,6 +13,10 @@ typedef int score_t;
 void evaluate_init();
 score_t evaluate(const struct position *position);
 int is_endgame(const struct position *position);
+score_t evaluate_player_pawns(struct position *position, enum player player);
+
+extern int piece_weights[N_PIECE_T];
+extern int mobility;
 
 static inline int opening_pieces_left(const struct position *position,
                                       enum player player) {

@@ -108,6 +108,7 @@ static inline void add_piece(struct position *position, enum square square,
   position->piece_at[square] = piece;
   position->index_at[square] = index;
   position->hash ^= placement_key[piece][square];
+  position->material[player] += piece_weights[piece_type[piece]];
 }
 
 /* Alter `position` to remove a piece at `square`. */
@@ -135,6 +136,7 @@ static inline void remove_piece(struct position *position, enum square square) {
   position->piece_at[square] = EMPTY;
   position->index_at[square] = EMPTY;
   position->hash ^= placement_key[piece][square];
+  position->material[player] -= piece_weights[piece_type[piece]];
 }
 
 /* Clear the castling rights in `position` for the rook at `square` owned by
@@ -161,6 +163,11 @@ static inline void clear_king_castling_rights(struct position *position,
       position->castling_rights &= ~castling_rights[player][side];
     }
   }
+}
+
+static inline void evaluate_pawns(struct position *position) {
+  position->pawns[WHITE] = evaluate_player_pawns(position, WHITE);
+  position->pawns[BLACK] = evaluate_player_pawns(position, BLACK);
 }
 
 /* Make the rook's move which is a counterpart to the king's castling move. */
@@ -274,6 +281,19 @@ void make_move(struct position *position, struct move *move) {
 
   /* Pre-calculate moves for all pieces */
   calculate_moves(position);
+
+  bitboard_t pawn_block =
+      (position->a[PAWN] << 8) | (position->a[PAWN + N_PIECE_T] >> 8);
+  if (piece_type[moving_piece] == PAWN ||
+      (victim_piece != EMPTY && piece_type[victim_piece] == PAWN) ||
+      (square2bit[move->to] & pawn_block) ||
+      (square2bit[move->from] & pawn_block) ||
+      (square2bit[move->to] &
+           position->pawn_claim[opponent[piece_player[moving_piece]]] ||
+       (square2bit[move->to] & position->en_passant) ||
+       move->promotion > PAWN)) {
+    evaluate_pawns(position);
+  }
 
   /* Test for check on both sides */
   for (enum player player = 0; player < N_PLAYERS; player++) {

@@ -129,6 +129,9 @@ struct position {
   bitboard_t en_passant;           /* 8 En-passant squares */
   hash_t hash;                     /* 8 */
   int ply;                         /* 4 */
+  short material[N_PLAYERS];
+  short mobility[N_PLAYERS];
+  short pawns[N_PLAYERS];
   enum phase phase;
 };
 
