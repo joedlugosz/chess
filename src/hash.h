@@ -25,6 +25,7 @@ typedef struct ttentry_s_ {
   move_s best_move;
 } ttentry_s;
 
+void tt_exit(void);
 void tt_zero(void);
 double tt_collisions(void);
 void tt_init(void);

@@ -34,5 +34,7 @@ int main(int argc, char *argv[]) {
   parse_command_line_args(&engine, argc, argv);
   run_engine(&engine);
 
+  tt_exit();
+
   return 0;
 }

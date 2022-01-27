@@ -41,6 +41,8 @@ void hash_init(void) {
 
 /* Transposition table size - prime number */
 enum { TT_SIZE = 15485867 };
+// enum { TT_SIZE = (1ull << 21) + 7};
+// enum { TT_SIZE = 7};
 
 ttentry_s *tt;
 
@@ -50,6 +52,10 @@ void tt_init(void) {
     printf("Can't allocate %lu bytes for transposition table\n", TT_SIZE * sizeof(ttentry_s));
     exit(1);
   }
+}
+
+void tt_exit(void) {
+  if (tt) free(tt);
 }
 
 void tt_zero(void) {
