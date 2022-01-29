@@ -48,7 +48,8 @@ void bench_search(int depth) {
 
     if (res.move.from == A1 && res.move.to == A1) break;
 
-    make_move(&position, &res.move);
+    struct unmake unmake;
+    make_move(&position, &res.move, &unmake);
     history_push(&history, position.hash, &res.move);
     change_player(&position);
   }
