@@ -335,7 +335,7 @@ void unmake_move(struct position *position, struct move *move,
   /* Promotion */
   if (move->promotion > PAWN) {
     remove_piece(position, move->to);
-    moving_piece -= moving_piece - move->promotion + PAWN;
+    moving_piece = piece_player[moving_piece] * N_PIECE_T + PAWN;
     add_piece(position, move->to, moving_piece, moving_index);
   }
 
