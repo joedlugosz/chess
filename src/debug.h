@@ -5,9 +5,6 @@
 #ifndef LOG_H
 #define LOG_H
 
-#define YES 1
-#define NO 0
-
 #include <stdio.h>
 
 #include "options.h"
@@ -28,13 +25,13 @@ extern log_s error_log;
 void assert_fail(log_s *log, const char *file, const char *func, const int line,
                  const char *condition);
 
-#ifndef LOGGING
-#  define LOG_THOUGHT(c, d, s, a, b)
-#else
+#ifdef LOGGING
 #  define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
+#else
+#  define LOG_THOUGHT(c, d, s, a, b)
 #endif
 
-#if (LOGGING == YES)
+#ifdef LOGGING
 void start_log(log_s *log, newevery_e new_log, const char *fmt, ...);
 void print_log(log_s *log, const char *fmt, ...);
 #  define ASSERT(x)                                              \
@@ -53,8 +50,10 @@ void debug_thought(FILE *f, search_job_s *job, int depth, score_t score, score_t
     }
 #  define START_LOG(l, n, f, ...)
 #  define PRINT_LOG(l, f, ...)
-#endif /* LOGGING == YES */
+#endif /* LOGGING */
+
 void set_sigsegv_handler(void);
 int open_log(log_s *log);
 void close_log(log_s *log);
+
 #endif /* LOG_H */
