@@ -369,18 +369,6 @@ void unmake_move(struct position *position, struct move *move,
 
   position->check[WHITE] = unmake->check[WHITE];
   position->check[BLACK] = unmake->check[BLACK];
-  /* Calculate moves for all pieces */
-  calculate_moves(position);
-
-  /* Check testing - TODO */
-  for (enum player player = 0; player < N_PLAYERS; player++) {
-    int king_pos = mask2pos(position->a[KING + player * N_PIECE_T]);
-    if (get_attacks(position, king_pos, opponent[player])) {
-      position->check[player] = 1;
-    } else {
-      position->check[player] = 0;
-    }
-  }
 }
 
 /* Setup `position` using the supplied information.  This is used by
