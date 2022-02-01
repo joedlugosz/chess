@@ -7,9 +7,9 @@
 
 #include "buildinfo/buildinfo.h"
 #include "commands.h"
+#include "debug.h"
 #include "engine.h"
 #include "io.h"
-#include "log.h"
 #include "search.h"
 
 /* Options */

@@ -2,11 +2,11 @@
  *  UI commands
  */
 
+#include "debug.h"
 #include "engine.h"
 #include "fen.h"
 #include "info.h"
 #include "io.h"
-#include "log.h"
 #include "movegen.h"
 #include "search.h"
 #include "ui.h"

@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "log.h"
+#include "debug.h"
 #include "lowlevel.h"
 
 /* Players */

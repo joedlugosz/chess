@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "log.h"
+#include "debug.h"
 #include "state.h"
 
 const score_t player_factor[N_PLAYERS] = {1, -1};

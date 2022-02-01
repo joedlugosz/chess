@@ -4,7 +4,7 @@
 
 #include "state.h"
 
-#include "log.h"
+#include "debug.h"
 #include "moves.h"
 
 void init_moves(void);

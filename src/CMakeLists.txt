@@ -7,12 +7,12 @@ add_subdirectory (buildinfo)
 set (
   SOURCES 
     commands.c
+    debug.c
     evaluate.c
     fen.c
     history.c
     io.c
     info.c
-    log.c
     movegen.c
     moves.c
     options.c
