@@ -27,6 +27,13 @@ extern log_s error_log;
 
 void assert_fail(log_s *log, const char *file, const char *func, const int line,
                  const char *condition);
+
+#ifndef LOGGING
+#  define LOG_THOUGHT(c, d, s, a, b)
+#else
+#  define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
+#endif
+
 #if (LOGGING == YES)
 void start_log(log_s *log, newevery_e new_log, const char *fmt, ...);
 void print_log(log_s *log, const char *fmt, ...);
@@ -36,6 +43,9 @@ void print_log(log_s *log, const char *fmt, ...);
     }
 #  define START_LOG(l, n, f, ...) start_log(l, n, f, __VA_ARGS__)
 #  define PRINT_LOG(l, f, ...) print_log(l, f, __VA_ARGS__)
+
+void debug_thought(FILE *f, search_job_s *job, int depth, score_t score, score_t alpha,
+                   score_t beta);
 #else
 #  define ASSERT(x)                                     \
     if (!(x)) {                                         \

@@ -6,7 +6,10 @@
 #define IO_H
 
 #include <sys/types.h>
+#include <time.h>
 
+#include "evaluate.h"
+#include "search.h"
 #include "state.h"
 
 void print_board(FILE *f, state_s *state, bitboard_t hl1, bitboard_t hl2);
@@ -20,5 +23,6 @@ int parse_square(const char *, square_e *);
 int parse_move(const char *, move_s *);
 int format_square(char *, square_e);
 int format_move(char *, move_s *, int);
+void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes);
 
 #endif /* IO_H */

@@ -27,44 +27,6 @@ static const option_s options[] = {
 };
 const options_s search_opts = {sizeof(options) / sizeof(options[0]), options};
 
-/*
- *  Thought Printing
- */
-/* Thoughts shown by XBoard */
-void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
-  fprintf(f, "  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
-  print_thought_moves(f, depth, job->search_history);
-  fprintf(f, "\n");
-}
-/* Thought logging stuff */
-#ifndef LOGGING
-#  define LOG_THOUGHT(c, d, s, a, b)
-#else
-#  define LOG_THOUGHT(c, d, s, a, b) log_thought(&think_log, c, d, s, a, b)
-void debug_thought(FILE *f, search_job_s *job, int depth, score_t score, score_t alpha,
-                   score_t beta) {
-  fprintf(f, "\n%2d %10d ", depth, job->result.n_searched);
-  if (alpha > -100000)
-    fprintf(f, "%7d ", alpha);
-  else
-    fprintf(f, "     -B ");
-  if (beta < 100000)
-    fprintf(f, "%7d ", beta);
-  else
-    fprintf(f, "     +B ");
-  print_thought_moves(f, depth, job->search_history);
-}
-
-void log_thought(log_s *log, search_job_s *job, int depth, score_t score, score_t alpha,
-                 score_t beta) {
-  if (log->logging) {
-    open_log(log);
-    debug_thought(log->file, job, depth, score / 10, alpha / 10, beta / 10);
-    close_log(log);
-  }
-}
-#endif
-
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta) {
   if (job->halt) return 0;

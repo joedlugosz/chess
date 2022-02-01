@@ -165,6 +165,13 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
   fprintf(f, "\n");
 }
 
+/* Thoughts shown by XBoard */
+void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
+  fprintf(f, "  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
+  print_thought_moves(f, depth, job->search_history);
+  fprintf(f, "\n");
+}
+
 /*
  *  Tokeniser
  */

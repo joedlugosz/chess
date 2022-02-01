@@ -12,8 +12,10 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include "io.h"
 #include "options.h"
 #include "os.h"
+#include "search.h"
 
 #ifndef LOG_DIR
 #  define LOG_DIR ""
@@ -109,4 +111,29 @@ void assert_fail(log_s *log, const char *file, const char *func, const int line,
   log_error(log, file, func, line, "Debug assertation failed: ", condition);
   printf("resign\n");
   abort();
+}
+
+/* Thought logging stuff */
+
+void debug_thought(FILE *f, search_job_s *job, int depth, score_t score, score_t alpha,
+                   score_t beta) {
+  fprintf(f, "\n%2d %10d ", depth, job->result.n_searched);
+  if (alpha > -100000)
+    fprintf(f, "%7d ", alpha);
+  else
+    fprintf(f, "     -B ");
+  if (beta < 100000)
+    fprintf(f, "%7d ", beta);
+  else
+    fprintf(f, "     +B ");
+  print_thought_moves(f, depth, job->search_history);
+}
+
+void log_thought(log_s *log, search_job_s *job, int depth, score_t score, score_t alpha,
+                 score_t beta) {
+  if (log->logging) {
+    open_log(log);
+    debug_thought(log->file, job, depth, score / 10, alpha / 10, beta / 10);
+    close_log(log);
+  }
 }
