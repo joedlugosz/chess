@@ -9,10 +9,10 @@
 #include <time.h>
 
 #include "commands.h"
+#include "debug.h"
 #include "engine.h"
 #include "info.h"
 #include "io.h"
-#include "log.h"
 #include "os.h"
 #include "search.h"
 

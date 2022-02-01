@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "log.h"
+#include "debug.h"
 #include "os.h"
 #include "search.h"
 #include "state.h"

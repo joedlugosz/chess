@@ -2,8 +2,8 @@
  *  Piece moves and relationships
  */
 
+#include "debug.h"
 #include "io.h"
-#include "log.h"
 #include "state.h"
 
 typedef unsigned char rank_t;

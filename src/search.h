@@ -7,8 +7,8 @@
 
 #include <time.h>
 
+#include "debug.h"
 #include "evaluate.h"
-#include "log.h"
 
 /* linked list */
 typedef struct movelist_s_ {

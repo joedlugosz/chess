@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "debug.h"
 #include "os.h"
 
 void init_os(void) {}
