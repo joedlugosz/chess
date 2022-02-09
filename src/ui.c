@@ -129,7 +129,6 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result) {
     print_statistics(engine, result);
     print_prompt(engine);
     printf("%s\n", buf);
-    print_game_state(engine);
   }
 }
 
@@ -241,6 +240,7 @@ static inline void do_ai_move(engine_s *engine) {
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
+  print_game_state(engine);
   reset_time(engine);
 }
 
@@ -268,8 +268,8 @@ static inline int accept_move(engine_s *engine, const char *input) {
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
   }
-  print_game_state(engine);
   finished_move(engine);
+  print_game_state(engine);
   return 0;
 }
 
