@@ -154,7 +154,7 @@ static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e
 /*
  *  Move Checking
  */
-int no_piece_at_square(engine_s *engine, square_e square) {
+int ui_no_piece_at_square(engine_s *engine, square_e square) {
   if ((square2bit[square] & engine->game.total_a) == 0) {
     print_msg(engine, "There is no piece at %s.\n", square, -1);
     return 1;
@@ -163,7 +163,7 @@ int no_piece_at_square(engine_s *engine, square_e square) {
 }
 
 int move_is_illegal(engine_s *engine, move_s *move) {
-  if (no_piece_at_square(engine, move->from)) {
+  if (ui_no_piece_at_square(engine, move->from)) {
     return 1;
   }
   if (move->from == move->to) {
