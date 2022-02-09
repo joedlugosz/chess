@@ -254,6 +254,15 @@ void make_move(state_s *state, move_s *move) {
   }
 }
 
+int check_legality(state_s *state, move_s *move) {
+  if (no_piece_at_square(state, move->from)) return ERR_NO_PIECE;
+  if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
+  if ((square2bit[move->from] & get_my_pieces(state)) == 0) return ERR_NOT_MY_PIECE;
+  if ((square2bit[move->to] & get_moves(state, move->from)) == 0) return ERR_CANT_MOVE_THERE;
+
+  return 0;
+}
+
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const piece_e *pieces, player_e turn,

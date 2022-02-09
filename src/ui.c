@@ -163,22 +163,25 @@ int ui_no_piece_at_square(engine_s *engine, square_e square) {
 }
 
 int move_is_illegal(engine_s *engine, move_s *move) {
-  if (ui_no_piece_at_square(engine, move->from)) {
-    return 1;
+  int result = check_legality(&engine->game, move);
+
+  switch (result) {
+    case ERR_NO_PIECE:
+      print_msg(engine, "There is no piece at %s.\n", move->from, -1);
+      break;
+    case ERR_SRC_EQUAL_DEST:
+      print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
+      break;
+    case ERR_NOT_MY_PIECE:
+      print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
+      break;
+    case ERR_CANT_MOVE_THERE:
+      print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
+      break;
+    default:
+      break;
   }
-  if (move->from == move->to) {
-    print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
-    return 1;
-  }
-  if ((square2bit[move->from] & get_my_pieces(&engine->game)) == 0) {
-    print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
-    return 1;
-  }
-  if ((square2bit[move->to] & get_moves(&engine->game, move->from)) == 0) {
-    print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
-    return 1;
-  }
-  return 0;
+  return result;
 }
 
 void init_engine(engine_s *engine) {
