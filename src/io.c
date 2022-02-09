@@ -172,6 +172,12 @@ void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_
   fprintf(f, "\n");
 }
 
+void print_move(move_s *move) {
+  char buf[100];
+  format_move(buf, move, 0);
+  printf("%s\n", buf);
+}
+
 /*
  *  Tokeniser
  */
