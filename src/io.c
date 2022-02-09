@@ -7,6 +7,7 @@
 #include <time.h>
 
 #include "debug.h"
+#include "fen.h"
 #include "os.h"
 #include "search.h"
 #include "state.h"
@@ -160,6 +161,17 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
       set_console_black_square();
       set_console_black_piece();
     }
+
+    char buf[100];
+    switch (rank) {
+      case 7:
+        get_fen(state, buf, sizeof(buf));
+        fprintf(f, "     %s", buf);
+        break;
+      default:
+        break;
+    }
+
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
