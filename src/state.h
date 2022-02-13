@@ -18,75 +18,24 @@ extern const char player_text[N_PLAYERS][6];
 
 typedef unsigned char status_t;
 
+/* clang-format off */
+
 /* Squares on the board */
 typedef enum {
   NO_SQUARE = -1,
   A1 = 0,
-  B1,
-  C1,
-  D1,
-  E1,
-  F1,
-  G1,
-  H1,
-  A2,
-  B2,
-  C2,
-  D2,
-  E2,
-  F2,
-  G2,
-  H2,
-  A3,
-  B3,
-  C3,
-  D3,
-  E3,
-  F3,
-  G3,
-  H3,
-  A4,
-  B4,
-  C4,
-  D4,
-  E4,
-  F4,
-  G4,
-  H4,
-  A5,
-  B5,
-  C5,
-  D5,
-  E5,
-  F5,
-  G5,
-  H5,
-  A6,
-  B6,
-  C6,
-  D6,
-  E6,
-  F6,
-  G6,
-  H6,
-  A7,
-  B7,
-  C7,
-  D7,
-  E7,
-  F7,
-  G7,
-  H7,
-  A8,
-  B8,
-  C8,
-  D8,
-  E8,
-  F8,
-  G8,
-  H8,
+      B1, C1, D1, E1, F1, G1, H1,
+  A2, B2, C2, D2, E2, F2, G2, H2,
+  A3, B3, C3, D3, E3, F3, G3, H3,
+  A4, B4, C4, D4, E4, F4, G4, H4,
+  A5, B5, C5, D5, E5, F5, G5, H5,
+  A6, B6, C6, D6, E6, F6, G6, H6,
+  A7, B7, C7, D7, E7, F7, G7, H7,
+  A8, B8, C8, D8, E8, F8, G8, H8,
   N_SQUARES
 } square_e;
+
+/* clang-format on */
 
 /* Sides of the board */
 typedef enum boardside_e { QUEENSIDE = 0, KINGSIDE, BOTHSIDES, N_BOARDSIDE } boardside_e;
@@ -188,6 +137,12 @@ void setup_board(state_s *, const piece_e *, player_e, castle_rights_t, bitboard
 
 bitboard_t get_attacks(state_s *state, square_e target, player_e attacking);
 void make_move(state_s *state, move_s *move);
+static inline void change_player(state_s *state) { state->turn = opponent[state->turn]; }
+int check_legality(state_s *state, move_s *move);
+static inline int move_equal(move_s *move1, move_s *move2) {
+  return (move1 && move2 && move1->from == move2->from && move1->to == move2->to &&
+          move1->promotion == move2->promotion);
+}
 
 static inline int is_valid_square(square_e square) { return (square >= 0 && square < N_SQUARES); }
 static inline square_e bit2square(bitboard_t mask) {
@@ -206,8 +161,6 @@ static inline bitboard_t get_opponents_pieces(state_s *state) {
   return state->player_a[state->turn];
 }
 static inline int in_check(state_s *state) { return state->check[state->turn]; }
-static inline void change_player(state_s *state) { state->turn = opponent[state->turn]; }
-int check_legality(state_s *state, move_s *move);
 static inline int is_promotion_move(state_s *state, square_e from, square_e to) {
   return ((square2bit[to] & 0xff000000000000ffull) != 0);
 }

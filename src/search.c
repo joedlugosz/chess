@@ -34,8 +34,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
 /* Search a single move - call search_ply after making the move. In/out args are
    updated on an alpha update: alpha, best_move. Returns 1 for a beta cutoff,
    and 0 in all other cases including impossible moves into check. */
-static inline int search_move(search_job_s *job, state_s *state, int depth, score_t *alpha,
-                              score_t beta, move_s *move) {
+static inline int search_move(search_job_s *job, state_s *state, int depth, score_t *best_score,
+                              score_t *alpha, score_t beta, move_s *move, move_s **best_move) {
   state_s next_state;
   copy_state(&next_state, state);
   make_move(&next_state, move);
@@ -48,6 +48,11 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   /* Recurse into search_ply */
   score_t score = -search_ply(job, &next_state, depth - 1, -beta, -*alpha);
 
+  if (score > *best_score) {
+    *best_score = score;
+    *best_move = move;
+  }
+
   /* Alpha update - best move found */
   if (score > *alpha) {
     write_search_history(job, depth, move);
@@ -57,8 +62,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
     if (depth == job->depth) {
       job->result.score = score;
       memcpy(&job->result.move, move, sizeof(job->result.move));
-      xboard_thought(stdout, job, depth, score, clock() - job->start_time,
-                     job->result.n_leaf);
+      xboard_thought(stdout, job, depth, score, clock() - job->start_time, job->result.n_leaf);
     }
   }
 
@@ -78,16 +82,19 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
 
+  /* Count leaf nodes at depth 0 only (even if they extend) */
+  if (depth == 0) job->result.n_leaf++;
+
+  score_t best_score = -boundary;
+  move_s *best_move = 0;
+
   /* Quiescence - evaluate taking no action - this could be better than the
      consequences of taking the piece. */
   if (depth <= 0) {
-    score_t score = evaluate(state);
-    if (score >= beta) return beta;
-    if (score > alpha) alpha = score;
+    best_score = evaluate(state);
+    if (best_score >= beta) return beta;
+    if (best_score > alpha) alpha = best_score;
   }
-
-  /* Count leaf nodes at depth 0 only (even if they extend) */
-  if (depth == 0) job->result.n_leaf++;
 
   /* Generate the move list - list_entry will point to the first sorted item */
   movelist_s move_buf[N_MOVES];
@@ -95,18 +102,26 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   int n_moves;
   if (depth > 0) {
     n_moves = generate_search_movelist(state, &list_entry);
+    if (n_moves == 0) return evaluate(state);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
     /* Quiet node at depth */
-    if (n_moves == 0) return evaluate(state);
+    if (n_moves == 0) return best_score;
   }
 
   /* Search each move */
   while (list_entry) {
     move_s *move = &list_entry->move;
     list_entry = list_entry->next;
-    if (search_move(job, state, depth, &alpha, beta, move)) return beta;
+    if (search_move(job, state, depth, &best_score, &alpha, beta, move, &best_move)) return beta;
   }
+
+  /* Update the result if at the top level */
+  if (depth == job->depth) {
+    job->result.score = alpha;
+    memcpy(&job->result.move, best_move, sizeof(job->result.move));
+  }
+
   return alpha;
 }
 
@@ -120,7 +135,6 @@ void search(int depth, state_s *state, search_result_s *res) {
   search_ply(&job, state, depth, -boundary, boundary);
 
   memcpy(res, &job.result, sizeof(*res));
-  //res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
   res->time = clock() - job.start_time;
 }
