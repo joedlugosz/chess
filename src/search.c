@@ -57,8 +57,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
     if (depth == job->depth) {
       job->result.score = score;
       memcpy(&job->result.move, move, sizeof(job->result.move));
-      xboard_thought(stdout, job, depth, score, clock() - job->start_time,
-                     job->result.n_leaf);
+      xboard_thought(stdout, job, depth, score, clock() - job->start_time, job->result.n_leaf);
     }
   }
 
@@ -120,7 +119,7 @@ void search(int depth, state_s *state, search_result_s *res) {
   search_ply(&job, state, depth, -boundary, boundary);
 
   memcpy(res, &job.result, sizeof(*res));
-  //res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
+  // res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
   res->time = clock() - job.start_time;
 }
