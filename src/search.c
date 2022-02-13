@@ -48,9 +48,9 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   /* Recurse into search_ply */
   score_t score = -search_ply(job, &next_state, depth - 1, -beta, -*alpha);
 
-  write_search_history(job, depth, move);
   /* Alpha update - best move found */
   if (score > *alpha) {
+    write_search_history(job, depth, move);
     *alpha = score;
 
     /* Show the best move if it updates at root level */
