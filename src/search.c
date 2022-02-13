@@ -82,9 +82,9 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Quiescence - evaluate taking no action - this could be better than the
      consequences of taking the piece. */
   if (depth <= 0) {
-    score_t standing_pat = evaluate(state);
-    if (standing_pat >= beta) return beta;
-    if (standing_pat > alpha) alpha = standing_pat;
+    score_t score = evaluate(state);
+    if (score >= beta) return beta;
+    if (score > alpha) alpha = score;
   }
 
   /* Generate the move list - list_entry will point to the first sorted item */
