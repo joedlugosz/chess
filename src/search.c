@@ -71,10 +71,6 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
                           score_t beta) {
   if (job->halt) return 0;
 
-  if (depth == 0) {
-    job->result.n_searched++;
-  }
-
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
 
   /* Count leaf nodes at depth 0 only (even if they extend) */
