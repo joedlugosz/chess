@@ -28,11 +28,49 @@ static const option_s options[] = {
 const options_s search_opts = {sizeof(options) / sizeof(options[0]), options};
 
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
+                          score_t beta);
+
+static inline int search_move(search_job_s *job, state_s *state, int depth, score_t *alpha,
+                              score_t beta, move_s *move) {
+  state_s next_state;
+  copy_state(&next_state, state);
+  make_move(&next_state, move);
+  /* Can't move into check */
+  if (in_check(&next_state)) {
+    return 0;
+  }
+  job->result.n_searched++;
+  change_player(&next_state);
+  score_t score = -search_ply(job, &next_state, depth - 1, -beta, -*alpha);
+  write_search_history(job, depth, move);
+  /* Alpha update - best move found */
+  if (score > *alpha) {
+    *alpha = score;
+    /* Update the chosen move if found at the top level */
+    if (depth == job->depth) {
+      job->result.score = score;
+      memcpy(&job->result.move, move, sizeof(job->result.move));
+      xboard_thought(stdout, job, depth, score, clock() - job->start_time,
+                     job->result.n_searched++);
+    }
+  }
+
+  /* Beta cutoff */
+  if (score >= beta) {
+    LOG_THOUGHT(job, depth, score, *alpha, beta);
+    job->result.n_beta++;
+    return 1;
+  }
+  LOG_THOUGHT(job, depth, score, *alpha, beta);
+  return 0;
+}
+
+static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta) {
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
-  
+
   if (depth <= 0) {
     /* Evaluate taking no action - i.e. not making any possible capture
       moves, this could be better than the consequences of taking the
@@ -58,35 +96,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   while (list_entry) {
     move_s *move = &list_entry->move;
     list_entry = list_entry->next;
-    state_s next_state;
-    copy_state(&next_state, state);
-    make_move(&next_state, move);
-    /* Can't move into check */
-    if (in_check(&next_state)) {
-      continue;
-    }
-    job->result.n_searched++;
-    change_player(&next_state);
-    score_t score = -search_ply(job, &next_state, depth - 1, -beta, -alpha);
-    write_search_history(job, depth, move);
-    /* Alpha update - best move found */
-    if (score > alpha) {
-      alpha = score;
-      /* Update the chosen move if found at the top level */
-      if (depth == job->depth) {
-        job->result.score = score;
-        memcpy(&job->result.move, move, sizeof(job->result.move));
-        xboard_thought(stdout, job, depth, score, clock() - job->start_time,
-                       job->result.n_searched++);
-      }
-    }
-    /* Beta cutoff */
-    if (score >= beta) {
-      LOG_THOUGHT(job, depth, score, alpha, beta);
-      job->result.n_beta++;
-      return beta;
-    }
-    LOG_THOUGHT(job, depth, score, alpha, beta);
+    if (search_move(job, state, depth, &alpha, beta, move)) return beta;
   }
   return alpha;
 }
