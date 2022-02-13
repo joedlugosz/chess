@@ -80,12 +80,14 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  score_t best_score = -boundary;
+
   /* Quiescence - evaluate taking no action - this could be better than the
      consequences of taking the piece. */
   if (depth <= 0) {
-    score_t score = evaluate(state);
-    if (score >= beta) return beta;
-    if (score > alpha) alpha = score;
+    best_score = evaluate(state);
+    if (best_score >= beta) return beta;
+    if (best_score > alpha) alpha = best_score;
   }
 
   /* Generate the move list - list_entry will point to the first sorted item */
@@ -94,10 +96,11 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   int n_moves;
   if (depth > 0) {
     n_moves = generate_search_movelist(state, &list_entry);
+    if (n_moves == 0) return evaluate(state);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
     /* Quiet node at depth */
-    if (n_moves == 0) return evaluate(state);
+    if (n_moves == 0) return best_score;
   }
 
   /* Search each move */
