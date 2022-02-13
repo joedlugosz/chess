@@ -105,7 +105,8 @@ int format_move(char *buf, move_s *move, int bare) {
 void print_thought_moves(FILE *f, int depth, move_s moves[]) {
   char buf[6];
   int i;
-  for (i = 0; i <= depth; i++) {
+  for (i = 0; i <= SEARCH_DEPTH_MAX; i++) {
+    if (moves[i].from == moves[i].to) break;
     format_move(buf, &moves[i], 0);
     fprintf(f, "%s ", buf);
   }

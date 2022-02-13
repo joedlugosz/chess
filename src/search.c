@@ -31,8 +31,9 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
                           score_t beta) {
   if (job->halt) return 0;
 
-  ASSERT(depth < SEARCH_DEPTH_MAX);
-  if (depth > job->depth) {
+  ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
+  
+  if (depth <= 0) {
     /* Evaluate taking no action - i.e. not making any possible capture
       moves, this could be better than the consequences of taking the
       piece.  If this is better than the opponent's beta, it causes a
@@ -46,7 +47,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
   int n_moves;
-  if (depth < job->depth) {
+  if (depth > 0) {
     n_moves = generate_search_movelist(state, &list_entry);
   } else {
     n_moves = generate_quiescence_movelist(state, &list_entry);
@@ -66,13 +67,13 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     }
     job->result.n_searched++;
     change_player(&next_state);
-    score_t score = -search_ply(job, &next_state, depth + 1, -beta, -alpha);
+    score_t score = -search_ply(job, &next_state, depth - 1, -beta, -alpha);
     write_search_history(job, depth, move);
     /* Alpha update - best move found */
     if (score > alpha) {
       alpha = score;
       /* Update the chosen move if found at the top level */
-      if (depth == 0) {
+      if (depth == job->depth) {
         job->result.score = score;
         memcpy(&job->result.move, move, sizeof(job->result.move));
         xboard_thought(stdout, job, depth, score, clock() - job->start_time,
@@ -95,7 +96,7 @@ void search(int depth, state_s *state, search_result_s *res) {
   memset(&job, 0, sizeof(job));
   job.depth = depth;
   job.start_time = clock();
-  search_ply(&job, state, 0, -boundary, boundary);
+  search_ply(&job, state, depth, -boundary, boundary);
   memcpy(res, &job.result, sizeof(*res));
   res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
   res->time = clock() - job.start_time;
