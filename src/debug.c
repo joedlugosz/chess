@@ -117,7 +117,7 @@ void assert_fail(log_s *log, const char *file, const char *func, const int line,
 
 void debug_thought(FILE *f, search_job_s *job, int depth, score_t score, score_t alpha,
                    score_t beta) {
-  fprintf(f, "\n%2d %10d ", depth, job->result.n_searched);
+  fprintf(f, "\n%2d %10d ", depth, job->result.n_leaf);
   if (alpha > -100000)
     fprintf(f, "%7d ", alpha);
   else

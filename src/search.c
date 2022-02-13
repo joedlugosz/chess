@@ -4,6 +4,7 @@
 
 #include "search.h"
 
+#include <math.h>
 #include <time.h>
 
 #include "history.h"
@@ -42,7 +43,6 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   /* Can't move into check */
   if (in_check(&next_state)) return 0;
 
-  job->result.n_searched++;
   change_player(&next_state);
 
   /* Recurse into search_ply */
@@ -58,14 +58,13 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
       job->result.score = score;
       memcpy(&job->result.move, move, sizeof(job->result.move));
       xboard_thought(stdout, job, depth, score, clock() - job->start_time,
-                     job->result.n_searched++);
+                     job->result.n_leaf);
     }
   }
 
   /* Beta cutoff */
   if (score >= beta) {
     LOG_THOUGHT(job, depth, score, *alpha, beta);
-    job->result.n_beta++;
     return 1;
   }
   LOG_THOUGHT(job, depth, score, *alpha, beta);
@@ -87,6 +86,9 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (score > alpha) alpha = score;
   }
 
+  /* Count leaf nodes at depth 0 only (even if they extend) */
+  if (depth == 0) job->result.n_leaf++;
+
   /* Generate the move list - list_entry will point to the first sorted item */
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
@@ -98,7 +100,6 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     /* Quiet node at depth */
     if (n_moves == 0) return evaluate(state);
   }
-  job->result.n_possible += n_moves;
 
   /* Search each move */
   while (list_entry) {
@@ -119,6 +120,7 @@ void search(int depth, state_s *state, search_result_s *res) {
   search_ply(&job, state, depth, -boundary, boundary);
 
   memcpy(res, &job.result, sizeof(*res));
-  res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
+  //res->cutoff = 100.0 - (double)res->n_searched / (double)res->n_possible * 100.0;
+  res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
   res->time = clock() - job.start_time;
 }
