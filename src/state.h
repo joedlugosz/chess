@@ -188,6 +188,12 @@ void setup_board(state_s *, const piece_e *, player_e, castle_rights_t, bitboard
 
 bitboard_t get_attacks(state_s *state, square_e target, player_e attacking);
 void make_move(state_s *state, move_s *move);
+static inline void change_player(state_s *state) { state->turn = opponent[state->turn]; }
+int check_legality(state_s *state, move_s *move);
+static inline int move_equal(move_s *move1, move_s *move2) {
+  return (move1 && move2 && move1->from == move2->from && move1->to == move2->to &&
+          move1->promotion == move2->promotion);
+}
 
 static inline int is_valid_square(square_e square) { return (square >= 0 && square < N_SQUARES); }
 static inline square_e bit2square(bitboard_t mask) {
@@ -206,8 +212,6 @@ static inline bitboard_t get_opponents_pieces(state_s *state) {
   return state->player_a[state->turn];
 }
 static inline int in_check(state_s *state) { return state->check[state->turn]; }
-static inline void change_player(state_s *state) { state->turn = opponent[state->turn]; }
-int check_legality(state_s *state, move_s *move);
 static inline int is_promotion_move(state_s *state, square_e from, square_e to) {
   return ((square2bit[to] & 0xff000000000000ffull) != 0);
 }
