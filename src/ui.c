@@ -79,8 +79,8 @@ static inline void print_statistics(engine_s *engine, search_result_s *result) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("\n\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
     if (ai_turn(engine) && result) {
-      printf(" : %d nodes : %0.1lf%% cutoff %0.2lfk node/s", result->n_searched, result->cutoff,
-             (double)result->n_searched / (time * 1000.0));
+      printf(" : %d nodes : b = %0.3lf : %0.2lf knps", result->n_leaf, result->branching_factor,
+             (double)result->n_leaf / (time * 1000.0));
     }
     printf("\n");
   }

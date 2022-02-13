@@ -30,7 +30,7 @@ endif ()
 
 # Library target
 add_library (common STATIC ${SOURCES})
-target_link_libraries(common buildinfo)
+target_link_libraries(common buildinfo m)
 
 if (WIN32)
   target_link_libraries(common dbghelp)
