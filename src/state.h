@@ -175,6 +175,8 @@ typedef struct move_s_ {
   moveresult_t result;
 } move_s;
 
+enum { ERR_BASE = 0, ERR_NO_PIECE, ERR_SRC_EQUAL_DEST, ERR_NOT_MY_PIECE, ERR_CANT_MOVE_THERE };
+
 extern bitboard_t *square2bit;
 extern const piece_e piece_type[N_PLANES];
 extern const player_e piece_player[N_PLANES];
@@ -205,7 +207,12 @@ static inline bitboard_t get_opponents_pieces(state_s *state) {
 }
 static inline int in_check(state_s *state) { return state->check[state->turn]; }
 static inline void change_player(state_s *state) { state->turn = opponent[state->turn]; }
+int check_legality(state_s *state, move_s *move);
 static inline int is_promotion_move(state_s *state, square_e from, square_e to) {
   return ((square2bit[to] & 0xff000000000000ffull) != 0);
 }
+static inline int no_piece_at_square(state_s *state, square_e square) {
+  return ((square2bit[square] & state->total_a) == 0);
+}
+
 #endif /* STATE_H */

@@ -7,6 +7,7 @@
 
 #include <execinfo.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -64,46 +65,118 @@ void set_console_black_piece(void) { printf("%s", BLACK_PIECE); }
 /* Get OS process ID of this process */
 unsigned int get_process_id(void) { return (unsigned int)getpid(); }
 
+typedef struct bt_entry_s_ {
+  char module[1000];
+  char function[1000];
+  uintptr_t rel_addr;
+  uintptr_t abs_addr;
+  char a2l_function[1000];
+  char line[1000];
+} bt_entry_s;
+
 /* Print backtrace to stdout in XBoard format and to a file */
 void print_backtrace(FILE *out) {
   /* Get backtrace symbols */
-  void *bt[1024];
-  int n_bt = backtrace(bt, 1024);
-  char **bt_syms = backtrace_symbols(bt, n_bt);
+  void *bt_raw[1024];
+  int n_bt = backtrace(bt_raw, 1024);
+  char **bt_syms = backtrace_symbols(bt_raw, n_bt);
 
-  /* Look up function names and line numbers */
-  char bt_function[1000][1024];
-  char bt_line[1000][1024];
+  /* Parse backtrace symbols text
+   *
+   *               rel_addr      abs_addr
+   *     module(function+0x1234) [0x12345678]
+   * or  module(+0x1234)         [0x12345678]
+   */
 
-  for (int i = 1; i < n_bt; i++) {
-    /* Symbol in name(offset) format is at the start of each backtrace line */
-    char symbol[256];
-    sscanf(bt_syms[i], "%s", symbol);
+  bt_entry_s bt[1000];
 
-    /* Convert address to format for addr2line
-     *     name(+0x1234).
-     *  -> name +0x1234..  */
-    symbol[strlen(symbol) - 9] = ' ';
-    symbol[strlen(symbol) - 1] = 0;
+  for (int i = 0; i < n_bt; i++) {
+    char *start = bt_syms[i];
+    char *ptr = start;
 
-    /* Run addr2line to get function names and line numbers */
-    char cmd[1000];
-    snprintf(cmd, sizeof(cmd), "addr2line -f -e %s", ((const char *)symbol));
-    FILE *out = popen(cmd, "r");
-    if (out) {
-      if (!fgets(bt_function[i], sizeof(bt_function[i]), out)) sprintf(bt_function[i], "%s", "???");
-      bt_function[i][strlen(bt_function[i]) - 1] = 0;
-      if (!fgets(bt_line[i], sizeof(bt_line[i]), out)) sprintf(bt_line[i], "%s", "???");
-      bt_line[i][strlen(bt_line[i]) - 1] = 0;
-      pclose(out);
+    /* module */
+    while (*ptr != '(') {
+      ptr++;
     }
+    *ptr++ = 0;
+    strcpy(bt[i].module, start);
+    start = ptr;
+
+    /* function (if given) */
+    if (*ptr != '+') {
+      while (*ptr != '+') {
+        ptr++;
+      }
+      *ptr++ = 0;
+      strcpy(bt[i].function, start);
+    } else {
+      bt[i].function[0] = 0;
+      *ptr++ = 0;
+    }
+    start = ptr;
+
+    /* Look up function names and line numbers */
+    /* rel_addr */
+    while (*ptr != ')') {
+      ptr++;
+    }
+    *ptr++ = 0;
+    sscanf(start, "%zx", &bt[i].rel_addr);
+    start = ptr;
+
+    /* text ') [' - ignore */
+    while (*ptr != '[') {
+      ptr++;
+    }
+    *ptr++ = 0;
+    start = ptr;
+
+    /* abs_addr */
+    while (*ptr != ']') {
+      ptr++;
+    }
+    *ptr++ = 0;
+    sscanf(start, "%zx", &bt[i].abs_addr);
+
+    char cmd[4000];
+
+    /* Run nm to look up base address of function, and add to rel_addr */
+    uintptr_t base_addr = 0;
+    if (bt[i].function[0]) {
+      snprintf(cmd, sizeof(cmd), "nm %s 2>/dev/null | grep -w %s", ((const char *)bt[i].module),
+               bt[i].function);
+      FILE *proc = popen(cmd, "r");
+      if (proc) {
+        if (!fscanf(proc, "%zx", &base_addr)) {
+          if (pclose(proc) == 0) {
+            bt[i].rel_addr += base_addr;
+          }
+        }
+      }
+    }
+    /* Run addr2line to get function names and line numbers */
+    snprintf(cmd, sizeof(cmd), "addr2line -f -s -e %s %p", ((const char *)bt[i].module),
+             (void *)bt[i].rel_addr);
+    FILE *proc = popen(cmd, "r");
+    if (proc) {
+      if (!fgets(bt[i].a2l_function, sizeof(bt[i].a2l_function), proc))
+        sprintf(bt[i].a2l_function, "%s", "???");
+      bt[i].a2l_function[strlen(bt[i].a2l_function) - 1] = 0;
+      if (!fgets(bt[i].line, sizeof(bt[i].line), proc)) sprintf(bt[i].line, "%s", "???");
+      bt[i].line[strlen(bt[i].line) - 1] = 0;
+      pclose(proc);
+    }
+
+    /* If backtrace_symbols didn't return a function name, use the one from addr2line */
+    if (!bt[i].function[0]) strcpy(bt[i].function, bt[i].a2l_function);
   }
 
   /* Print backtrace */
-  if (out) fprintf(out, "\nCall stack:\n");
-  printf("\n{Call stack:}\n");
-  for (int i = 2; i < n_bt; i++) {
-    if (out) fprintf(out, "%s %-20s %s\n", bt_syms[i], bt_function[i], bt_line[i]);
-    printf("{%s %20s %s}\n", bt_syms[i], bt_function[i], bt_line[i]);
+  if (out != stdout) fprintf(out, "\nCall stack:\n");
+  printf("\n{ Call stack: }\n");
+  for (int i = 3; i < n_bt; i++) {
+    if (out != stdout) fprintf(out, "%s %-20s %s\n", bt_syms[i], bt[i].function, bt[i].line);
+    printf("{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function, bt[i].line);
+    if (strcmp(bt[i].function, "main") == 0) break;
   }
 }

@@ -7,6 +7,7 @@
 #include <time.h>
 
 #include "debug.h"
+#include "fen.h"
 #include "os.h"
 #include "search.h"
 #include "state.h"
@@ -160,6 +161,17 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
       set_console_black_square();
       set_console_black_piece();
     }
+
+    char buf[100];
+    switch (rank) {
+      case 7:
+        get_fen(state, buf, sizeof(buf));
+        fprintf(f, "     %s", buf);
+        break;
+      default:
+        break;
+    }
+
     fprintf(f, "\n");
   }
   fprintf(f, "\n");
@@ -170,6 +182,12 @@ void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_
   fprintf(f, "  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
   print_thought_moves(f, depth, job->search_history);
   fprintf(f, "\n");
+}
+
+void print_move(move_s *move) {
+  char buf[100];
+  format_move(buf, move, 0);
+  printf("%s\n", buf);
 }
 
 /*

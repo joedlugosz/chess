@@ -148,7 +148,7 @@ void ui_attacks(engine_s *e) {
   if (parse_square(get_input(), &target)) {
     return;
   }
-  if (no_piece_at_square(e, target)) {
+  if (ui_no_piece_at_square(e, target)) {
     return;
   }
   print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
@@ -160,7 +160,7 @@ void ui_moves(engine_s *e) {
   if (parse_square(get_input(), &from)) {
     return;
   }
-  if (no_piece_at_square(e, from)) {
+  if (ui_no_piece_at_square(e, from)) {
     return;
   }
   print_board(stdout, &(e->game), get_moves(&(e->game), from), square2bit[from]);
