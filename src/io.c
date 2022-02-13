@@ -122,17 +122,15 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
 
   term = is_terminal(stdout);
 
-<<<<<<< HEAD
-  printf("\n");
-=======
   ttentry_s *tte = tt_probe(state->hash);
 
   if (tte) {
     mask1 = square2bit[tte->best_move.from];
     mask2 = square2bit[tte->best_move.to];
   }
-  fprintf(f, "\n");
->>>>>>> ADD: fen and tt info to print_board
+  
+  printf("\n");
+
   for (rank = 7; rank >= 0; rank--) {
     printf("%s", "    ");
 #if (ORDER_BINARY)
@@ -194,8 +192,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
           printf("     %s", buf);
           break;
         case 4:
-//          fprintf(f, "     %s %d (%d)", type[tte->type], tte->score, tte->depth);
-          printf("     %d (%d)", tte->score, tte->depth);
+          printf("     %s %d (%d)", type[tte->type], tte->score, tte->depth);
           break;
         default:
           break;

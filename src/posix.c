@@ -155,7 +155,7 @@ void print_backtrace() {
         }
       }
     }
-    
+
     /* Run addr2line to get function names and line numbers */
     snprintf(cmd, sizeof(cmd), "addr2line -f -s -e %s %p", ((const char *)bt[i].module),
              (void *)bt[i].rel_addr);
