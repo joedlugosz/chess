@@ -2,8 +2,8 @@
  *  Debug logging
  */
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef DEBUG_H
+#define DEBUG_H
 
 #ifdef ASSERTS
 
@@ -25,6 +25,4 @@ void debug_thought(search_job_s *job, int depth, score_t score, score_t alpha, s
 #  define DEBUG_THOUGHT(c, d, s, a, b)
 #endif /* LOGGING */
 
-void set_sigsegv_handler(void);
-
-#endif /* LOG_H */
+#endif /* DEBUG_H */
