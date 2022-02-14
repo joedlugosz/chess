@@ -5,16 +5,12 @@
 #include "debug.h"
 
 #include <errno.h>
-#include <inttypes.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 
 #include "io.h"
-#include "options.h"
 #include "os.h"
-#include "search.h"
 
 /* Report an error to stderror and as an xboard message to stdout */
 void report_error(const char *src_file, const char *func, const int line, const char *msg1,
