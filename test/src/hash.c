@@ -1,12 +1,13 @@
+#include "hash.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "hash.h"
 #include "fen.h"
 #include "state.h"
 #include "test.h"
 
 void test_prng(void) {
-
   prng_seed(0);
 
   hash_t val = prng_rand();

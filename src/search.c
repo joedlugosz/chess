@@ -14,6 +14,7 @@
 #include "options.h"
 
 const int BOUNDARY = 1000000;
+enum { TT_MIN_DEPTH = 4 };
 
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta);
@@ -61,8 +62,9 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
       memcpy(&job->killer_moves[depth], move, sizeof(job->killer_moves[0]));
     }
     *type = TT_BETA;
+    return 1;
   }
-  
+
   return 0;
 }
 
@@ -89,12 +91,16 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (best_score > alpha) alpha = best_score;
   }
 
+  /* Default node type - this will change to TT_EXACT on alpha update or
+     TT_BETA on beta cutoff */
+  tt_type_e type = TT_ALPHA;
+
   /* Try to get a cutoff from a killer move */
   if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
-                  &best_move))
+                  &best_move, &type))
     return beta;
-    
+
   /* Probe the transposition table, but only at higher levels */
   ttentry_s *tte = 0;
   if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
@@ -106,8 +112,6 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (tte->type == TT_BETA && tte->score > beta) return beta;
     if (tte->type == TT_EXACT) return tte->score;
   }
-
-  tt_type_e type = TT_ALPHA;
 
   /* If there is a best move from the transposition table, try searching it
      first. A beta cutoff will avoid move generation, otherwise alpha will
@@ -143,7 +147,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   }
 
   /* Update the result if at the top level */
-  if (depth == job->depth) {
+  if (depth == job->depth && best_move) {
     job->result.score = alpha;
     memcpy(&job->result.move, best_move, sizeof(job->result.move));
   }

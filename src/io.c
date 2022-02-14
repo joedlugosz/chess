@@ -128,7 +128,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     mask1 = square2bit[tte->best_move.from];
     mask2 = square2bit[tte->best_move.to];
   }
-  
+
   printf("\n");
 
   for (rank = 7; rank >= 0; rank--) {
@@ -178,7 +178,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
         printf("     %s", buf);
         break;
       case 6:
-        fprintf(f, "     %016llx", state->hash);
+        printf("     %016llx", state->hash);
         break;
       default:
         break;
