@@ -4,6 +4,8 @@
 
 #include "movegen.h"
 
+#include <stdio.h>
+
 #include "history.h"
 #include "io.h"
 #include "state.h"

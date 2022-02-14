@@ -102,29 +102,28 @@ int format_move(char *buf, move_s *move, int bare) {
   return 0;
 }
 
-void print_thought_moves(FILE *f, int depth, move_s moves[]) {
+void print_thought_moves(int depth, move_s moves[]) {
   char buf[6];
   int i;
   for (i = 0; i <= SEARCH_DEPTH_MAX; i++) {
     if (moves[i].from == moves[i].to) break;
     format_move(buf, &moves[i], 0);
-    fprintf(f, "%s ", buf);
+    printf("%s ", buf);
   }
 }
 
 /*
  *  Board printing
  */
-void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
+void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
   int rank, file;
   int term;
 
-  if (!f) return;
-  term = is_terminal(f);
+  term = is_terminal(stdout);
 
-  fprintf(f, "\n");
+  printf("\n");
   for (rank = 7; rank >= 0; rank--) {
-    fprintf(f, "%s", "    ");
+    printf("%s", "    ");
 #if (ORDER_BINARY)
     for (file = 7; file >= 0; file--)
 #else
@@ -152,9 +151,9 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
             set_console_black_piece();
           }
         }
-        fprintf(f, "%s", PIECE_TEXT_TERM[piece]);
+        printf("%s", PIECE_TEXT_TERM[piece]);
       } else {
-        fprintf(f, "%s", "  ");
+        printf("%s", "  ");
       }
     }
     /* End each line with black */
@@ -167,22 +166,22 @@ void print_board(FILE *f, state_s *state, bitboard_t mask1, bitboard_t mask2) {
     switch (rank) {
       case 7:
         get_fen(state, buf, sizeof(buf));
-        fprintf(f, "     %s", buf);
+        printf("     %s", buf);
         break;
       default:
         break;
     }
 
-    fprintf(f, "\n");
+    printf("\n");
   }
-  fprintf(f, "\n");
+  printf("\n");
 }
 
 /* Thoughts shown by XBoard */
-void xboard_thought(FILE *f, search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
-  fprintf(f, "  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
-  print_thought_moves(f, depth, job->search_history);
-  fprintf(f, "\n");
+void xboard_thought(search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
+  printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
+  print_thought_moves(depth, job->search_history);
+  printf("\n");
 }
 
 void print_move(move_s *move) {

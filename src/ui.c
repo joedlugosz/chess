@@ -18,33 +18,6 @@
 
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
-log_s xboard_log = {.new_every = NE_SESSION};
-log_s error_log = {.new_every = NE_SESSION};
-
-static const option_s options[] = {
-    {"New XBoard log", COMBO_OPT, .value.integer = (int *)&(xboard_log.new_every), 0, 0,
-     &newevery_combo},
-};
-const options_s engine_options = {sizeof(options) / sizeof(options[0]), options};
-
-/*
- *  Logging
- */
-void start_session_log(void) {
-  START_LOG(&think_log, NE_SESSION, "%s", "");
-  START_LOG(&xboard_log, NE_SESSION, "%s", "xboard");
-  START_LOG(&error_log, NE_SESSION, "%s", "error");
-}
-void start_move_log(engine_s *e) {
-#if (LOGGING == YES)
-  char buf[100];
-  snprintf(buf, sizeof(buf), "g%02d-%c%02d", e->game_n,
-           (e->mode == ENGINE_PLAYING_AS_WHITE) ? 'w' : 'b', e->move_n);
-  START_LOG(&think_log, NE_MOVE, "%s", buf);
-  START_LOG(&xboard_log, NE_MOVE, "%s-xboard", buf);
-#endif
-}
-
 /*
  *  Clocks
  */
@@ -77,18 +50,18 @@ static inline int is_in_normal_play(engine_s *engine) {
 static inline void print_statistics(engine_s *engine, search_result_s *result) {
   if (!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
-    printf("\n\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
+    printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
     if (ai_turn(engine) && result) {
       printf(" : %d nodes : b = %0.3lf : %0.2lf knps", result->n_leaf, result->branching_factor,
              (double)result->n_leaf / (time * 1000.0));
     }
-    printf("\n");
+    printf("\n\n");
   }
 }
 
 static inline void print_game_state(engine_s *engine) {
   if (!engine->xboard_mode) {
-    print_board(stdout, &engine->game, 0, 0);
+    print_board(&engine->game, 0, 0);
     if (in_check(&engine->game)) {
       printf("%s is in check.\n", player_text[engine->game.turn]);
     }
@@ -107,7 +80,6 @@ static inline void print_prompt(engine_s *engine) {
 }
 
 static inline void print_ai_resign(engine_s *engine) {
-  PRINT_LOG(&xboard_log, "%s", "\nAI > resign");
   if (engine->xboard_mode) {
     printf("resign\n");
   } else {
@@ -120,8 +92,6 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result) {
 
   char buf[MOVE_BUF_SIZE];
   format_move(buf, &result->move, engine->xboard_mode);
-
-  PRINT_LOG(&xboard_log, "\nAI > %s", buf);
 
   if (engine->xboard_mode) {
     printf("move %s\n", buf);
@@ -209,7 +179,7 @@ static inline void log_ai_move(move_s *move, int captured, int check) {}
 #endif
 
 static inline void do_ai_move(engine_s *engine) {
-  start_move_log(engine);
+  //  start_move_log(engine);
 
   search_result_s result;
   search(engine->depth, &engine->game, &result);
@@ -275,7 +245,6 @@ static inline int accept_move(engine_s *engine, const char *input) {
 
 static inline int accept_message(const char *input) {
   if (input[0] == '{') {
-    PRINT_LOG(&xboard_log, "Msg : %s", input + 1);
     return 0;
   }
   return 1;
