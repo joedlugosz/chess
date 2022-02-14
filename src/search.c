@@ -12,19 +12,7 @@
 #include "movegen.h"
 #include "options.h"
 
-int search_depth = 7;
-int search_best = 5;
-int boundary = 1000000;
-int log_search = 1;
-int show = 1;
-
-/* Options */
-static const option_s options[] = {
-    {"Search depth", INT_OPT, .value.integer = &search_depth, 1, 10, 0},
-    {"Boundary score", INT_OPT, .value.integer = &boundary, 0, 2000000, 0},
-    {"Show thinking", BOOL_OPT, .value.integer = &show, 0, 0, 0},
-};
-const options_s search_opts = {sizeof(options) / sizeof(options[0]), options};
+const int BOUNDARY = 1000000;
 
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta);
@@ -82,7 +70,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
-  score_t best_score = -boundary;
+  score_t best_score = -BOUNDARY;
   move_s *best_move = 0;
 
   /* Quiescence - evaluate taking no action - this could be better than the
@@ -129,7 +117,7 @@ void search(int depth, state_s *state, search_result_s *res) {
   job.depth = depth;
   job.start_time = clock();
 
-  search_ply(&job, state, depth, -boundary, boundary);
+  search_ply(&job, state, depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);

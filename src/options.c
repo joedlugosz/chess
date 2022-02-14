@@ -18,13 +18,10 @@
 /* Options */
 
 /* Arrays of options are declared in other modules */
-// extern const options_s engine_options;
-extern const options_s search_opts;
 extern const options_s eval_opts;
-extern const options_s log_opts;
 
 // const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
-const options_s *const module_opts[] = {&search_opts, &eval_opts};
+const options_s *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
 /* Names passed to XBoard describing option types - see definition of option_type_e */
