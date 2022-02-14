@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "options.h"
 #include "state.h"
 
 const score_t player_factor[N_PLAYERS] = {1, -1};

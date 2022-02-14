@@ -2,12 +2,15 @@
  *  UI commands
  */
 
+#include <stdio.h>
+
 #include "debug.h"
 #include "engine.h"
 #include "fen.h"
 #include "info.h"
 #include "io.h"
 #include "movegen.h"
+#include "options.h"
 #include "search.h"
 #include "ui.h"
 
@@ -40,7 +43,7 @@ void ui_white(engine_s *e) {}
 void ui_computer(engine_s *e) {}
 
 /* XBoard notifies a result */
-void ui_result(engine_s *e) { PRINT_LOG(&xboard_log, "%s ", get_input()); }
+void ui_result(engine_s *e) { get_input(); }
 
 /* New game */
 void ui_new(engine_s *e) {
@@ -51,8 +54,6 @@ void ui_new(engine_s *e) {
   e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
   reset_board(&e->game);
-  START_LOG(&think_log, NE_GAME, "g%02d", e->game_n);
-  START_LOG(&xboard_log, NE_GAME, "%s", "xboard");
 }
 
 /* -- Engine control */
@@ -78,7 +79,6 @@ void ui_otim(engine_s *e) { sscanf(get_input(), "%lu", &e->otim); }
 void ui_protover(engine_s *e) {
   int ver;
   sscanf(get_input(), "%d", &ver);
-  PRINT_LOG(&xboard_log, "%d", ver);
   if (ver > 1) {
     list_features();
     list_options();
@@ -91,15 +91,12 @@ void ui_option(engine_s *e) {
   int reject = 0;
 
   name = get_delim('=');
-  PRINT_LOG(&xboard_log, "%s=", name);
 
   reject = set_option(e, name);
   if (reject == 0) {
     printf("accept\n");
-    PRINT_LOG(&xboard_log, "%s", "\naccept");
   } else {
     printf("reject\n");
-    PRINT_LOG(&xboard_log, "%s", "\nreject");
   }
 }
 
@@ -140,7 +137,7 @@ void ui_getfen(engine_s *e) {
 /* -- Debugging */
 
 /* Print board */
-void ui_print(engine_s *e) { print_board(stdout, &(e->game), 0, 0); }
+void ui_print(engine_s *e) { print_board(&(e->game), 0, 0); }
 
 /* Print board showing pieces attacking a target square */
 void ui_attacks(engine_s *e) {
@@ -151,7 +148,7 @@ void ui_attacks(engine_s *e) {
   if (ui_no_piece_at_square(e, target)) {
     return;
   }
-  print_board(stdout, &(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
+  print_board(&(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
 
 /* Print board showing squares a piece can move to */
@@ -163,7 +160,7 @@ void ui_moves(engine_s *e) {
   if (ui_no_piece_at_square(e, from)) {
     return;
   }
-  print_board(stdout, &(e->game), get_moves(&(e->game), from), square2bit[from]);
+  print_board(&(e->game), get_moves(&(e->game), from), square2bit[from]);
 }
 
 /* Evaluate the position and print the score */
@@ -294,7 +291,6 @@ int accept_command(engine_s *e, const char *in) {
   for (i = 0; i < N_UI_CMDS; i++) {
     if (strcmp(in, cmds[i].cmd) == 0) {
       (*cmds[i].fn)(e);
-      PRINT_LOG(&xboard_log, "Cmd %s", in);
       /* Success */
       return 0;
     }

@@ -19,7 +19,8 @@ void init_os(void) {}
 
 /* SIGSEGV handler */
 static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
-  PRINT_LOG(&xboard_log, "%s", "Received sigsegv");
+  printf("%s\n", "{ Received sigsegv }");
+  fprintf(stderr, "%s\n", "{ Received sigsegv }");
   print_backtrace(0);
   abort();
 }

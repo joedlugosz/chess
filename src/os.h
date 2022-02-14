@@ -60,6 +60,6 @@ void set_console_black_square(void);
 void set_console_white_piece(void);
 void set_console_black_piece(void);
 unsigned int get_process_id(void);
-void print_backtrace(FILE *out);
+void print_backtrace();
 
 #endif /* OS_H */

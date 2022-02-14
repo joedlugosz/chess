@@ -3,6 +3,8 @@
  *   Forsyth-Edwards Notation input and output
  */
 
+#include <stdio.h>
+
 #include "io.h"
 #include "state.h"
 

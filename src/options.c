@@ -2,8 +2,11 @@
  *    Options and features interface to XBoard
  */
 
+#include "options.h"
+
 #include <ctype.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "buildinfo/buildinfo.h"
 #include "commands.h"
@@ -15,12 +18,13 @@
 /* Options */
 
 /* Arrays of options are declared in other modules */
-extern const options_s engine_options;
+// extern const options_s engine_options;
 extern const options_s search_opts;
 extern const options_s eval_opts;
 extern const options_s log_opts;
 
-const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
+// const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
+const options_s *const module_opts[] = {&search_opts, &eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
 /* Names passed to XBoard describing option types - see definition of option_type_e */
@@ -237,7 +241,6 @@ void feature_accepted(const char *name) {
   for (int i = 0; i < N_FEATURES; i++) {
     if (strcmp(name, features[i].name) == 0) {
       feature_acc[i] = 1;
-      PRINT_LOG(&xboard_log, "%s", buf);
       break;
     }
   }

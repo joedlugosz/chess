@@ -2,6 +2,7 @@
 #include "search.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "fen.h"
 #include "state.h"
