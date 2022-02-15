@@ -86,6 +86,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (best_score > alpha) alpha = best_score;
   }
 
+  /* Try to get a cutoff from a killer move */
   if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
                   &best_move))
