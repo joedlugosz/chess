@@ -36,6 +36,27 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
                                score_t alpha, score_t beta);
 
+static inline int search_null(struct search_job *job, struct pv *pv,
+                              struct position *from_position, int depth,
+                              score_t alpha, score_t beta) {
+  /* Can't nullmove if already in check */
+  if (in_check(from_position)) return 0;
+
+  struct position position;
+  copy_state(&position, from_position);
+
+  /* The move would be made here */
+
+  change_player(&position);
+
+  /* Recurse into search_position */
+  score_t score =
+      -search_position(job, pv, &position, depth - 3, -beta, -alpha);
+
+  /* Beta cutoff */
+  return (score >= beta);
+}
+
 /* Search a single move - call search_position after making the move. Return 1
    for a beta cutoff, and 0 in all other cases including self-check. */
 static inline int search_move(struct search_job *job, struct pv *parent_pv,
@@ -153,6 +174,9 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* Struct holding the princpal variation of children for this node */
   struct pv pv;
   pv.length = 0;
+
+  if (depth > 0 && search_null(job, &pv, position, depth, alpha, beta))
+    return beta;
 
   /* Standing pat - in a quiescence search, evaluate taking no action - this
      could be better than the consequences of taking a piece. */
