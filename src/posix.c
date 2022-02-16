@@ -76,7 +76,7 @@ typedef struct bt_entry_s_ {
 } bt_entry_s;
 
 /* Print backtrace to stdout in XBoard format and to a file */
-void print_backtrace(FILE *out) {
+void print_backtrace() {
   /* Get backtrace symbols */
   void *bt_raw[1024];
   int n_bt = backtrace(bt_raw, 1024);
@@ -173,10 +173,8 @@ void print_backtrace(FILE *out) {
   }
 
   /* Print backtrace */
-  if (out != stdout) fprintf(out, "\nCall stack:\n");
   printf("\n{ Call stack: }\n");
   for (int i = 3; i < n_bt; i++) {
-    if (out != stdout) fprintf(out, "%s %-20s %s\n", bt_syms[i], bt[i].function, bt[i].line);
     printf("{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function, bt[i].line);
     if (strcmp(bt[i].function, "main") == 0) break;
   }
