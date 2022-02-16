@@ -5,6 +5,11 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#ifndef NDEBUG
+#  define ASSERTS
+#  define LOGGING
+#endif /* _DEBUG */
+
 #ifdef ASSERTS
 
 void assert_fail(const char *file, const char *func, const int line, const char *condition);
