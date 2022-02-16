@@ -11,6 +11,8 @@
 
 #include "io.h"
 #include "os.h"
+#include "search.h"
+#include "state.h"
 
 /* Report an error to stderror and as an xboard message to stdout */
 void report_error(const char *src_file, const char *func, const int line, const char *msg1,
