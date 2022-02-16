@@ -255,8 +255,9 @@ void calculate_moves(state_s *state) {
         /* Apply block to pawn advances */
         moves = pawn_advances[player][square] & ~block;
         /* Add actual taking moves */
-        moves |=
-            pawn_takes[player][square] & (state->player_a[opponent[player]] | state->en_passant);
+        moves |= pawn_takes[player][square] &
+                 (state->player_a[opponent[player]] |
+                  (state->en_passant & ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
         /* Claim for pawns is only taking moves */
         state->claim[player] |= pawn_takes[player][square] & ~state->player_a[player];
       } break;
