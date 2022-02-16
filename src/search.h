@@ -9,6 +9,7 @@
 
 #include "debug.h"
 #include "evaluate.h"
+#include "state.h"
 
 /* linked list */
 typedef struct movelist_s_ {

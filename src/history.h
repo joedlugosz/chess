@@ -5,7 +5,7 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
-#include "evaluate.h"
+#include "state.h"
 
 struct search_job_s_;
 

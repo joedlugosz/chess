@@ -11,6 +11,8 @@
 
 #include "io.h"
 #include "os.h"
+#include "search.h"
+#include "state.h"
 
 /* Report an error to stderror and as an xboard message to stdout */
 void report_error(const char *src_file, const char *func, const int line, const char *msg1,
@@ -34,8 +36,8 @@ void assert_fail(const char *src_file, const char *func, const int line, const c
 }
 
 /* Print alpha, beta, search history */
-void debug_thought(search_job_s *job, int depth, score_t score, score_t alpha, score_t beta) {
-  printf("\n%2d %10d ", depth, job->result.n_leaf);
+void debug_thought(struct search_job_s_ *job, int depth, score_t score, score_t alpha, score_t beta) {
+  printf("%2d %10d ", depth, job->result.n_leaf);
   if (alpha > -100000)
     printf("%7d ", alpha);
   else
@@ -45,4 +47,5 @@ void debug_thought(search_job_s *job, int depth, score_t score, score_t alpha, s
   else
     printf("     +B ");
   print_thought_moves(depth, job->search_history);
+  printf("\n");
 }

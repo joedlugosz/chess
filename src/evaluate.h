@@ -5,9 +5,9 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#include "state.h"
-
 typedef int score_t;
-score_t evaluate(state_s *);
+
+struct state_s_;
+score_t evaluate(struct state_s_ *);
 
 #endif /* EVAL_H */
