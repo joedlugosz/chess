@@ -5,6 +5,7 @@
 #include "search.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <time.h>
 
 #include "evaluate.h"
@@ -34,7 +35,7 @@ struct move mate_move = {.result = CHECK | MATE};
 
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
-                               score_t alpha, score_t beta);
+                               score_t alpha, score_t beta, int do_nullmove);
 
 static inline int search_null(struct search_job *job, struct pv *pv,
                               struct position *from_position, int depth,
@@ -51,7 +52,7 @@ static inline int search_null(struct search_job *job, struct pv *pv,
 
   /* Recurse into search_position */
   score_t score =
-      -search_position(job, pv, &position, depth - 3, -beta, -alpha);
+      -search_position(job, pv, &position, depth - 3, -beta, -alpha, 0);
 
   /* Beta cutoff */
   return (score >= beta);
@@ -78,18 +79,23 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (in_check(&position)) return 0;
   if (n_legal_moves) (*n_legal_moves)++;
 
-  /* Move history is hashed against the position being moved from */
-  history_push(job->history, from_position->hash, move);
-  change_player(&position);
+  score_t score;
+  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
+  if (position.halfmove > 50 ||
+      is_repeated_position(job->history, position.hash, 3)) {
+    score = DRAW_SCORE;
+  } else {
+    /* Move history is hashed against the position being moved from */
+    history_push(job->history, from_position->hash, move);
+    change_player(&position);
 
-  /* Record whether this move puts the opponent in check */
-  if (in_check(&position)) move->result |= CHECK;
+    /* Record whether this move puts the opponent in check */
+    if (in_check(&position)) move->result |= CHECK;
 
-  /* Recurse into search_position */
-  score_t score =
-      -search_position(job, pv, &position, depth - 1, -beta, -*alpha);
-
-  history_pop(job->history);
+    /* Recurse into search_position */
+    score_t score =
+        -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+  }
 
   if (score > *best_score) {
     *best_score = score;
@@ -145,7 +151,7 @@ static score_t get_draw_score(const struct position *position) {
    move */
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
-                               score_t alpha, score_t beta) {
+                               score_t alpha, score_t beta, int do_nullmove) {
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
@@ -171,11 +177,12 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
 
-  /* Struct holding the princpal variation of children for this node */
+  /* Principal variation for this node and its children */
   struct pv pv;
   pv.length = 0;
 
-  if (depth > 0 && search_null(job, &pv, position, depth, alpha, beta))
+  if (do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
+      search_null(job, &pv, position, depth, alpha, beta))
     return beta;
 
   /* Standing pat - in a quiescence search, evaluate taking no action - this
@@ -322,7 +329,7 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Enter recursive search with the current position as the root */
     struct pv pv;
     search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
-                    INVALID_SCORE);
+                    INVALID_SCORE, 0);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
