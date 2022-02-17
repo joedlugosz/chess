@@ -173,18 +173,19 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* First phase - try to exit early */
 
-  /* If there are any moves, best_move and best_score will be updated by the end
-     of the function */
-  score_t best_score = -INVALID_SCORE;
-  struct move *best_move = 0;
-
   /* Principal variation for this node and its children */
   struct pv pv;
   pv.length = 0;
 
+  /* Null move pruning */
   if (do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
       search_null(job, &pv, position, depth, alpha, beta))
     return beta;
+
+  /* If there are any moves, best_move and best_score will be updated by the end
+     of the function */
+  score_t best_score = -INVALID_SCORE;
+  struct move *best_move = 0;
 
   /* Standing pat - in a quiescence search, evaluate taking no action - this
      could be better than the consequences of taking a piece. */
@@ -330,7 +331,7 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Enter recursive search with the current position as the root */
     struct pv pv;
     search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
-                    INVALID_SCORE, 0);
+                    INVALID_SCORE, 1);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
