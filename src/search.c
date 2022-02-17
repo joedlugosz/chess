@@ -50,9 +50,10 @@ static inline int search_null(struct search_job *job, struct pv *pv,
 
   change_player(&position);
 
-  /* Recurse into search_position */
+  /* Recurse into search_position.  can_null = 0 so the next ply can't also test
+     a null move. */
   score_t score =
-      -search_position(job, pv, &position, depth - 3, -beta, -alpha, 0);
+      -search_position(job, pv, &position, depth - 3, -beta, -beta + 1, 0);
 
   /* Beta cutoff */
   return (score >= beta);
