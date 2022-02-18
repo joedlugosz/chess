@@ -1,6 +1,6 @@
 
 #include "state.h"
-
+#include <stdio.h>
 #define PRINT_SIZE(type) (printf("sizeof(%s) = %ld = %ld * 64\n", #type, \
   sizeof(type), (sizeof(type)-1)/64+1))
 
