@@ -55,7 +55,12 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   DEBUG_THOUGHT(job, depth, score, *alpha, beta);
 
   /* Beta cutoff */
-  if (score >= beta) return 1;
+  if (score >= beta) {
+    if (depth >= 0) {
+      memcpy(&job->killer_moves[depth], move, sizeof(job->killer_moves[0]));
+    }
+    return 1;
+  }
 
   return 0;
 }
@@ -80,6 +85,12 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
   }
+
+  /* Try to get a cutoff from a killer move */
+  if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
+      search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
+                  &best_move))
+    return beta;
 
   /* Generate the move list - list_entry will point to the first sorted item */
   movelist_s move_buf[N_MOVES];

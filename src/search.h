@@ -35,6 +35,7 @@ typedef struct search_job_s_ {
   /* State */
   clock_t start_time;
   move_s search_history[SEARCH_DEPTH_MAX];
+  move_s killer_moves[SEARCH_DEPTH_MAX];
   int n_ai_moves;
   /* Results */
   search_result_s result;
