@@ -3,6 +3,7 @@
 #include <time.h>
 
 #include "engine.h"
+#include "hash.h"
 #include "os.h"
 #include "ui.h"
 
@@ -22,6 +23,8 @@ int main(int argc, char *argv[]) {
   setbuf(stdout, NULL);
   setup_signal_handlers();
   init_board();
+  hash_init();
+  tt_init();
 
   /* Genuine(ish) random numbers are used where repeatability is not desirable */
   srand(clock());
@@ -30,6 +33,8 @@ int main(int argc, char *argv[]) {
   init_engine(&engine);
   parse_command_line_args(&engine, argc, argv);
   run_engine(&engine);
+
+  tt_exit();
 
   return 0;
 }

@@ -52,8 +52,9 @@ static inline void print_statistics(engine_s *engine, search_result_s *result) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
     if (ai_turn(engine) && result) {
-      printf(" : %d nodes : b = %0.3lf : %0.2lf knps", result->n_leaf, result->branching_factor,
-             (double)result->n_leaf / (time * 1000.0));
+      printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions", result->n_leaf,
+             result->branching_factor, (double)result->n_leaf / (time * 1000.0),
+             result->collisions);
     }
     printf("\n\n");
   }
@@ -150,6 +151,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
     default:
       break;
   }
+
   return result;
 }
 

@@ -84,9 +84,9 @@ void print_backtrace() {
 
   /* Parse backtrace symbols text
    *
-   *               rel_addr      abs_addr
+   *                     rel_addr      abs_addr
    *     module(function+0x1234) [0x12345678]
-   * or  module(+0x1234)         [0x12345678]
+   * or  module(+0x1234) [0x12345678]
    */
 
   bt_entry_s bt[1000];
@@ -155,6 +155,7 @@ void print_backtrace() {
         }
       }
     }
+
     /* Run addr2line to get function names and line numbers */
     snprintf(cmd, sizeof(cmd), "addr2line -f -s -e %s %p", ((const char *)bt[i].module),
              (void *)bt[i].rel_addr);
