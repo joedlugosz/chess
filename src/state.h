@@ -131,7 +131,14 @@ typedef struct move_s_ {
   moveresult_t result;
 } move_s;
 
-enum { ERR_BASE = 0, ERR_NO_PIECE, ERR_SRC_EQUAL_DEST, ERR_NOT_MY_PIECE, ERR_CANT_MOVE_THERE };
+enum {
+  ERR_BASE = 0,
+  ERR_NO_PIECE,
+  ERR_SRC_EQUAL_DEST,
+  ERR_NOT_MY_PIECE,
+  ERR_CANT_MOVE_THERE,
+  ERR_PROMOTION
+};
 
 extern bitboard_t *square2bit;
 extern const piece_e piece_type[N_PLANES];
