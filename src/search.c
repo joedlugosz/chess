@@ -74,6 +74,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
+  ASSERT(depth <= job->depth);
 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
@@ -169,7 +170,7 @@ void search(int depth, state_s *state, search_result_s *res) {
 
   tt_zero();
 
-  search_ply(&job, state, depth, -BOUNDARY, BOUNDARY);
+  search_ply(&job, state, job.depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
