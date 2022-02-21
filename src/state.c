@@ -279,7 +279,10 @@ int check_legality(state_s *state, move_s *move) {
   if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
   if ((square2bit[move->from] & get_my_pieces(state)) == 0) return ERR_NOT_MY_PIECE;
   if ((square2bit[move->to] & get_moves(state, move->from)) == 0) return ERR_CANT_MOVE_THERE;
-
+  if ((is_promotion_move(state, move->from, move->to) &&
+       (state->piece_at[move->from] == PAWN || state->piece_at[move->from] == PAWN + N_PIECE_T)) ^
+      (move->promotion > PAWN))
+    return ERR_PROMOTION;
   return 0;
 }
 
