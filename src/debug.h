@@ -7,8 +7,8 @@
 
 #ifndef NDEBUG
 #  define ASSERTS
-#  define LOGGING
 #endif /* _DEBUG */
+#define LOGGING
 
 #ifdef ASSERTS
 
@@ -32,4 +32,9 @@ void debug_thought(struct search_job_s_ *job, int depth, score_t score, score_t 
 #  define DEBUG_THOUGHT(c, d, s, a, b)
 #endif /* LOGGING */
 
+#include <stdio.h>
+extern FILE *logfile;
+void debug_init();
+void debug_exit();
+void debug_print(const char *fmt, ...);
 #endif /* DEBUG_H */
