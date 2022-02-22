@@ -49,9 +49,9 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
     *type = TT_EXACT;
 
     /* Show the best move if it updates at root level */
-  }
-  if (depth == job->depth) {
-    xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
+    if (depth == job->depth) {
+      xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
+    }
   }
 
   DEBUG_THOUGHT(job, depth, score, *alpha, beta);
