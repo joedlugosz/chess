@@ -107,11 +107,20 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth,
-     use the result from the tt */
+     use the result from the tt. At root level, accapt only exact and copy
+     out the move */
   if (tte && (tte->depth >= depth)) {
-    if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
-    if (tte->type == TT_BETA && tte->score > beta) return beta;
-    if (tte->type == TT_EXACT) return tte->score;
+    if (depth < job->depth) {
+      if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
+      if (tte->type == TT_BETA && tte->score > beta) return beta;
+      if (tte->type == TT_EXACT) return tte->score;
+    } else {
+      if (tte->type == TT_EXACT) {
+        job->result.score = alpha;
+        memcpy(&job->result.move, &tte->best_move, sizeof(job->result.move));
+        return tte->score;
+      }
+    }
   }
 
   /* If there is a best move from the transposition table, try searching it
