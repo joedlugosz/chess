@@ -181,8 +181,6 @@ static inline void log_ai_move(move_s *move, int captured, int check) {}
 #endif
 
 static inline void do_ai_move(engine_s *engine) {
-  //  start_move_log(engine);
-
   search_result_s result;
   search(engine->depth, &engine->game, &result);
 

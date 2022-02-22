@@ -103,13 +103,13 @@ int format_move(char *buf, move_s *move, int bare) {
   return 0;
 }
 
-void print_thought_moves(int depth, move_s moves[]) {
+void print_thought_moves(FILE *f, int depth, move_s moves[]) {
   char buf[6];
   int i;
   for (i = 0; i <= SEARCH_DEPTH_MAX; i++) {
     if (moves[i].from == moves[i].to) break;
     format_move(buf, &moves[i], 0);
-    printf("%s ", buf);
+    fprintf(f, "%s ", buf);
   }
 }
 
@@ -207,7 +207,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
 /* Thoughts shown by XBoard */
 void xboard_thought(search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
   printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
-  print_thought_moves(depth, job->search_history);
+  print_thought_moves(stdout, depth, job->search_history);
   printf("\n");
 }
 
@@ -270,31 +270,6 @@ const char *get_delim(char delim) {
 /* Strip leading whitespace then get text from stdin up to the next whitespace
  * If text is enclosed by brackets {} return all enclosed text */
 const char *get_input(void) {
-#if 0
-  char *ptr = input_buf;
-  char *end = input_buf + sizeof(input_buf) - 1;
-  /* Read input until first non whitespace character */
-  while (isspace(*ptr = fgetc(stdin)))
-    ;
-  /* Handle brackets */
-  if (*ptr == '{') {
-    while (++ptr < end) {
-      *ptr = fgetc(stdin);
-      if (*ptr == '}') {
-        ptr++;
-        break;
-      }
-    }
-    *ptr = 0;
-    return input_buf;
-  }
-  /* Read input until first whitespace character */
-  while (++ptr < end) {
-    *ptr = fgetc(stdin);
-    if (isspace(*ptr)) break;
-  }
-  *ptr = 0;
-#endif
   get_input_to_buf(input_buf, sizeof(input_buf));
   return input_buf;
 }

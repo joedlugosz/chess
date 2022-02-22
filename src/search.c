@@ -74,6 +74,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
+  ASSERT(depth <= job->depth);
 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
@@ -106,11 +107,20 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth,
-     use the result from the tt */
+     use the result from the tt. At root level, accapt only exact and copy
+     out the move */
   if (tte && (tte->depth >= depth)) {
-    if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
-    if (tte->type == TT_BETA && tte->score > beta) return beta;
-    if (tte->type == TT_EXACT) return tte->score;
+    if (depth < job->depth) {
+      if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
+      if (tte->type == TT_BETA && tte->score > beta) return beta;
+      if (tte->type == TT_EXACT) return tte->score;
+    } else {
+      if (tte->type == TT_EXACT) {
+        job->result.score = alpha;
+        memcpy(&job->result.move, &tte->best_move, sizeof(job->result.move));
+        return tte->score;
+      }
+    }
   }
 
   /* If there is a best move from the transposition table, try searching it
@@ -169,7 +179,7 @@ void search(int depth, state_s *state, search_result_s *res) {
 
   tt_zero();
 
-  search_ply(&job, state, depth, -BOUNDARY, BOUNDARY);
+  search_ply(&job, state, job.depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
