@@ -50,9 +50,9 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
 
     /* Show the best move if it updates at root level */
   }
-    if (depth == job->depth) {
-      xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
-    }
+  if (depth == job->depth) {
+    xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
+  }
 
   DEBUG_THOUGHT(job, depth, score, *alpha, beta);
 
@@ -70,7 +70,8 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
 
 /* Update the result if at the top level */
 /* This only happens when score = beta = BOUNDARY...? */
-static inline void update_result(search_job_s *job, state_s *state, int depth, move_s *move, score_t score) {
+static inline void update_result(search_job_s *job, state_s *state, int depth, move_s *move,
+                                 score_t score) {
   if (depth == job->depth) {
     job->result.score = score;
     if (move) {
@@ -138,9 +139,9 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* If there is a best move from the transposition table, try searching it
      first. A beta cutoff will avoid move generation, otherwise alpha will
      get a good starting value. */
-  if (tte && !check_legality(state, &tte->best_move)
-    && search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
-                    &type)) {
+  if (tte && !check_legality(state, &tte->best_move) &&
+      search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
+                  &type)) {
     update_result(job, state, depth, &tte->best_move, best_score);
     return beta;
   }
