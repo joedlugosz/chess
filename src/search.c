@@ -68,6 +68,13 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   return 0;
 }
 
+static inline void update_result(search_job_s *job, int depth, move_s *move, score_t score) {
+  if (depth == job->depth && move) {
+    job->result.score = score;
+    memcpy(&job->result.move, move, sizeof(job->result.move));
+  }
+}
+
 /* Search a single ply and all possible moves - call search_move for each move */
 static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
                           score_t beta) {
@@ -116,8 +123,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
       if (tte->type == TT_EXACT) return tte->score;
     } else {
       if (tte->type == TT_EXACT) {
-        job->result.score = alpha;
-        memcpy(&job->result.move, &tte->best_move, sizeof(job->result.move));
+        update_result(job, depth, &tte->best_move, tte->score);
         return tte->score;
       }
     }
@@ -129,7 +135,13 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   if (tte && !check_legality(state, &tte->best_move)) {
     if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
                     &type))
-      return beta;
+      /* Update the result if at the top level */
+      /* This only happens when score = beta = BOUNDARY...? */
+      if (depth == job->depth && best_move) {
+        job->result.score = beta;
+        memcpy(&job->result.move, best_move, sizeof(job->result.move));
+      }
+    return beta;
   }
 
   /* Generate the move list - list_entry will point to the first sorted item */
@@ -150,17 +162,16 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   while (list_entry) {
     if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
       if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
-                      &type))
+                      &type)) {
+        update_result(job, depth, &list_entry->move, beta);
         return beta;
+      }
     }
     list_entry = list_entry->next;
   }
 
   /* Update the result if at the top level */
-  if (depth == job->depth && best_move) {
-    job->result.score = alpha;
-    memcpy(&job->result.move, best_move, sizeof(job->result.move));
-  }
+  update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
