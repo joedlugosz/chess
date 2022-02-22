@@ -84,7 +84,7 @@ static inline void print_ai_resign(engine_s *engine) {
   if (engine->xboard_mode) {
     printf("resign\n");
   } else {
-    printf("%s resigns.", player_text[engine->game.turn]);
+    printf("\n%s resigns.\n\n", player_text[engine->game.turn]);
   }
 }
 
@@ -188,7 +188,7 @@ static inline void do_ai_move(engine_s *engine) {
 
   if (engine->resign_delayed) {
     resign = 1;
-  } else if (result.move.from == NO_SQUARE) {
+  } else if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       /* Checkmate */
       resign = 1;
