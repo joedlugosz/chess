@@ -49,9 +49,9 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
     *type = TT_EXACT;
 
     /* Show the best move if it updates at root level */
-    if (depth == job->depth) {
-      xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
-    }
+  }
+  if (depth == job->depth) {
+    xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
   }
 
   DEBUG_THOUGHT(job, depth, score, *alpha, beta);
@@ -66,6 +66,18 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   }
 
   return 0;
+}
+
+/* Update the result if at the top level */
+/* This only happens when score = beta = BOUNDARY...? */
+static inline void update_result(search_job_s *job, state_s *state, int depth, move_s *move,
+                                 score_t score) {
+  if (depth == job->depth) {
+    job->result.score = score;
+    if (move) {
+      memcpy(&job->result.move, move, sizeof(job->result.move));
+    }
+  }
 }
 
 /* Search a single ply and all possible moves - call search_move for each move */
@@ -99,8 +111,10 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Try to get a cutoff from a killer move */
   if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
-                  &best_move, &type))
+                  &best_move, &type)) {
+    update_result(job, state, depth, &job->killer_moves[depth], best_score);
     return beta;
+  }
 
   /* Probe the transposition table, but only at higher levels */
   ttentry_s *tte = 0;
@@ -116,8 +130,7 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
       if (tte->type == TT_EXACT) return tte->score;
     } else {
       if (tte->type == TT_EXACT) {
-        job->result.score = alpha;
-        memcpy(&job->result.move, &tte->best_move, sizeof(job->result.move));
+        update_result(job, state, depth, &tte->best_move, tte->score);
         return tte->score;
       }
     }
@@ -126,10 +139,11 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* If there is a best move from the transposition table, try searching it
      first. A beta cutoff will avoid move generation, otherwise alpha will
      get a good starting value. */
-  if (tte && !check_legality(state, &tte->best_move)) {
-    if (search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
-                    &type))
-      return beta;
+  if (tte && !check_legality(state, &tte->best_move) &&
+      search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
+                  &type)) {
+    update_result(job, state, depth, &tte->best_move, best_score);
+    return beta;
   }
 
   /* Generate the move list - list_entry will point to the first sorted item */
@@ -150,17 +164,16 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   while (list_entry) {
     if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
       if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
-                      &type))
+                      &type)) {
+        update_result(job, state, depth, &list_entry->move, beta);
         return beta;
+      }
     }
     list_entry = list_entry->next;
   }
 
   /* Update the result if at the top level */
-  if (depth == job->depth && best_move) {
-    job->result.score = alpha;
-    memcpy(&job->result.move, best_move, sizeof(job->result.move));
-  }
+  update_result(job, state, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
