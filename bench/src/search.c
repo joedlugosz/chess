@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "hash.c"
+#include "history.h"
 #include "fen.h"
 #include "state.h"
 
@@ -13,6 +14,7 @@ int ply = 50;
 
 void bench_search(int depth) {
   state_s state;
+  struct history history;
   reset_board(&state);
 
   clock_t total = 0;
@@ -20,7 +22,7 @@ void bench_search(int depth) {
   for (int i = 0; i < ply; i++) {
     search_result_s res;
 
-    search(depth, &state, &res);
+    search(depth, &history, &state, &res);
     total += res.time;
     n_searched += res.n_leaf;
 
@@ -35,6 +37,7 @@ void bench_search(int depth) {
     if (res.move.from == A1 && res.move.to == A1) break;
 
     make_move(&state, &res.move);
+    history_push(&history, state.hash);
     change_player(&state);
   }
   printf("avg  %4d %4d %16lld %6.2lf\n", depth, ply, n_searched / ply,
