@@ -9,11 +9,6 @@
 #include "debug.h"
 #include "search.h"
 
-/* Write a new move into the search history */
-void write_search_history(search_job_s *job, int depth, move_s *move) {
-  memcpy(&job->search_history[job->depth - depth], move, sizeof(*job->search_history));
-}
-
 /* Push position hash onto game history stack */
 void history_push(struct history *history, hash_t hash) {
   history->hash[history->index] = hash;
