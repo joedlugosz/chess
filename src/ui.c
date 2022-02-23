@@ -182,7 +182,7 @@ static inline void log_ai_move(move_s *move, int captured, int check) {}
 
 static inline void do_ai_move(engine_s *engine) {
   search_result_s result;
-  search(engine->depth, &engine->game, &result);
+  search(engine->depth, &engine->history, &engine->game, &result);
 
   int resign = 0;
 
@@ -207,6 +207,7 @@ static inline void do_ai_move(engine_s *engine) {
   }
 
   make_move(&engine->game, &result.move);
+  history_push(&engine->history, engine->game.hash, 1);
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
@@ -235,6 +236,8 @@ static inline int accept_move(engine_s *engine, const char *input) {
     reset_time(engine);
   }
   make_move(&engine->game, &move);
+  history_push(&engine->history, engine->game.hash, 1);
+
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
   }
