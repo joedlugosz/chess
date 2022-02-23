@@ -1,5 +1,5 @@
 /*
- *   Move history
+ *   Position history
  */
 
 #include "history.h"
