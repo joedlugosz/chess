@@ -3,6 +3,7 @@
 
 #include <time.h>
 
+#include "history.h"
 #include "state.h"
 
 typedef struct engine_s_ {
@@ -25,6 +26,7 @@ typedef struct engine_s_ {
   int game_n;
 
   state_s game;
+  struct history history;
 
   int depth;
 
