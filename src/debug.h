@@ -24,12 +24,13 @@ void assert_fail(const char *file, const char *func, const int line, const char 
 
 #ifdef LOGGING
 #  include "evaluate.h"
-#  define DEBUG_THOUGHT(c, d, s, a, b) debug_thought(c, d, s, a, b)
+#  define DEBUG_THOUGHT(j, p, d, s, a, b) debug_thought(j, p, d, s, a, b)
 struct search_job_s_;
-void debug_thought(struct search_job_s_ *job, int depth, score_t score, score_t alpha,
-                   score_t beta);
+struct pv;
+void debug_thought(struct search_job_s_ *job, struct pv *pv, int depth, score_t score,
+                   score_t alpha, score_t beta);
 #else
-#  define DEBUG_THOUGHT(c, d, s, a, b)
+#  define DEBUG_THOUGHT(j, p, d, s, a, b)
 #endif /* LOGGING */
 
 #include <stdio.h>

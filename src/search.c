@@ -12,19 +12,20 @@
 #include "io.h"
 #include "movegen.h"
 #include "options.h"
+#include "pv.h"
 
 const int BOUNDARY = 1000000;
 enum { TT_MIN_DEPTH = 4 };
 
-static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
-                          score_t beta);
+static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
+                          score_t alpha, score_t beta);
 
 /* Search a single move - call search_ply after making the move. In/out args are
    updated on an alpha update: alpha, best_move. Returns 1 for a beta cutoff,
    and 0 in all other cases including impossible moves into check. */
-static inline int search_move(search_job_s *job, state_s *state, int depth, score_t *best_score,
-                              score_t *alpha, score_t beta, move_s *move, move_s **best_move,
-                              tt_type_e *type) {
+static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv *pv,
+                              state_s *state, int depth, score_t *best_score, score_t *alpha,
+                              score_t beta, move_s *move, move_s **best_move, tt_type_e *type) {
   state_s next_state;
   copy_state(&next_state, state);
   make_move(&next_state, move);
@@ -39,7 +40,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   change_player(&next_state);
 
   /* Recurse into search_ply */
-  score_t score = -search_ply(job, &next_state, depth - 1, -beta, -*alpha);
+  score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
 
   history_pop(job->history);
 
@@ -50,17 +51,17 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
 
   /* Alpha update */
   if (score > *alpha) {
-    write_search_history(job, depth, move);
     *alpha = score;
     *type = TT_EXACT;
 
-    /* Show the best move if it updates at root level */
+    /* Update the PV and show it if it updates at root level */
+    pv_add(parent_pv, pv, move);
     if (depth == job->depth) {
-      xboard_thought(job, depth, score, clock() - job->start_time, job->result.n_leaf);
+      xboard_thought(job, parent_pv, depth, score, clock() - job->start_time, job->result.n_leaf);
     }
   }
 
-  DEBUG_THOUGHT(job, depth, score, *alpha, beta);
+  DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta);
 
   /* Beta cutoff */
   if (score >= beta) {
@@ -87,8 +88,8 @@ static inline void update_result(search_job_s *job, state_s *state, int depth, m
 }
 
 /* Search a single ply and all possible moves - call search_move for each move */
-static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t alpha,
-                          score_t beta) {
+static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
+                          score_t alpha, score_t beta) {
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
@@ -101,6 +102,9 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
      function */
   score_t best_score = -BOUNDARY;
   move_s *best_move = 0;
+
+  struct pv pv;
+  pv.length = 0;
 
   /* Quiescence - evaluate taking no action - this could be better than the
      consequences of taking the piece. */
@@ -116,8 +120,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
 
   /* Try to get a cutoff from a killer move */
   if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
-      search_move(job, state, depth, &best_score, &alpha, beta, &job->killer_moves[depth],
-                  &best_move, &type)) {
+      search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
+                  &job->killer_moves[depth], &best_move, &type)) {
     update_result(job, state, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
@@ -146,8 +150,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
      first. A beta cutoff will avoid move generation, otherwise alpha will
      get a good starting value. */
   if (tte && !check_legality(state, &tte->best_move) &&
-      search_move(job, state, depth, &best_score, &alpha, beta, &tte->best_move, &best_move,
-                  &type)) {
+      search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta, &tte->best_move,
+                  &best_move, &type)) {
     update_result(job, state, depth, &tte->best_move, best_score);
     return beta;
   }
@@ -169,8 +173,8 @@ static score_t search_ply(search_job_s *job, state_s *state, int depth, score_t 
   /* Search each move, skipping the best move from the tt which has already been searched */
   while (list_entry) {
     if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-      if (search_move(job, state, depth, &best_score, &alpha, beta, &list_entry->move, &best_move,
-                      &type)) {
+      if (search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
+                      &list_entry->move, &best_move, &type)) {
         update_result(job, state, depth, &list_entry->move, beta);
         return beta;
       }
@@ -199,7 +203,8 @@ void search(int depth, struct history *history, state_s *state, search_result_s 
 
   tt_zero();
 
-  search_ply(&job, state, job.depth, -BOUNDARY, BOUNDARY);
+  struct pv pv;
+  search_ply(&job, &pv, state, job.depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);

@@ -10,6 +10,7 @@
 #include "fen.h"
 #include "hash.h"
 #include "os.h"
+#include "pv.h"
 #include "search.h"
 #include "state.h"
 
@@ -103,12 +104,11 @@ int format_move(char *buf, move_s *move, int bare) {
   return 0;
 }
 
-void print_thought_moves(FILE *f, int depth, move_s moves[]) {
-  char buf[6];
+void print_pv(FILE *f, struct pv *pv) {
+  char buf[8];
   int i;
-  for (i = 0; i <= SEARCH_DEPTH_MAX; i++) {
-    if (moves[i].from == moves[i].to) break;
-    format_move(buf, &moves[i], 0);
+  for (i = 0; i < pv->length; i++) {
+    format_move(buf, &pv->moves[i], 0);
     fprintf(f, "%s ", buf);
   }
 }
@@ -205,9 +205,10 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
 }
 
 /* Thoughts shown by XBoard */
-void xboard_thought(search_job_s *job, int depth, score_t score, clock_t time, int nodes) {
+void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, clock_t time,
+                    int nodes) {
   printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
-  print_thought_moves(stdout, depth, job->search_history);
+  print_pv(stdout, pv);
   printf("\n");
 }
 
