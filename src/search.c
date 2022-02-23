@@ -98,6 +98,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
         -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
   }
 
+  history_pop(job->history);
+
   if (score > *best_score) {
     *best_score = score;
     *best_move = move;
