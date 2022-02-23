@@ -35,7 +35,7 @@ static inline int search_move(search_job_s *job, state_s *state, int depth, scor
   /* Can't break threefold repetition rule */
   if (is_repeated_position(job->history, next_state.hash, 3)) return 0;
 
-  history_push(job->history, state->hash, 1);
+  history_push(job->history, state->hash);
   change_player(&next_state);
 
   /* Recurse into search_ply */
