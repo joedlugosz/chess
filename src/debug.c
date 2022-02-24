@@ -16,7 +16,7 @@
 
 FILE *logfile;
 
-#define USE_LOGFILE 1
+#define USE_LOGFILE 0
 #define LOGFILE_PID 0
 
 void debug_init() {
