@@ -29,6 +29,7 @@ enum {
   CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
+  R_NULL = 2
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -37,6 +38,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
                                score_t alpha, score_t beta, int do_nullmove);
 
+/* Null-move reduction search - evaluate at depth the consequences of
+   hypothetically passing on a turn without making a move. */
 static inline int search_null(struct search_job *job, struct pv *pv,
                               struct position *from_position, int depth,
                               score_t alpha, score_t beta) {
