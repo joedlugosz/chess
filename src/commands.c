@@ -54,6 +54,7 @@ void ui_new(engine_s *e) {
   e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
   reset_board(&e->game);
+  history_clear(&e->history);
 }
 
 /* -- Engine control */
