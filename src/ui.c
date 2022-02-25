@@ -158,6 +158,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
 void init_engine(engine_s *engine) {
   memset(engine, 0, sizeof *engine);
   reset_board(&engine->game);
+  history_clear(&engine->history);
   engine->xboard_mode = 0;
   engine->resign_delayed = 0;
   engine->game_n = 1;
@@ -201,7 +202,7 @@ static inline void do_ai_move(engine_s *engine) {
 
   /* Make the AI move */
   make_move(&engine->game, &result.move);
-  history_push(&engine->history, engine->game.hash);
+  history_push(&engine->history, engine->game.hash, &result.move);
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
@@ -242,7 +243,7 @@ static inline int accept_move(engine_s *engine, const char *input) {
     reset_time(engine);
   }
   make_move(&engine->game, &move);
-  history_push(&engine->history, engine->game.hash);
+  history_push(&engine->history, engine->game.hash, &move);
 
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);

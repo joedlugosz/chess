@@ -14,7 +14,7 @@
 #include "options.h"
 #include "pv.h"
 
-enum { TT_MIN_DEPTH = 4, BOUNDARY = 100000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
+enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
 static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
                           score_t alpha, score_t beta);
@@ -42,7 +42,7 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
     score = DRAW_SCORE;
   } else {
     /* Normal search - recurse into search_ply */
-    history_push(job->history, state->hash);
+    history_push(job->history, state->hash, move);
     change_player(&next_state);
     score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
     history_pop(job->history);
