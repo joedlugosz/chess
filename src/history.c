@@ -24,14 +24,11 @@ hash_t history_pop(struct history *history) {
 }
 
 /* Clear the position history */
-void history_clear(struct history *history) {
-  memset(history, 0, sizeof(*history));
-}
+void history_clear(struct history *history) { memset(history, 0, sizeof(*history)); }
 
 /* Check for whether a position has been encountered before, to satisfy three-
    or fivefold repetition rules. */
 int is_repeated_position(struct history *history, hash_t hash, int repetitions) {
-
   /* Search back every 2nd position from top of stack to bottom of stack,
      keeping a count of the number of times a hash is found on the stack that
      matches the supplied hash. If a breaking move is encoutered which makes it
