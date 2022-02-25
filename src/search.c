@@ -252,17 +252,19 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
+  int reduce = 0;
   if (n_pseudo_legal_moves > 0) {
     while (list_entry) {
       if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-        if (search_move(job, parent_pv, &pv, position, depth, &best_score,
-                        &alpha, beta, &list_entry->move, &best_move, &type,
-                        &n_legal_moves)) {
+        if (search_move(job, parent_pv, &pv, position, depth - reduce,
+                        &best_score, &alpha, beta, &list_entry->move,
+                        &best_move, &type, &n_legal_moves)) {
           update_result(job, position, depth, &list_entry->move, beta);
           return beta;
         }
       }
       list_entry = list_entry->next;
+      if (n_legal_moves > 3) reduce = 2;
     }
   }
 
