@@ -118,7 +118,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Quiescence - evaluate taking no action - this could be better than the
      consequences of taking the piece. */
-  if (depth <= 0) {
+  if (depth <= 0 && !in_check(state)) {
     best_score = evaluate(state);
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
@@ -183,7 +183,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
   int n_pseudo_legal_moves;
-  if (depth > 0) {
+  if (depth > 0 || state->check[WHITE] || state->check[BLACK]) {
     n_pseudo_legal_moves = generate_search_movelist(state, &list_entry);
   } else {
     n_pseudo_legal_moves = generate_quiescence_movelist(state, &list_entry);
