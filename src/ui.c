@@ -184,28 +184,22 @@ static inline void do_ai_move(engine_s *engine) {
   search_result_s result;
   search(engine->depth, &engine->history, &engine->game, &result);
 
-  int resign = 0;
-
+  /* If no AI move was found, print checkmate or stalemate messages */
   if (engine->resign_delayed) {
-    resign = 1;
   } else if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
-      /* Checkmate */
-      resign = 1;
+      mark_time(engine);
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+      print_ai_resign(engine);
+      engine->mode = ENGINE_FORCE_MODE;
     } else {
-      /* Stalemate - delay resign to see if draw is given */
-      engine->resign_delayed = 1;
-      return;
+      printf("\nStalemate - 1/2-1/2\n\n");
+      engine->mode = ENGINE_FORCE_MODE;
     }
-  }
-
-  if (resign) {
-    mark_time(engine);
-    print_ai_resign(engine);
-    engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
+  /* Make the AI move */
   make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash);
   mark_time(engine);
@@ -213,6 +207,18 @@ static inline void do_ai_move(engine_s *engine) {
   finished_move(engine);
   print_game_state(engine);
   reset_time(engine);
+
+  /* Search at depth 1 to see if human has any moves, then print
+     checkmate or stalemate messages for human */
+  search(1, &engine->history, &engine->game, &result);
+  if (result.move.from == result.move.to) {
+    if (engine->game.check[engine->game.turn]) {
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+    } else {
+      printf("\nStalemate - 1/2-1/2\n\n");
+    }
+    engine->mode = ENGINE_FORCE_MODE;
+  }
 }
 
 /* Accept a valid user move.
