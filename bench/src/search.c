@@ -22,7 +22,7 @@ void bench_search(int depth) {
   for (int i = 0; i < ply; i++) {
     search_result_s res;
 
-    search(depth, &history, &state, &res);
+    search(depth, &history, &state, &res, 1);
     total += res.time;
     n_searched += res.n_leaf;
 

@@ -34,6 +34,7 @@ typedef struct search_job_s_ {
   /* Parameters */
   int depth; /* Search depth before quiescence */
   int halt;  /* Halt search */
+  int show_thoughts;
   /* State */
   clock_t start_time;
   move_s search_history[SEARCH_DEPTH_MAX];
@@ -44,6 +45,6 @@ typedef struct search_job_s_ {
   search_result_s result;
 } search_job_s;
 
-void search(int, struct history *history, state_s *, search_result_s *);
+void search(int, struct history *history, state_s *, search_result_s *, int);
 
 #endif  // SEARCH_H
