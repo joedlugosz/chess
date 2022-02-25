@@ -60,7 +60,7 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
 
     /* Update the PV and show it if it updates at root level */
     pv_add(parent_pv, pv, move);
-    if (depth == job->depth) {
+    if (job->show_thoughts && depth == job->depth) {
       xboard_thought(job, parent_pv, depth, score, clock() - job->start_time, job->result.n_leaf);
     }
   }
@@ -230,12 +230,14 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 }
 
 /* Entry point to recursive search */
-void search(int depth, struct history *history, state_s *state, search_result_s *res) {
+void search(int depth, struct history *history, state_s *state, search_result_s *res,
+            int show_thoughts) {
   search_job_s job;
   memset(&job, 0, sizeof(job));
   job.depth = depth;
   job.start_time = clock();
   job.history = history;
+  job.show_thoughts = show_thoughts;
 
   tt_zero();
 

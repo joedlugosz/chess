@@ -182,7 +182,7 @@ static inline void log_ai_move(move_s *move, int captured, int check) {}
 
 static inline void do_ai_move(engine_s *engine) {
   search_result_s result;
-  search(engine->depth, &engine->history, &engine->game, &result);
+  search(engine->depth, &engine->history, &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages */
   if (engine->resign_delayed) {
@@ -210,7 +210,7 @@ static inline void do_ai_move(engine_s *engine) {
 
   /* Search at depth 1 to see if human has any moves, then print
      checkmate or stalemate messages for human */
-  search(1, &engine->history, &engine->game, &result);
+  search(1, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
