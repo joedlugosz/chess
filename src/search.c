@@ -14,8 +14,7 @@
 #include "options.h"
 #include "pv.h"
 
-const int BOUNDARY = 1000000;
-enum { TT_MIN_DEPTH = 4 };
+enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
 static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
                           score_t alpha, score_t beta);
@@ -25,7 +24,8 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
    and 0 in all other cases including impossible moves into check. */
 static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv *pv,
                               state_s *state, int depth, score_t *best_score, score_t *alpha,
-                              score_t beta, move_s *move, move_s **best_move, tt_type_e *type) {
+                              score_t beta, move_s *move, move_s **best_move, tt_type_e *type,
+                              int *n_legal) {
   state_s next_state;
   copy_state(&next_state, state);
   make_move(&next_state, move);
@@ -33,16 +33,20 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
   /* Can't move into check */
   if (in_check(&next_state)) return 0;
 
-  /* Can't break threefold repetition rule */
-  if (is_repeated_position(job->history, next_state.hash, 3)) return 0;
+  /* All other moves are legal options */
+  if (n_legal) (*n_legal)++;
 
-  history_push(job->history, state->hash);
-  change_player(&next_state);
-
-  /* Recurse into search_ply */
-  score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
-
-  history_pop(job->history);
+  score_t score;
+  /* Breaking the threefold repetition rule forces a draw. */
+  if (is_repeated_position(job->history, next_state.hash, 3)) {
+    score = DRAW_SCORE;
+  } else {
+    /* Normal search - recurse into search_ply */
+    history_push(job->history, state->hash, move);
+    change_player(&next_state);
+    score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
+    history_pop(job->history);
+  }
 
   if (score > *best_score) {
     *best_score = score;
@@ -56,7 +60,7 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
 
     /* Update the PV and show it if it updates at root level */
     pv_add(parent_pv, pv, move);
-    if (depth == job->depth) {
+    if (job->show_thoughts && depth == job->depth) {
       xboard_thought(job, parent_pv, depth, score, clock() - job->start_time, job->result.n_leaf);
     }
   }
@@ -87,7 +91,8 @@ static inline void update_result(search_job_s *job, state_s *state, int depth, m
   }
 }
 
-/* Search a single ply and all possible moves - call search_move for each move */
+/* Search a single ply and all possible moves - call search_move for each move
+ */
 static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
                           score_t alpha, score_t beta) {
   if (job->halt) return 0;
@@ -98,11 +103,16 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  /* The first phase of searching a node involves trying to find ways to return
+     early, before the work of generating and searching all the possible moves
+     for the node. */
+
   /* If there are any moves, this will point to the best move by the end of the
      function */
   score_t best_score = -BOUNDARY;
   move_s *best_move = 0;
 
+  /* Struct holding the princpal variation of children for this node */
   struct pv pv;
   pv.length = 0;
 
@@ -114,14 +124,14 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     if (best_score > alpha) alpha = best_score;
   }
 
-  /* Default node type - this will change to TT_EXACT on alpha update or
-     TT_BETA on beta cutoff */
+  /* Default node type - this will change to TT_EXACT on alpha update or TT_BETA
+     on beta cutoff */
   tt_type_e type = TT_ALPHA;
 
   /* Try to get a cutoff from a killer move */
   if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
-                  &job->killer_moves[depth], &best_move, &type)) {
+                  &job->killer_moves[depth], &best_move, &type, 0)) {
     update_result(job, state, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
@@ -130,9 +140,9 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   ttentry_s *tte = 0;
   if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
-  /* If the position has already been searched at the same or greater depth,
-     use the result from the tt. At root level, accapt only exact and copy
-     out the move */
+  /* If the position has already been searched at the same or greater depth, use
+     the result from the tt. At root level, accapt only exact and copy out the
+     move */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
       if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
@@ -147,39 +157,65 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   }
 
   /* If there is a best move from the transposition table, try searching it
-     first. A beta cutoff will avoid move generation, otherwise alpha will
-     get a good starting value. */
+     first. A beta cutoff will avoid move generation, otherwise alpha will get a
+     good starting value. */
   if (tte && !check_legality(state, &tte->best_move) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta, &tte->best_move,
-                  &best_move, &type)) {
+                  &best_move, &type, 0)) {
     update_result(job, state, depth, &tte->best_move, best_score);
     return beta;
   }
 
-  /* Generate the move list - list_entry will point to the first sorted item */
+  /* The second phase of searching a node occurs if an early exit was not
+     achieved. This involves a search through all possible moves for this
+     position, with an earlier exit if a beta cutoff is found. */
+
+  /* Generate the list of pseudo-legal moves. These are moves which appear to be
+     legal without considering check. It is easier to test for check once the
+     move has been made, then abandon the move if it turns out to be illegal. To
+     assist with sorting, moves are are stored as a linked list within the array
+     move_buf. list_entry will point to the first sorted item. In front of the
+     search horizon, a list is generated for a normal search, with all moves
+     that can be made for all pieces. At and beyond the horizon, a separate
+     function is used to generate a list of only moves which are interesting
+     enough to extend the search, such as a capture of the piece just moved.
+     If no moves are generated, recursion stops. */
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
-  int n_moves;
+  int n_pseudo_legal_moves;
   if (depth > 0) {
-    n_moves = generate_search_movelist(state, &list_entry);
-    /* Checkmate or stalemate */
-    if (n_moves == 0) return evaluate(state);
+    n_pseudo_legal_moves = generate_search_movelist(state, &list_entry);
   } else {
-    n_moves = generate_quiescence_movelist(state, &list_entry);
-    /* A quiet node has been found at depth */
-    if (n_moves == 0) return best_score;
+    n_pseudo_legal_moves = generate_quiescence_movelist(state, &list_entry);
+    if (n_pseudo_legal_moves == 0) return best_score;
   }
 
-  /* Search each move, skipping the best move from the tt which has already been searched */
-  while (list_entry) {
-    if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-      if (search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
-                      &list_entry->move, &best_move, &type)) {
-        update_result(job, state, depth, &list_entry->move, beta);
-        return beta;
+  /* Search through the list of pseudo-legal moves. search_move will update
+     best_score, best_move, alpha, and type, and will increment n_legal_moves
+     whenever a genuine legal move is found which does not lead into check */
+  int n_legal_moves = 0;
+  if (n_pseudo_legal_moves > 0) {
+    while (list_entry) {
+      if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
+        if (search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
+                        &list_entry->move, &best_move, &type, &n_legal_moves)) {
+          update_result(job, state, depth, &list_entry->move, beta);
+          return beta;
+        }
       }
+      list_entry = list_entry->next;
     }
-    list_entry = list_entry->next;
+  }
+
+  /* If no genuine legal moves were found in the search, it means a checkmate or
+     stalemate. For checkmate, reduce the checkmate score by the distance from
+     root to mate, so that the shortest path to mate has the strongest score.
+     Stalemate causes a draw score of zero, which is a goal for the losing side */
+  if (n_legal_moves == 0) {
+    if (in_check(state))
+      alpha = CHECKMATE_SCORE + (job->depth - depth);
+    else
+      alpha = DRAW_SCORE;
   }
 
   /* Update the result if at the top level */
@@ -194,12 +230,14 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 }
 
 /* Entry point to recursive search */
-void search(int depth, struct history *history, state_s *state, search_result_s *res) {
+void search(int depth, struct history *history, state_s *state, search_result_s *res,
+            int show_thoughts) {
   search_job_s job;
   memset(&job, 0, sizeof(job));
   job.depth = depth;
   job.start_time = clock();
   job.history = history;
+  job.show_thoughts = show_thoughts;
 
   tt_zero();
 

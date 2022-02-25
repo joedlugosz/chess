@@ -22,7 +22,7 @@ void bench_search(int depth) {
   for (int i = 0; i < ply; i++) {
     search_result_s res;
 
-    search(depth, &history, &state, &res);
+    search(depth, &history, &state, &res, 1);
     total += res.time;
     n_searched += res.n_leaf;
 
@@ -37,7 +37,7 @@ void bench_search(int depth) {
     if (res.move.from == A1 && res.move.to == A1) break;
 
     make_move(&state, &res.move);
-    history_push(&history, state.hash);
+    history_push(&history, state.hash, &res.move);
     change_player(&state);
   }
   printf("avg  %4d %4d %16lld %6.2lf\n", depth, ply, n_searched / ply,

@@ -158,6 +158,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
 void init_engine(engine_s *engine) {
   memset(engine, 0, sizeof *engine);
   reset_board(&engine->game);
+  history_clear(&engine->history);
   engine->xboard_mode = 0;
   engine->resign_delayed = 0;
   engine->game_n = 1;
@@ -182,37 +183,43 @@ static inline void log_ai_move(move_s *move, int captured, int check) {}
 
 static inline void do_ai_move(engine_s *engine) {
   search_result_s result;
-  search(engine->depth, &engine->history, &engine->game, &result);
+  search(engine->depth, &engine->history, &engine->game, &result, 1);
 
-  int resign = 0;
-
+  /* If no AI move was found, print checkmate or stalemate messages */
   if (engine->resign_delayed) {
-    resign = 1;
   } else if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
-      /* Checkmate */
-      resign = 1;
+      mark_time(engine);
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+      print_ai_resign(engine);
+      engine->mode = ENGINE_FORCE_MODE;
     } else {
-      /* Stalemate - delay resign to see if draw is given */
-      engine->resign_delayed = 1;
-      return;
+      printf("\nStalemate - 1/2-1/2\n\n");
+      engine->mode = ENGINE_FORCE_MODE;
     }
-  }
-
-  if (resign) {
-    mark_time(engine);
-    print_ai_resign(engine);
-    engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
+  /* Make the AI move */
   make_move(&engine->game, &result.move);
-  history_push(&engine->history, engine->game.hash);
+  history_push(&engine->history, engine->game.hash, &result.move);
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
   print_game_state(engine);
   reset_time(engine);
+
+  /* Search at depth 1 to see if human has any moves, then print
+     checkmate or stalemate messages for human */
+  search(1, &engine->history, &engine->game, &result, 0);
+  if (result.move.from == result.move.to) {
+    if (engine->game.check[engine->game.turn]) {
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+    } else {
+      printf("\nStalemate - 1/2-1/2\n\n");
+    }
+    engine->mode = ENGINE_FORCE_MODE;
+  }
 }
 
 /* Accept a valid user move.
@@ -236,7 +243,7 @@ static inline int accept_move(engine_s *engine, const char *input) {
     reset_time(engine);
   }
   make_move(&engine->game, &move);
-  history_push(&engine->history, engine->game.hash);
+  history_push(&engine->history, engine->game.hash, &move);
 
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
