@@ -25,6 +25,9 @@ void bench_search(int depth) {
   memset(&history, 0, sizeof(history));
   reset_board(&position);
 
+  struct history history;
+  memset(&history, 0, sizeof(history));
+
   clock_t total = 0;
   long long n_searched = 0;
   for (int i = 0; i < ply; i++) {
@@ -64,6 +67,7 @@ int main(int argc, const char *argv[]) {
   setbuf(stdout, 0);
   init_board();
   hash_init();
+  debug_init();
   tt_init();
 
   for (int i = 1; i <= max_depth; i++) {
