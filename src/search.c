@@ -29,7 +29,8 @@ enum {
   CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
-  R_NULL = 2
+  R_NULL = 2,
+  LATE_R = 1,
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -72,7 +73,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                               score_t beta, struct move *move,
                               struct move **best_move,  /* in/out */
                               enum tt_entry_type *type, /* in/out */
-                              int *n_legal_moves /* in/out */) {
+                              int *n_legal_moves,       /* in/out */
+                              int is_late_move) {
   struct position position;
 
   /* Copy and move */
@@ -96,9 +98,29 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     /* Record whether this move puts the opponent in check */
     if (in_check(&position)) move->result |= CHECK;
 
+    /* Late move reduction and extensions
+       Reduce the search depth for late moves unless they are tactical. Extend
+       the depth for pawn moves to try to find a promotion. */
+    int extend_reduce;
+    if (is_late_move && !in_check(from_position) && !in_check(&position) &&
+        from_position->piece_at[move->to] == EMPTY && move->promotion == PAWN)
+      extend_reduce = -1;
+    else if (from_position->piece_at[move->from] == PAWN)
+      extend_reduce = 0; /* TODO: better criteria for extension */
+    else
+      extend_reduce = 0;
+
     /* Recurse into search_position */
-    score_t score =
-        -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+    score = -search_position(job, pv, &position, depth + extend_reduce - 1,
+                             -beta, -*alpha, 1);
+
+    /* If a reduced search produces a score which will cause an update,
+       re-search at full depth in case it turns out to be not so good */
+    if (extend_reduce < 0 && score > *alpha) {
+      score = -search_ply(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+    }
+
+    history_pop(job->history);
   }
 
   if (score > *best_score) {
@@ -118,7 +140,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                      job->result.n_leaf);
   }
 
-  DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta, position.hash);
+  DEBUG_THOUGHT(job, pv, move, depth, score, *alpha, beta, position.hash);
 
   /* Beta cutoff */
   if (score >= beta) {
@@ -206,7 +228,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (OPT_KILLER && (depth >= 0) &&
       !check_legality(position, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &job->killer_moves[depth], &best_move, &type, 0)) {
+                  beta, &job->killer_moves[depth], &best_move, &type, 0, 0)) {
     update_result(job, position, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
@@ -231,7 +253,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   int n_legal_moves = 0;
   if (tte && !check_legality(position, &tte->best_move) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &tte->best_move, &best_move, &type, &n_legal_moves)) {
+                  beta, &tte->best_move, &best_move, &type, &n_legal_moves,
+                  0)) {
     update_result(job, position, depth, &tte->best_move, best_score);
     return beta;
   }
@@ -253,51 +276,52 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
   int reduce = 0;
-  if (n_pseudo_legal_moves > 0) {
-    while (list_entry) {
-      if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-        if (search_move(job, parent_pv, &pv, position, depth - reduce,
-                        &best_score, &alpha, beta, &list_entry->move,
-                        &best_move, &type, &n_legal_moves)) {
-          update_result(job, position, depth, &list_entry->move, beta);
-          return beta;
-        }
+  int is_late_move = 0;
+>>>>>>> ADD: late reduction re-search
+  while (list_entry) {
+    if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
+      if (depth > 3 && n_legal_moves > 1) is_late_move = 1;
+      if (search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
+                      beta, &list_entry->move, &best_move, &type,
+                      &n_legal_moves, is_late_move)) {
+        update_result(job, position, depth, &list_entry->move, beta);
+        return beta;
       }
-      list_entry = list_entry->next;
-      if (n_legal_moves > 3) reduce = 2;
     }
+    list_entry = list_entry->next;
   }
+}
 
-  /* Checkmate or stalemate. For checkmate, reduce the score by the distance
-     from root to mate. */
-  if (n_legal_moves == 0) {
-    type = TT_EXACT;
+/* Checkmate or stalemate. For checkmate, reduce the score by the distance
+   from root to mate. */
+if (n_legal_moves == 0) {
+  type = TT_EXACT;
+  if (in_check(position)) {
+    alpha = CHECKMATE_SCORE + (job->depth - depth);
+    best_move = &mate_move;
+  } else {
+    alpha = get_draw_score(position);
+  }
+  if (depth == job->depth) {
     if (in_check(position)) {
-      alpha = CHECKMATE_SCORE + (job->depth - depth);
-      best_move = &mate_move;
+      job->result.type = SEARCH_RESULT_CHECKMATE;
     } else {
-      alpha = get_draw_score(position);
-    }
-    if (depth == job->depth) {
-      if (in_check(position)) {
-        job->result.type = SEARCH_RESULT_CHECKMATE;
-      } else {
-        printf("stalemate\n");
-        job->result.type = SEARCH_RESULT_STALEMATE;
-      }
+      printf("stalemate\n");
+      job->result.type = SEARCH_RESULT_STALEMATE;
     }
   }
+}
 
-  /* Update the result if at root */
-  update_result(job, position, depth, best_move, alpha);
+/* Update the result if at root */
+update_result(job, position, depth, best_move, alpha);
 
-  /* Update the transposition table at higher levels */
-  if (depth > TT_MIN_DEPTH) {
-    tt_update(position->hash, type, depth, alpha, best_move);
-  }
+/* Update the transposition table at higher levels */
+if (depth > TT_MIN_DEPTH) {
+  tt_update(position->hash, type, depth, alpha, best_move);
+}
 
-  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
-  return alpha;
+ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
+return alpha;
 }
 
 /* Perform a search */
