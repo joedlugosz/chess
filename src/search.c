@@ -102,11 +102,12 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
        Reduce the search depth for late moves unless they are tactical. Extend
        the depth for pawn moves to try to find a promotion. */
     int extend_reduce;
-    if (is_late_move && !in_check(from_position) && !in_check(&position) &&
-        from_position->piece_at[move->to] == EMPTY && move->promotion == PAWN)
-      extend_reduce = -1;
-    else if (from_position->piece_at[move->from] == PAWN)
+    if (from_position->piece_at[move->from] == PAWN)
       extend_reduce = 0; /* TODO: better criteria for extension */
+    else if (is_late_move && !in_check(from_position) && !in_check(&position) &&
+             from_position->piece_at[move->to] == EMPTY &&
+             move->promotion == PAWN)
+      extend_reduce = -LATE_R;
     else
       extend_reduce = 0;
 
