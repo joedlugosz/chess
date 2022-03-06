@@ -123,8 +123,12 @@ void ui_fen(engine_s *e) {
   get_input_to_buf(castling, sizeof(castling));
   char enpassant[100];
   get_input_to_buf(enpassant, sizeof(enpassant));
-  if (load_fen(&e->game, placement, active, castling, enpassant)) {
-    printf("FEN string not recognised\n");
+  char halfmove[100];
+  get_input_to_buf(halfmove, sizeof(halfmove));
+  char fullmove[100];
+  get_input_to_buf(fullmove, sizeof(fullmove));
+  if (load_fen(&e->game, placement, active, castling, enpassant, halfmove, fullmove)) {
+    printf("sFEN string not recognised\n");
   }
 }
 
