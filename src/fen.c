@@ -23,7 +23,8 @@ static const struct castle_rights_entry castling_rights_letter[N_CASTLE_RIGHTS_M
 
 /* Load a board state given in FEN, into state */
 int load_fen(state_s *state, const char *placement_text, const char *active_player_text,
-             const char *castling_text, const char *en_passant_text) {
+             const char *castling_text, const char *en_passant_text, const char *halfmove_text,
+             const char *fullmove_text) {
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
@@ -131,8 +132,20 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
     en_passant = square2bit[ep_square];
   }
 
+  /* Halfmove and fullmove */
+  int halfmove;
+  if (sscanf(halfmove_text, "%d", &halfmove) != 1) {
+    printf("FEN: Invalid halfmove clock input\n");
+    goto error;
+  }
+  int fullmove;
+  if (sscanf(fullmove_text, "%d", &fullmove) != 1) {
+    printf("FEN: Invalid move number input\n");
+    goto error;
+  }
+
   /* Success - write the new positions to state */
-  setup_board(state, board, turn, castling_rights, en_passant);
+  setup_board(state, board, turn, castling_rights, en_passant, halfmove, fullmove);
   return 0;
 
   /* Input error - display location */
@@ -194,6 +207,7 @@ int get_fen(const state_s *state, char *out, size_t outsize) {
     format_square(ptr, bit2square(state->en_passant));
     ptr += 2;
   }
-  *ptr = 0;
+
+  sprintf(ptr, " %d %d", state->halfmove, state->fullmove);
   return 0;
 }
