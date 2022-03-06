@@ -177,6 +177,8 @@ void make_move(state_s *state, move_s *move) {
 
   move->result = 0;
 
+  state->halfmove++;
+
   /* Taking */
   int8_t victim_piece = state->piece_at[move->to];
   if (victim_piece != EMPTY) {
@@ -189,6 +191,7 @@ void make_move(state_s *state, move_s *move) {
     if (piece_type[victim_piece] == ROOK) {
       clear_rook_castling_rights(state, move->to, victim_player);
     }
+    state->halfmove = 0;
   }
 
   /* Moving */
@@ -233,6 +236,7 @@ void make_move(state_s *state, move_s *move) {
         remove_piece(state, target_square);
         move->result |= EN_PASSANT | CAPTURED;
       }
+      state->halfmove = 0;
       break;
     default:
       break;
@@ -262,11 +266,8 @@ void make_move(state_s *state, move_s *move) {
     }
   }
 
-  if (state->check[state->turn]) {
-    move->result |= CHECK;
-  }
-
   state->ply++;
+  if (state->turn == BLACK) state->fullmove++;
 }
 
 void change_player(state_s *state) {
@@ -289,12 +290,15 @@ int check_legality(state_s *state, move_s *move) {
 /* Uses infomration in pieces to generate the board state.
  * This is used by reset_board and load_fen */
 void setup_board(state_s *state, const piece_e *pieces, player_e turn,
-                 castle_rights_t castling_rights, bitboard_t en_passant) {
+                 castle_rights_t castling_rights, bitboard_t en_passant, int halfmove,
+                 int fullmove) {
   memset(state, 0, sizeof(*state));
   state->hash = init_key;
   state->turn = turn;
   state->castling_rights = castling_rights;
   state->en_passant = en_passant;
+  state->halfmove = halfmove;
+  state->fullmove = fullmove;
 
   memset(state->piece_square, NO_SQUARE, N_PIECES * sizeof(state->piece_square[0]));
   memset(state->index_at, EMPTY, N_SQUARES * sizeof(state->index_at[0]));
@@ -315,8 +319,7 @@ void setup_board(state_s *state, const piece_e *pieces, player_e turn,
 
 /* Resets the board to the starting position */
 void reset_board(state_s *state) {
-  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0);
-  // load_fen(state, "p6p/8/8/8/8/8/8/P6P", "w", "KQkq", "-");
+  setup_board(state, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0, 0, 1);
 }
 
 /* Initialises the module */
