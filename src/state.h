@@ -105,7 +105,8 @@ typedef struct state_s_ {
   square_e piece_square[N_PIECES]; /* Board position of each piece */
   int8_t piece_at[N_SQUARES];      /* Piece type at board position */
   int8_t index_at[N_SQUARES];      /* Piece index at board position */
-
+  int halfmove;
+  int fullmove;
   status_t turn : 1;         /* Player to move next */
   status_t check[N_PLAYERS]; /* Whether each player is in check */
   castle_rights_t castling_rights;
@@ -127,6 +128,7 @@ enum {
 };
 typedef struct move_s_ {
   square_e from, to;
+  piece_e piece;
   piece_e promotion;
   moveresult_t result;
 } move_s;
@@ -147,7 +149,7 @@ extern const player_e opponent[N_PLAYERS];
 
 void init_board(void);
 void reset_board(state_s *state);
-void setup_board(state_s *, const piece_e *, player_e, castle_rights_t, bitboard_t);
+void setup_board(state_s *, const piece_e *, player_e, castle_rights_t, bitboard_t, int, int);
 
 bitboard_t get_attacks(state_s *state, square_e target, player_e attacking);
 void make_move(state_s *state, move_s *move);
