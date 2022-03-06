@@ -60,15 +60,16 @@ static inline void add_movelist_entries(state_s *state, square_e from, square_e 
                                         movelist_s *move_buf,          /* in */
                                         movelist_s **prev, int *index) /* in, out */
 {
-  piece_e promotion =
-      (piece_type[state->piece_at[from]] == PAWN && is_promotion_move(state, from, to)) ? QUEEN
-                                                                                        : PAWN;
+  piece_e piece = piece_type[state->piece_at[from]];
+  piece_e promotion = (piece == PAWN && is_promotion_move(state, from, to)) ? QUEEN : PAWN;
+
   do {
     ASSERT(*index < N_MOVES);
     movelist_s *current = &move_buf[*index];
     ASSERT(current != *prev);
     current->move.from = from;
     current->move.to = to;
+    current->move.piece = piece;
     current->move.promotion = promotion;
     current->score = sort_evaluate(state, &current->move);
     current->next = 0;
@@ -195,7 +196,7 @@ void perft_divide(state_s *state, int depth) {
     if (!in_check(&next_state)) {
       change_player(&next_state);
       perft(&next_data, &next_state, depth - 1, list_entry->move.result);
-      format_move(buf, &list_entry->move, 1);
+      format_move_san(buf, &list_entry->move);
       printf("%s: %lld\n", buf, next_data.moves);
     }
     list_entry = list_entry->next;

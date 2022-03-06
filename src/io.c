@@ -27,6 +27,7 @@
 const char piece_text_ascii[N_PLANES][6] = {"p ", "R ", "N ", "B ", "Q ", "K ",
                                             "p*", "R*", "N*", "B*", "Q*", "K*"};
 static const char piece_letter[] = "prnbq";
+static const char piece_letter_san[] = "RNBQK";
 
 #if (TERM_UNICODE)
 const char piece_text_unicode[N_PLANES][6] = {"\u265f ", "\u265c ", "\u265e ", "\u265d ",
@@ -79,20 +80,46 @@ int parse_move(const char *buf, move_s *move) {
 int format_square(char *buf, square_e square) {
   if (square < 0 || square >= N_SQUARES) {
     buf[0] = 0;
-    return 1;
+    return -1;
   }
   buf[0] = (char)(square % 8) + 'a';
   buf[1] = (char)(square / 8) + '1';
   buf[2] = 0;
-  return 0;
+  return 2;
+}
+
+int format_move_san(char *buf, move_s *move) {
+  char *ptr = buf;
+
+  if (move->piece != PAWN) {
+    *ptr++ = piece_letter_san[move->piece - 1];
+  }
+
+  if (move->piece == PAWN && (move->result & CAPTURED)) {
+    *ptr++ = (char)(move->from % 8) + 'a';
+  }
+
+  if ((move->result & CAPTURED)) *ptr++ = 'x';
+  if (format_square(ptr, move->to) < 2) return -1;
+  ptr += 2;
+  if (move->promotion > PAWN) {
+    *ptr++ = piece_letter[move->promotion];
+  }
+  if (move->result & CHECK)
+    *ptr++ = '+';
+  else if (move->result & MATE)
+    *ptr++ = '#';
+  *ptr = 0;
+  return (int)(ptr - buf);
 }
 
 int format_move(char *buf, move_s *move, int bare) {
   char *ptr = buf;
-  if (format_square(ptr, move->from)) return 1;
-  ptr += 2;
+  int len;
+  if ((len = format_square(ptr, move->from)) < 2) return -1;
+  ptr += len;
   if (!bare && (move->result & CAPTURED)) *ptr++ = 'x';
-  if (format_square(ptr, move->to)) return 1;
+  if ((len = format_square(ptr, move->to)) < 2) return -1;
   ptr += 2;
   if (move->promotion > PAWN) {
     *ptr++ = piece_letter[move->promotion];
@@ -101,14 +128,14 @@ int format_move(char *buf, move_s *move, int bare) {
     if (move->result & CHECK) *ptr++ = '+';
     if (move->result & MATE) *ptr++ = '#';
   }
-  return 0;
+  return (int)(ptr - buf);
 }
 
 void print_pv(FILE *f, struct pv *pv) {
   char buf[8];
   int i;
   for (i = 0; i < pv->length; i++) {
-    format_move(buf, &pv->moves[i], 0);
+    format_move_san(buf, &pv->moves[i]);
     fprintf(f, "%s ", buf);
   }
 }
@@ -188,7 +215,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     if (tte) {
       switch (rank) {
         case 5:
-          format_move(buf, &tte->best_move, 0);
+          format_move_san(buf, &tte->best_move);
           printf("     %s", buf);
           break;
         case 4:

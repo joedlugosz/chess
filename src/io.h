@@ -27,6 +27,7 @@ int parse_square(const char *, square_e *);
 int parse_move(const char *, move_s *);
 int format_square(char *, square_e);
 int format_move(char *, move_s *, int);
+int format_move_san(char *buf, move_s *move);
 void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, clock_t time,
                     int nodes);
 
