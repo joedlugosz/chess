@@ -1,0 +1,19 @@
+# 
+#2kr2r1/5p2/ppB1p3/3pnP1n/6p1/P7/3P2PP/1R3KNR w - - # Pawn promotion pulled from killer moves
+#rnb1kbr1/pp2pp1p/2p5/q2p2p1/3Bn3/1P2PQ2/P1PPBPPP/RN2K1NR w KQq -
+# Endgame
+8/6Q1/4Q3/8/3P1p2/P7/3K1k2/8 w - - bm Qe1+ Qe2+; dm 1; id "MY_Endgame.001"; # white should mate in one move
+8/8/p4pk1/8/3p2pP/3nn1P1/7K/1r6 b - - dm 2; id "MY_Endgame.002"; # Black should prevent white from forcing a stalemate
+8/2R5/8/1p1P4/1k2p1P1/R3K3/1P3P1P/8 w - - dm 4; id "MY_Endgame.003"; # White should prevent black from forcing a draw by stalemate
+6R1/8/8/8/p2P4/P4K2/8/5k2 b - - dm 4; id "MY_Endgame.004"; # White should prevent black from forcing a draw by rep etition
+8/2R5/N2npk2/7r/P1np2p1/8/3P2P1/6K1 w - - id "MY_Endgame.005"; # Halfmove 7 - no nodes are searched
+8/8/8/8/P2P2Q1/P4K2/7k/8 w - - bm Qg2+; dm 1; id "MY_Endgame.006"; # White to mate with queen
+#8/8/8/8/P2PK1Q1/P7/7k/8 b - -
+8/bp5p/8/p3p1k1/4P3/P1rb1K1P/1r6/7R w - -
+#8/7k/p4pnP/8/3p2p1/4n1P1/7K/1r6 w - -
+#8/7k/p4p1P/8/3p2p1/4n1Pn/7K/1r6 w - - # Stalemate
+#8/8/6R1/8/p2P4/P3K3/8/5k2 b - - # Checkmate
+#8/2R5/N2npk2/7r/P1np2p1/8/3P2P1/6K1 w - - id "MY_Endgame.010"; # h7h8 to mate black
+#
+#r1b1kbnr/ppQp1ppp/2n1pq2/8/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - # White should avoid queen being trapped
+#r1b1kbnr/pppp1ppp/2n1pq2/Q7/8/4P3/PPPP1PPP/RNB1KBNR w KQkq -
