@@ -16,6 +16,8 @@
 
 enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
+move_s mate_move = {.result = CHECK | MATE};
+
 static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
                           score_t alpha, score_t beta);
 
@@ -37,13 +39,15 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
   if (n_legal) (*n_legal)++;
 
   score_t score;
-  /* Breaking the threefold repetition rule forces a draw. */
-  if (is_repeated_position(job->history, next_state.hash, 3)) {
+  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
+  if (next_state.halfmove > 50 || is_repeated_position(job->history, next_state.hash, 3)) {
     score = DRAW_SCORE;
   } else {
     /* Normal search - recurse into search_ply */
     history_push(job->history, state->hash, move);
     change_player(&next_state);
+    /* Move gives check */
+    if (in_check(&next_state)) move->result |= CHECK;
     score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
     history_pop(job->history);
   }
@@ -212,10 +216,12 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
      root to mate, so that the shortest path to mate has the strongest score.
      Stalemate causes a draw score of zero, which is a goal for the losing side */
   if (n_legal_moves == 0) {
-    if (in_check(state))
+    if (in_check(state)) {
       alpha = CHECKMATE_SCORE + (job->depth - depth);
-    else
+      best_move = &mate_move;
+    } else {
       alpha = DRAW_SCORE;
+    }
   }
 
   /* Update the result if at the top level */
