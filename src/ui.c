@@ -92,13 +92,13 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result) {
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];
-  format_move(buf, &result->move, engine->xboard_mode);
-
   if (engine->xboard_mode) {
+    format_move(buf, &result->move, 1);
     printf("move %s\n", buf);
   } else {
     print_statistics(engine, result);
     print_prompt(engine);
+    format_move_san(buf, &result->move);
     printf("%s\n", buf);
   }
 }
@@ -200,11 +200,12 @@ static inline void do_ai_move(engine_s *engine) {
     return;
   }
 
+  print_ai_move(engine, &result);
+
   /* Make the AI move */
   make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
   mark_time(engine);
-  print_ai_move(engine, &result);
   finished_move(engine);
   print_game_state(engine);
   reset_time(engine);
