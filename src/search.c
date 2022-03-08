@@ -14,6 +14,9 @@
 #include "options.h"
 #include "pv.h"
 
+#define OPT_KILLER 1
+#define OPT_HASH 1
+
 enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
 move_s mate_move = {.result = CHECK | MATE};
@@ -32,25 +35,19 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
   copy_state(&next_state, state);
   make_move(&next_state, move);
 
-  /* Can't move into check */
+  /* Can't move into check. All other moves are legal options */
   if (in_check(&next_state)) return 0;
-
-  /* All other moves are legal options */
   if (n_legal) (*n_legal)++;
 
-  score_t score;
-  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
-  if (next_state.halfmove > 50 || is_repeated_position(job->history, next_state.hash, 3)) {
-    score = DRAW_SCORE;
-  } else {
-    /* Normal search - recurse into search_ply */
-    history_push(job->history, state->hash, move);
-    change_player(&next_state);
-    /* Move gives check */
-    if (in_check(&next_state)) move->result |= CHECK;
-    score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
-    history_pop(job->history);
-  }
+  history_push(job->history, state->hash, move);
+  change_player(&next_state);
+
+  /* If this move gives check */
+  if (in_check(&next_state)) move->result |= CHECK;
+
+  score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
+
+  history_pop(job->history);
 
   if (score > *best_score) {
     *best_score = score;
@@ -107,6 +104,11 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  /* Breaking the 50-move rule or threefold repetition rule forces a draw */
+  if (state->halfmove > 50 || is_repeated_position(job->history, state->hash, 3)) {
+    return DRAW_SCORE;
+  }
+
   /* The first phase of searching a node involves trying to find ways to return
      early, before the work of generating and searching all the possible moves
      for the node. */
@@ -133,7 +135,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   tt_type_e type = TT_ALPHA;
 
   /* Try to get a cutoff from a killer move */
-  if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
+  if (OPT_KILLER && (depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
                   &job->killer_moves[depth], &best_move, &type, 0)) {
     update_result(job, state, depth, &job->killer_moves[depth], best_score);
@@ -142,7 +144,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Probe the transposition table, but only at higher levels */
   ttentry_s *tte = 0;
-  if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
+  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth, use
      the result from the tt. At root level, accapt only exact and copy out the
@@ -216,6 +218,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
      root to mate, so that the shortest path to mate has the strongest score.
      Stalemate causes a draw score of zero, which is a goal for the losing side */
   if (n_legal_moves == 0) {
+    type = TT_EXACT;
     if (in_check(state)) {
       alpha = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
