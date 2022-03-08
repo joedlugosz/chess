@@ -219,6 +219,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
      root to mate, so that the shortest path to mate has the strongest score.
      Stalemate causes a draw score of zero, which is a goal for the losing side */
   if (n_legal_moves == 0) {
+    type = TT_EXACT;
     if (in_check(state)) {
       alpha = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
