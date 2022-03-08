@@ -35,25 +35,19 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
   copy_state(&next_state, state);
   make_move(&next_state, move);
 
-  /* Can't move into check */
+  /* Can't move into check. All other moves are legal options */
   if (in_check(&next_state)) return 0;
-
-  /* All other moves are legal options */
   if (n_legal) (*n_legal)++;
 
-  score_t score;
-  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
-  if (next_state.halfmove > 50 || is_repeated_position(job->history, next_state.hash, 3)) {
-    score = DRAW_SCORE;
-  } else {
-    /* Normal search - recurse into search_ply */
-    history_push(job->history, state->hash, move);
-    change_player(&next_state);
-    /* Move gives check */
-    if (in_check(&next_state)) move->result |= CHECK;
-    score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
-    history_pop(job->history);
-  }
+  history_push(job->history, state->hash, move);
+  change_player(&next_state);
+
+  /* If this move gives check */
+  if (in_check(&next_state)) move->result |= CHECK;
+
+  score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
+
+  history_pop(job->history);
 
   if (score > *best_score) {
     *best_score = score;
@@ -109,6 +103,11 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Count leaf nodes at depth 0 only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
+
+  /* Breaking the 50-move rule or threefold repetition rule forces a draw */
+  if (state->halfmove > 50 || is_repeated_position(job->history, state->hash, 3)) {
+    return DRAW_SCORE;
+  }
 
   /* The first phase of searching a node involves trying to find ways to return
      early, before the work of generating and searching all the possible moves
