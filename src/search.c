@@ -14,6 +14,9 @@
 #include "options.h"
 #include "pv.h"
 
+#define OPT_KILLER 1
+#define OPT_HASH 1
+
 enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
 move_s mate_move = {.result = CHECK | MATE};
@@ -133,7 +136,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   tt_type_e type = TT_ALPHA;
 
   /* Try to get a cutoff from a killer move */
-  if ((depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
+  if (OPT_KILLER && (depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
                   &job->killer_moves[depth], &best_move, &type, 0)) {
     update_result(job, state, depth, &job->killer_moves[depth], best_score);
@@ -142,7 +145,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Probe the transposition table, but only at higher levels */
   ttentry_s *tte = 0;
-  if (depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
+  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth, use
      the result from the tt. At root level, accapt only exact and copy out the
