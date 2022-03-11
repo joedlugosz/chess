@@ -15,6 +15,7 @@ int ply = 50;
 void bench_search(int depth) {
   state_s state;
   struct history history;
+  memset(&history, 0, sizeof(history));
   reset_board(&state);
 
   clock_t total = 0;
