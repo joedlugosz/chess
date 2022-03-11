@@ -35,7 +35,7 @@ const info_line_s lines[] = {
 
 /* Prints a program info banner */
 void print_program_info() {
-  char buf[COL_WIDTH * sizeof(lines)];
+  char buf[1000];
   printf("\n");
   for (int i = 0; i < sizeof(lines) / sizeof(*lines); i++) {
     if (lines[i].key[0]) {
