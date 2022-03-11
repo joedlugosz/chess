@@ -147,6 +147,12 @@ static bitboard_t get_pawn_moves(struct position *position, enum square square,
            (position->player_a[opponent[player]] |
             (position->en_passant &
              ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
+
+  /* Claim for pawns is only taking moves */
+  position->pawn_claim[player] |=
+      pawn_takes[player][square] & ~position->player_a[player];
+  if (!moves) position->blocked_pawns[player]++;
+
   return moves;
 }
 
@@ -314,6 +320,8 @@ void calculate_moves(struct position *position) {
   position->claim[BLACK] = 0;
   position->mobility[WHITE] = 0;
   position->mobility[BLACK] = 0;
+  position->blocked_pawns[WHITE] = 0;
+  position->blocked_pawns[BLACK] = 0;
 
   for (int8_t index = 0; index < N_PIECES; index++) {
     enum square square = position->piece_square[index];
@@ -360,7 +368,7 @@ void calculate_moves(struct position *position) {
       position->claim[player] |=
           pawn_takes[player][square] & ~position->player_a[player];
     }
-    position->mobility[player] += pop_count(moves) * mobility;
+    position->mobility[player] += pop_count(moves);
   }
 
   for (int8_t index = 0; index < N_PIECES; index++) {
@@ -378,7 +386,7 @@ void calculate_moves(struct position *position) {
     moves &= ~position->player_a[player];
     position->moves[index] = moves;
     position->claim[player] |= moves;
-    position->mobility[player] += pop_count(moves) * mobility;
+    position->mobility[player] += pop_count(moves);
   }
 }
 
