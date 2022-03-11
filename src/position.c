@@ -165,11 +165,6 @@ static inline void clear_king_castling_rights(struct position *position,
   }
 }
 
-static inline void evaluate_pawns(struct position *position) {
-  position->pawns[WHITE] = evaluate_player_pawns(position, WHITE);
-  position->pawns[BLACK] = evaluate_player_pawns(position, BLACK);
-}
-
 /* Make the rook's move which is a counterpart to the king's castling move. */
 static inline void do_rook_castling_move(struct position *position,
                                          enum square from, enum square to) {
@@ -212,7 +207,8 @@ void make_move(struct position *position, struct move *move) {
    */
 
   uint8_t moving_piece = position->piece_at[move->from];
-  ASSERT(piece_player[moving_piece] == position->turn);
+  uint8_t moving_player = piece_player[moving_piece];
+  ASSERT(moving_player == position->turn);
   int8_t moving_index = position->index_at[move->from];
   remove_piece(position, move->from);
   add_piece(position, move->to, moving_piece, moving_index);
@@ -282,18 +278,18 @@ void make_move(struct position *position, struct move *move) {
   /* Pre-calculate moves for all pieces */
   calculate_moves(position);
 
-  bitboard_t pawn_block =
-      (position->a[PAWN] << 8) | (position->a[PAWN + N_PIECE_T] >> 8);
-  if (piece_type[moving_piece] == PAWN ||
-      (victim_piece != EMPTY && piece_type[victim_piece] == PAWN) ||
-      (square2bit[move->to] & pawn_block) ||
-      (square2bit[move->from] & pawn_block) ||
-      (square2bit[move->to] &
-           position->pawn_claim[opponent[piece_player[moving_piece]]] ||
-       (square2bit[move->to] & position->en_passant) ||
-       move->promotion > PAWN)) {
-    evaluate_pawns(position);
-  }
+  /* Player's doubled pawn count may change if their pawn captures or is
+     promoted */
+  if (piece_type[moving_piece] == PAWN &&
+      (victim_piece != EMPTY || square2bit[move->to] == position->en_passant ||
+       is_promotion_move(position, move->from, move->to)))
+    count_player_doubled_pawns(position, moving_player);
+
+  /* Opponent's doubled pawn count may change if one of their pawns is captured
+   */
+  if ((victim_piece != EMPTY && piece_type[victim_piece] == PAWN) ||
+      (square2bit[move->to] == position->en_passant))
+    count_player_doubled_pawns(position, !moving_player);
 
   /* Test for check on both sides */
   for (enum player player = 0; player < N_PLAYERS; player++) {
