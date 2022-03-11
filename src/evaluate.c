@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "evaluate.h"
 #include "options.h"
 #include "position.h"
 
@@ -82,76 +83,25 @@ const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
 static inline score_t evaluate_player(const struct position *position,
                                       enum player player) {
   int score = 0;
-  int player_first_piece = N_PIECE_T * player;
-  int opponent_first_piece = N_PIECE_T * !player;
-
-  /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  bitboard_t pieces = position->b[PAWN + player_first_piece];
-  while (pieces) {
-    if (pop_count(pieces & 0xffull) > 1) score -= doubled_pawn_penalty;
-    pieces >>= 8;
-  }
-
-  /* Blocked pawns - look for pawns with no moves */
-  pieces = position->a[PAWN + player_first_piece];
-  while (pieces) {
-    enum square square = bit2square(take_next_bit_from(&pieces));
-
-    /* Penalise blocked pawns which have no moves. */
-    if (pop_count(get_moves(position, square)) == 0ull)
-      score -= blocked_pawn_penalty;
-
-    /* If the pawn is a passed pawn, reward its advancement across the board to
-     * encourage promotion even when promotion is beyond the search horizon. */
-    if (OPT_EVAL_PASSED && !(front_spans[player][square] &
-                             position->a[PAWN + opponent_first_piece])) {
-      int file = square / 8;
-      int advancement = player ? (6 - file) : (file - 1);
-      score += advancement * passed_pawn_advance_bonus;
-    }
-  }
-
-  return score;
-}
-
-/* Evaluate one player's pieces */
-static inline score_t evaluate_player(struct position *position,
-                                      enum player player) {
-  int score = 0;
-  // bitboard_t pieces;
-
-  // /* Materials */
-  // for (int i = 0; i < N_PIECE_T; i++) {
-  //   score += piece_weights[i] * pop_count(position->a[i + pt_first]);
-  // }
-  // ASSERT(score == position->material[player]);
-
-  // /* Mobility - for each piece count the number of moves */
-  // int mobility_score = 0;
-  // pieces = position->player_a[player];
-  // while (pieces) {
-  //   square_e pos = bit2square(take_next_bit_from(&pieces));
-  //   mobility_score += mobility * pop_count(get_moves(position, pos));
-  // }
-  // ASSERT(mobility_score == position->mobility[player]);
-  // score += mobility_score;
-
-  score = position->material[player] + position->mobility[player] * mobility;
-  score_t pawns = evaluate_player_pawns(position, player);
-  ASSERT(pawns == position->pawns[player]);
-  score += pawns;
-  // /* Random element */
-  // if (randomness) {
-  //   score += rand() % randomness;
-  // }
-
   /* Penalise moving queen before other pieces */
   if (OPT_OPENING_GUIDE && position->phase == OPENING) {
     score -= opening_pieces_left(position, player) * unmoved_penalty;
     if (has_queen_moved(position, player)) score -= queen_penalty;
   }
+  return score + position->material[player] +
+         position->mobility[player] * mobility_bonus +
+         position->doubled_pawns[player] * doubled_pawn_penalty +
+         position->blocked_pawns[player] * blocked_pawn_penalty;
+}
+/* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
+void count_player_doubled_pawns(struct position *position, enum player player) {
+  position->doubled_pawns[player] = 0;
+  bitboard_t pieces = position->b[PAWN + N_PIECE_T * player];
 
-  return score;
+  while (pieces) {
+    if (pop_count(pieces & 0xffull) > 1) position->doubled_pawns[player]++;
+    pieces >>= 8;
+  }
 }
 
 int is_endgame(const struct position *position) {
