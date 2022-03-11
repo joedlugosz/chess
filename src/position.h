@@ -131,7 +131,9 @@ struct position {
   int ply;                         /* 4 */
   short material[N_PLAYERS];
   short mobility[N_PLAYERS];
-  short pawns[N_PLAYERS];
+  short blocked_pawns[N_PLAYERS];
+  short doubled_pawns[N_PLAYERS];
+  short passed_pawns[N_PLAYERS];
   enum phase phase;
 };
 
