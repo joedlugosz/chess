@@ -281,14 +281,12 @@ void make_move(struct position *position, struct move *move) {
   /* Player's doubled pawn count may change if their pawn captures or is
      promoted */
   if (piece_type[moving_piece] == PAWN &&
-      (victim_piece != EMPTY || square2bit[move->to] == position->en_passant ||
-       is_promotion_move(position, move->from, move->to)))
+      (move->result & (CAPTURED | PROMOTED)))
     count_player_doubled_pawns(position, moving_player);
 
   /* Opponent's doubled pawn count may change if one of their pawns is captured
    */
-  if ((victim_piece != EMPTY && piece_type[victim_piece] == PAWN) ||
-      (square2bit[move->to] == position->en_passant))
+  if ((move->result & CAPTURED) && piece_type[victim_piece] == PAWN)
     count_player_doubled_pawns(position, !moving_player);
 
   /* Test for check on both sides */
