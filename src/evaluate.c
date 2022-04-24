@@ -28,6 +28,9 @@ int piece_weights[N_PIECE_T] = {100, 500, 300, 300, 900, 2000};
 int mobility = 10;
 int doubled = 50;
 int blocked = 50;
+int passed_advance = 50;
+
+bitboard_t front_spans[N_PLAYERS][N_SQUARES];
 
 /* Small random value 0-9 */
 int randomness = 0;
@@ -62,37 +65,43 @@ const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
 static inline score_t evaluate_player(const struct position *position,
                                       enum player player) {
   int score = 0;
-  int pt_first;
-  bitboard_t pieces;
 
-  pt_first = N_PIECE_T * player;
+  enum piece player_first = N_PIECE_T * player;
+  enum piece opponent_first = N_PIECE_T * !player;
 
   /* Materials */
   for (int i = 0; i < N_PIECE_T; i++) {
-    score += piece_weights[i] * pop_count(position->a[i + pt_first]);
+    score += piece_weights[i] * pop_count(position->a[i + player_first]);
   }
+
   /* Mobility - for each piece count the number of moves */
-  pieces = position->player_a[player];
+  bitboard_t pieces = position->player_a[player];
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
     score += mobility * pop_count(get_moves(position, square));
   }
+
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  pieces = position->b[PAWN + pt_first];
+  pieces = position->b[PAWN + player_first];
   while (pieces) {
-    if (pop_count(pieces & 0xffull) > 1) {
-      score -= doubled;
-    }
+    if (pop_count(pieces & 0xffull) > 1) score -= doubled;
     pieces >>= 8;
   }
-  /* Blocked pawns - look for pawns with no moves */
-  pieces = position->a[PAWN + pt_first];
+
+  /* Blocked and passed pawns */
+  pieces = position->a[PAWN + player_first];
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
-    if (pop_count(get_moves(position, square) == 0ull)) {
-      score -= blocked;
+
+    if (pop_count(get_moves(position, square) == 0ull)) score -= blocked;
+
+    if (!(front_spans[player][square] & position->a[PAWN + opponent_first])) {
+      int file = square / 8;
+      int advancement = player ? (6 - file) : (file - 1);
+      score += advancement * passed_advance;
     }
   }
+
   /* Random element */
   if (randomness) {
     score += rand() % randomness;
@@ -110,6 +119,22 @@ int is_endgame(const struct position *position) {
 score_t evaluate(const struct position *position) {
   return (evaluate_player(position, WHITE) - evaluate_player(position, BLACK)) *
          player_factor[position->turn];
+}
+
+void evaluate_init() {
+  for (int square = B1; square <= H7; square++) {
+    int rank = square & 7;
+    int file = square & ~7;
+    bitboard_t fs;
+    if (rank == 0)
+      fs = 0x0303030303030303ull;
+    else if (rank == 7)
+      fs = 0xc0c0c0c0c0c0c0c0ull;
+    else
+      fs = 0x0707070707070707ull << (rank - 1);
+    front_spans[WHITE][square] = fs << (file + 8);
+    front_spans[BLACK][square] = fs >> (64 - file);
+  }
 }
 
 /* Tests */

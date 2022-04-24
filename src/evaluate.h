@@ -10,6 +10,7 @@ struct position;
 /* Position evaluation score */
 typedef int score_t;
 
+void evaluate_init();
 score_t evaluate(const struct position *position);
 int is_endgame(const struct position *position);
 #endif /* EVAL_H */
