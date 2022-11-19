@@ -2,6 +2,9 @@
 
 # Build information
 add_subdirectory (buildinfo)
+include(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX("execinfo.h" HAVE_EXECINFO_H)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/compiler.h.in" "${CMAKE_CURRENT_BINARY_DIR}/compiler.h" @ONLY)
 
 # Most of the app
 set (
@@ -30,6 +33,8 @@ if (WIN32)
 else ()
   list (APPEND SOURCES posix.c)
 endif ()
+
+include_directories(common ${CMAKE_CURRENT_BINARY_DIR})
 
 # Library target
 add_library (common STATIC ${SOURCES})
