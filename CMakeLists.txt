@@ -4,7 +4,7 @@
 # Configurations: Release, Debug, Gprof (gcc only)
 #
 
-cmake_minimum_required (VERSION 3.7)
+cmake_minimum_required (VERSION 3.6)
 
 if (POLICY CMP0115)
   cmake_policy (SET CMP0115 NEW)
