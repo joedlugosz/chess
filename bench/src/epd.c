@@ -1,12 +1,28 @@
+/* 
+ * bench/src/epd.c
+ * Runner for EPD test cases
+ * Builds executable bench_epd
+ * 
+ * Runs a set of EPD test cases from a specified file, and prints the results.
+ */
+
 #include "cmdline.h"
 #include "debug.h"
 #include "epd.h"
 #include "hash.h"
 #include "state.h"
 
+void display_usage(void);
+
+/* 
+ * Variables for program arguments 
+ */
 int depth = 4;
 char filename[1000] = "";
 
+/* 
+ * Callbacks for program arguments
+ */
 int arg_depth(struct cmdline *cmdl) {
   const char *arg = cmdline_get(cmdl);
   if (sscanf(arg, "%d", &depth) != 1) return 1;
@@ -18,13 +34,12 @@ int arg_filename(struct cmdline *cmdl) {
   return 0;
 }
 
-void usage(void);
-
 int arg_help(struct cmdline *cmdl) {
-  usage();
+  display_usage();
   return 1;
 }
 
+/* Table of program arguments */
 const struct cmdline_def arg_defs[] = {
   { 0, "", arg_filename, "Input EPD filename", "FILE" },
   { 'd', "depth", arg_depth, "Search depth", "N" },
@@ -33,7 +48,7 @@ const struct cmdline_def arg_defs[] = {
   { 0, "", 0, "" },
 };
 
-void usage(void) {
+void display_usage(void) {
   printf("Usage:\n\n     bench_epd FILE [OPTIONS]\n\n");
   cmdline_show(arg_defs);
   printf("\n");
@@ -50,7 +65,7 @@ int main(int argc, const char *argv[]) {
 
   if (!filename[0]) {
     printf("\nSpecify an input file\n");
-    usage();
+    display_usage();
     return 1;
   }
 

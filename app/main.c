@@ -1,3 +1,7 @@
+/*  app/main.c
+ *  Entry point to the chess engine app
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
