@@ -27,6 +27,12 @@ if (Git_FOUND)
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   set (git_version "${git_version_tag}-${git_branch_name}-${git_commit_short}")
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" show -s --format="%cd" --date=format:"%d/%M/%Y"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE source_date
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 else ()
   set (git_version "Unknown")
 endif ()

@@ -5,6 +5,7 @@ extern const char app_name[];
 extern const char git_version[];
 extern const char os_name[];
 extern const char target_name[];
+extern const char source_date[];
 extern const char build_date[];
 extern const char build_config[];
 extern const char compiler_options[];
