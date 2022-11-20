@@ -1,6 +1,5 @@
-# The app
-
-# Executable target
+# app/CMakeLists.txt
+# Target to make the application
 add_executable (chess main.c)
 target_link_libraries (chess common)
 target_include_directories (chess PRIVATE ../src)

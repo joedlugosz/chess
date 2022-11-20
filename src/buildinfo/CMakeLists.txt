@@ -1,9 +1,11 @@
-# Build information
+# CMake recipe for `libbuildinfo` which contains information about the build
 
-# Generate a source file containing build information in the binary dir from a
-# template in the source dir. `cmake -P` sets all directory variables to the working
-# dir, so the binary dir is supplied as an argument, and the working directory
-# is the source dir to access git features etc.
+# Generate buildinfo.c
+# buildinfo.c contains variables with the build information. As a generated
+# file, it is a build artifact and not part of the repo, so it is placed in the
+# binary directory. `cmake -P` sets all directory variables to the working
+# dir, so the binary dir is supplied as an argument, and the supplied working directory
+# is the source dir to access git information.
 add_custom_target (
   buildinfo_src ALL
   BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
