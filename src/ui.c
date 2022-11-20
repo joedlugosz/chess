@@ -200,12 +200,11 @@ static inline void do_ai_move(engine_s *engine) {
     return;
   }
 
-  print_ai_move(engine, &result);
-
   /* Make the AI move */
   make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
   mark_time(engine);
+  print_ai_move(engine, &result);
   finished_move(engine);
   print_game_state(engine);
   reset_time(engine);

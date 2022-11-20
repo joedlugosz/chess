@@ -31,12 +31,12 @@ get_target_property (value buildinfo COMPILE_OPTIONS)
 if (value)
   list (APPEND flags_list "${value}")
 endif ()
-# flags is a space separated string with the contents of flags_list,
-# trimmed of any unnecessary spaces or empty items
+# flags is a space separated string with the contents of flags_list
+# trimmed of any unnecessary spaces or empty items and omitting warning flags
 set (flags "")
 foreach (flag ${flags_list})
   string (STRIP ${flag} flag)
-  if (NOT ${flag} STREQUAL "")
+  if ((NOT ${flag} STREQUAL "") AND (NOT ${flag} MATCHES "^-W"))
     string (CONCAT flags "${flags}${flag} ")
   endif ()
 endforeach ()

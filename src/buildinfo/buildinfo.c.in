@@ -7,6 +7,7 @@ const char git_version[] = "@git_version@";
 const char os_name[] = "@os_name@";
 const char target_name[] = "@target_name@";
 
+const char source_date[] = "@source_date@";
 const char build_date[] = __DATE__;
 
 /* Supplied at compiler invocation - as quoted strings */
