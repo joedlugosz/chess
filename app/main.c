@@ -21,7 +21,6 @@ void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   debug_init();
-  debug_print("start\n");
   setbuf(stdout, NULL);
   setup_signal_handlers();
   init_board();

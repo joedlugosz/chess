@@ -9,27 +9,28 @@
 /* Program info data */
 enum { COL_WIDTH = 50 };
 
-typedef struct info_line_s_ {
+struct info_line {
   char key[COL_WIDTH];
   const char *value;
-} info_line_s;
+};
 
 /* clang-format off */
-const info_line_s lines[] = {
-  { "",         0                           },
-  { "Joe's Chess Engine", 0                 },
-  { "",         0                           },
-  { "Version",  git_version                 },
-  { "Config",   build_config                },
-  { "Built",    build_date                  },
-  { "",         0                           },
-  { "Compiler", compiler_name               },
-  { "Options",  compiler_options            },
-  { "Target",   target_name                 },
-  { "OS",       os_name                     },
-  { "",         0                           },
-  { "Type 'help' for a list of commands", 0 },
-  { "",         0                           }
+const struct info_line lines[] = {
+  { "",              0                           },
+  { "Joe's Chess Engine", 0                      },
+  { "",              0                           },
+  { "Version",       git_version                 },
+  { "Source date",   source_date                 },
+  { "",              0                           },
+  { "Configuration", build_config                },
+  { "Compiler",      compiler_name               },
+  { "Options",       compiler_options            },
+  { "Target",        target_name                 },
+  { "OS",            os_name                     },
+  { "Build date",    build_date                  },
+  { "",              0                           },
+  { "Type 'help' for a list of commands", 0      },
+  { "",              0                           }
 };
 /* clang-format on */
 
