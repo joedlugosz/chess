@@ -11,8 +11,8 @@
 
 #include "io.h"
 #include "os.h"
-#include "search.h"
 #include "position.h"
+#include "search.h"
 
 /* File handle used for logging */
 FILE *logfile;

@@ -213,10 +213,12 @@ bitboard_t get_attacks(struct position *position, enum square target, enum playe
   attacks = pawn_takes[opponent[attacking]][target] & position->a[base + PAWN];
   attacks |= knight_moves[target] & position->a[base + KNIGHT];
   attacks |= king_moves[target] & position->a[base + KING];
-  bitboard_t sliders = position->a[base + ROOK] | position->a[base + BISHOP] | position->a[base + QUEEN];
+  bitboard_t sliders =
+      position->a[base + ROOK] | position->a[base + BISHOP] | position->a[base + QUEEN];
   while (sliders) {
     bitboard_t attacker = take_next_bit_from(&sliders);
-    if (target_mask & position->moves[(int)position->index_at[bit2square(attacker)]]) attacks |= attacker;
+    if (target_mask & position->moves[(int)position->index_at[bit2square(attacker)]])
+      attacks |= attacker;
   }
   return attacks;
 }
@@ -255,9 +257,10 @@ void calculate_moves(struct position *position) {
         /* Apply block to pawn advances */
         moves = pawn_advances[player][square] & ~block;
         /* Add actual taking moves */
-        moves |= pawn_takes[player][square] &
-                 (position->player_a[opponent[player]] |
-                  (position->en_passant & ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
+        moves |=
+            pawn_takes[player][square] &
+            (position->player_a[opponent[player]] |
+             (position->en_passant & ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
         /* Claim for pawns is only taking moves */
         position->claim[player] |= pawn_takes[player][square] & ~position->player_a[player];
       } break;

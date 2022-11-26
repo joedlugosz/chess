@@ -33,7 +33,6 @@ struct engine {
   struct history history;
 
   int depth;
-
 };
 
 #endif /* ENGINE_H */

@@ -10,8 +10,8 @@
 #include <time.h>
 
 #include "evaluate.h"
-#include "search.h"
 #include "position.h"
+#include "search.h"
 
 struct pv;
 

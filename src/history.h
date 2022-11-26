@@ -5,8 +5,8 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
-#include "search.h"
 #include "position.h"
+#include "search.h"
 
 /* Position history stack */
 struct history {

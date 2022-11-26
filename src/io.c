@@ -10,9 +10,9 @@
 #include "fen.h"
 #include "hash.h"
 #include "os.h"
+#include "position.h"
 #include "pv.h"
 #include "search.h"
-#include "position.h"
 
 #if (TERM_UNICODE)
 #  define FULL_SQUARE "\u2b24"
