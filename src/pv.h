@@ -22,7 +22,7 @@ struct pv {
    parent search node to be the updating move at index 0, followed by the PV history
    for this node from index 1 onwards. In this way, the history is built up, with
    the root move at index 0 */
-static inline void pv_add(struct pv *parent, struct pv *child, struct move *move) {
+static inline void pv_add(struct pv *parent, const struct pv *child, struct move *move) {
   memcpy(&parent->moves[0], move, sizeof(parent->moves[0]));
   memcpy(&parent->moves[1], &child->moves[0], child->length * sizeof(parent->moves[0]));
   parent->length = child->length + 1;

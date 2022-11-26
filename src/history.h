@@ -18,6 +18,6 @@ struct history {
 void history_push(struct history *history, hash_t hash, struct move *move);
 hash_t history_pop(struct history *history);
 void history_clear(struct history *history);
-int is_repeated_position(struct history *history, hash_t hash, int moves);
+int is_repeated_position(const struct history *history, hash_t hash, int moves);
 
 #endif /* HISTORY_H */

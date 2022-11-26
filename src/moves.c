@@ -97,7 +97,7 @@ bitboard_t pawn_advances[N_PLAYERS][N_SQUARES], pawn_takes[N_PLAYERS][N_SQUARES]
 /* Returns the valid rook moves for a given position, taking into account
    blockages by other pieces.  Also returns moves where rooks can take their
    own side's pieces (these are filtered out elsewhere). */
-bitboard_t get_rook_moves(struct position *position, enum square a_square) {
+static bitboard_t get_rook_moves(struct position *position, enum square a_square) {
   /* A-stack */
   /* The shift that is required to move the rank containing square down to rank zero */
   int a_shift = a_square & ~7ul;
@@ -201,7 +201,7 @@ bitboard_t get_king_moves(struct position *position, enum square from, enum play
 }
 
 /* Returns the set of all pieces that can attack a given position */
-bitboard_t get_attacks(struct position *position, enum square target, enum player attacking) {
+bitboard_t get_attacks(const struct position *position, enum square target, enum player attacking) {
   bitboard_t attacks = 0;
   bitboard_t target_mask = square2bit[target];
   int base = attacking * N_PIECE_T;

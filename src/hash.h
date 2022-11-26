@@ -50,7 +50,8 @@ void tt_zero(void);
 double tt_collisions(void);
 void tt_init(void);
 void tt_clear(void);
-ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, struct move *best_move);
+ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score,
+                     const struct move *best_move);
 ttentry_s *tt_probe(hash_t hash);
 
 #endif /* HASH_H */

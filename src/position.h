@@ -153,13 +153,13 @@ void reset_board(struct position *position);
 void setup_board(struct position *, const enum piece *, enum player, castle_rights_t, bitboard_t,
                  int, int);
 
-bitboard_t get_attacks(struct position *position, enum square target, enum player attacking);
+bitboard_t get_attacks(const struct position *position, enum square target, enum player attacking);
 void make_move(struct position *position, struct move *move);
 void change_player(struct position *position);
-int check_legality(struct position *position, struct move *move);
+int check_legality(const struct position *position, const struct move *move);
 
 /* Two moves are identical */
-static inline int move_equal(struct move *move1, struct move *move2) {
+static inline int move_equal(const struct move *move1, const struct move *move2) {
   return (move1 && move2 && move1->from == move2->from && move1->to == move2->to &&
           move1->promotion == move2->promotion);
 }
@@ -182,25 +182,28 @@ static inline void copy_position(struct position *dst, const struct position *sr
   memcpy(dst, src, sizeof(struct position));
 }
 /* Return the set of squares that the piece on the given square can move to */
-static inline bitboard_t get_moves(struct position *position, enum square square) {
+static inline bitboard_t get_moves(const struct position *position, enum square square) {
   return position->moves[(int)position->index_at[square]];
 }
 /* Return the set of squares containing the moving player's pieces */
-static inline bitboard_t get_my_pieces(struct position *position) {
+static inline bitboard_t get_my_pieces(const struct position *position) {
   return position->player_a[position->turn];
 }
 /* Return the set of squares containing the non-moving player's pieces */
-static inline bitboard_t get_opponents_pieces(struct position *position) {
+static inline bitboard_t get_opponents_pieces(const struct position *position) {
   return position->player_a[position->turn];
 }
 /* The player to move is in check */
-static inline int in_check(struct position *position) { return position->check[position->turn]; }
+static inline int in_check(const struct position *position) {
+  return position->check[position->turn];
+}
 /* The move goes to the back row, true even if not a pawn. */
-static inline int is_promotion_move(struct position *position, enum square from, enum square to) {
+static inline int is_promotion_move(const struct position *position, enum square from,
+                                    enum square to) {
   return ((square2bit[to] & 0xff000000000000ffull) != 0);
 }
 /* There is no piece at the given square */
-static inline int no_piece_at_square(struct position *position, enum square square) {
+static inline int no_piece_at_square(const struct position *position, enum square square) {
   return ((square2bit[square] & position->total_a) == 0);
 }
 

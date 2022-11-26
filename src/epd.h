@@ -7,7 +7,7 @@
 
 struct position;
 
-int epd_run(struct position *position, char *epd_line);
+int epd_run(const char *epd_line, int depth);
 int epd_test(const char *filename, int depth);
 
 #endif  // EPD_H
