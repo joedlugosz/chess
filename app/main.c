@@ -12,7 +12,7 @@
 #include "os.h"
 #include "ui.h"
 
-void parse_command_line_args(engine_s *e, int argc, char *argv[]) {
+void parse_command_line_args(struct engine *e, int argc, char *argv[]) {
   for (int arg = 1; arg < argc; arg++) {
     if (strcmp(argv[arg], "x") == 0) {
       enter_xboard_mode(e);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   /* Genuine(ish) random numbers are used where repeatability is not desirable */
   srand(clock());
 
-  engine_s engine;
+  struct engine engine;
   init_engine(&engine);
   parse_command_line_args(&engine, argc, argv);
   run_engine(&engine);

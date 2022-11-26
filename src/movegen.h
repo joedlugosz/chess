@@ -19,9 +19,9 @@ typedef struct perft_s_ {
   unsigned long checkmates;
 } perft_s;
 
-int generate_search_movelist(state_s *s, movelist_s **);
-int generate_quiescence_movelist(state_s *s, movelist_s **);
-void perft_total(state_s *state, int depth);
-void perft_divide(state_s *state, int depth);
+int generate_search_movelist(struct position *s, struct move_list **);
+int generate_quiescence_movelist(struct position *s, struct move_list **);
+void perft_total(struct position *position, int depth);
+void perft_divide(struct position *position, int depth);
 
 #endif /* MOVEGEN_H */

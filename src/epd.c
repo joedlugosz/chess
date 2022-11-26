@@ -17,7 +17,7 @@
 #include "fen.h"
 #include "history.h"
 #include "search.h"
-#include "state.h"
+#include "position.h"
 
 enum {
   EPD_CMD_LENGTH_MAX = 1000,
@@ -99,9 +99,9 @@ void print_results(void) {
 }
 
 /* "bm" <MOVE> - best move is MOVE - FAIL if search result is different */
-int epd_bm(char *args, search_result_s *result) {
+int epd_bm(char *args, struct search_result *result) {
   char san[10];
-  format_move_san(san, &result->move);
+  format_struct movean(san, &result->move);
 
   char *bm = strtok(args, " ");
   while (bm) {
@@ -116,16 +116,16 @@ int epd_bm(char *args, search_result_s *result) {
 }
 
 /* "dm" <N> - direct mate in N moves - read the argument */
-int epd_dm_pre(char *args, search_result_s *result) {
+int epd_dm_pre(char *args, struct search_result *result) {
   if (sscanf(args, "%d", &direct_mate) != 1) return 1;
   return 0;
 }
 
 /* "dm" <N> - direct mate in N moves - FAIL if search result > N */
-int epd_dm_post(char *args, search_result_s *result) { return (full_move > direct_mate) ? 1 : 0; }
+int epd_dm_post(char *args, struct search_result *result) { return (full_move > direct_mate) ? 1 : 0; }
 
 /* "id" - set id of case */
-int epd_id(char *args, search_result_s *result) {
+int epd_id(char *args, struct search_result *result) {
   char *src = args;
   while (isspace(*src)) src++;
   if (*src == '\"') src++;
@@ -142,10 +142,10 @@ int epd_id(char *args, search_result_s *result) {
 }
 
 /* Handle EPD comments with no effect */
-int epd_comment(char *args, search_result_s *result) { return 0; }
+int epd_comment(char *args, struct search_result *result) { return 0; }
 
 /* EPD command function */
-typedef int (*epd_fn)(char *, search_result_s *);
+typedef int (*epd_fn)(char *, struct search_result *);
 
 /* Entry in a table of EPD command definitions */
 struct epd_cmd {
@@ -184,7 +184,7 @@ epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
 
 /* Run an EPD case */
 int epd_run(char *epd_line, int depth) {
-  state_s position;
+  struct position position;
   int pass = 1;
   direct_mate = 0;
 
@@ -230,8 +230,8 @@ int epd_run(char *epd_line, int depth) {
   memset(&history, 0, sizeof(history));
   full_move = 0;
 
-  search_result_s first_result;
-  search_result_s result;
+  struct search_result first_result;
+  struct search_result result;
   if (direct_mate == 0) {
     search(depth, &history, &position, &result, show_board);
     memcpy(&first_result, &result, sizeof(first_result));

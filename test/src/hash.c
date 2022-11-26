@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "fen.h"
-#include "state.h"
+#include "position.h"
 #include "test.h"
 
 void test_prng(void) {
@@ -40,19 +40,19 @@ void test_prng(void) {
   TEST_ASSERT(!collision, buf);
 }
 /*
-void test_hash_state(state_s *state) {
+void test_hash_position(struct position *position) {
   char buf[1000];
   char fen[100];
-  get_fen(state, fen, sizeof(fen));
+  get_fen(position, fen, sizeof(fen));
 
-  state_s state_b;
-  load_fen(&state_b, fen);
+  struct position position_b;
+  load_fen(&position_b, fen);
 
   sprintf(buf, "Hash can be re-created FEN: %s\n", fen);
-  TEST_ASSERT(state->hash == state_b.hash, buf);
+  TEST_ASSERT(position->hash == position_b.hash, buf);
 
-  sprintf(buf, "State can be re-created FEN: %s\n", fen);
-  TEST_ASSERT(memcmp(state, &state_b, sizeof(state)) == 0, buf);
+  sprintf(buf, "position can be re-created FEN: %s\n", fen);
+  TEST_ASSERT(memcmp(position, &position_b, sizeof(position)) == 0, buf);
 }
 */
 int main(void) {

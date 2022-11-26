@@ -12,7 +12,7 @@
 #include "os.h"
 #include "pv.h"
 #include "search.h"
-#include "state.h"
+#include "position.h"
 
 #if (TERM_UNICODE)
 #  define FULL_SQUARE "\u2b24"
@@ -54,32 +54,32 @@ const char player_text[N_PLAYERS][6] = {"WHITE", "BLACK"};
  *  Instruction encoding and decoding
  */
 
-/* Parse a string with square coordinates to a square_e */
-int parse_square(const char *buf, square_e *square) {
+/* Parse a string with square coordinates to a enum square */
+int parse_square(const char *buf, enum square *square) {
   const char *ptr = buf;
   *square = NO_SQUARE;
   if (*ptr == 0) return 1;
   if (!isalpha(*ptr)) return 1;
-  *square = (square_e)(tolower(*ptr) - 'a');
+  *square = (enum square)(tolower(*ptr) - 'a');
   if (*square > 7) return 1;
   ptr++;
   if (*ptr == 0) return 1;
   if (!isdigit(*ptr)) return 1;
   if (*ptr > '8') return 1;
-  *square += 8 * (square_e)(*ptr - '1');
+  *square += 8 * (enum square)(*ptr - '1');
   ptr++;
   return 0;
 }
 
-/* Parse a string with a move to a move_s */
-int parse_move(const char *buf, move_s *move) {
+/* Parse a string with a move to a struct move */
+int parse_move(const char *buf, struct move *move) {
   if (parse_square(buf, &move->from)) return 1;
   if (parse_square(buf + 2, &move->to)) return 1;
   if (buf[4] == 0) {
     move->promotion = 0;
     return 0;
   }
-  for (piece_e piece = ROOK; piece <= QUEEN; piece++) {
+  for (enum piece piece = ROOK; piece <= QUEEN; piece++) {
     if (tolower(buf[4]) == piece_letter[piece]) {
       move->promotion = piece;
       return 0;
@@ -88,8 +88,8 @@ int parse_move(const char *buf, move_s *move) {
   return 1;
 }
 
-/* Format a square_e to a string of square coords */
-int format_square(char *buf, square_e square) {
+/* Format a enum square to a string of square coords */
+int format_square(char *buf, enum square square) {
   if (square < 0 || square >= N_SQUARES) {
     buf[0] = 0;
     return -1;
@@ -101,7 +101,7 @@ int format_square(char *buf, square_e square) {
 }
 
 /* Format a move to a string in Standard Algebraic Notation */
-int format_move_san(char *buf, move_s *move) {
+int format_struct movean(char *buf, struct move *move) {
   char *ptr = buf;
 
   if (move->piece != PAWN) {
@@ -127,7 +127,7 @@ int format_move_san(char *buf, move_s *move) {
 }
 
 /* Format a move to a string in coordinate format */
-int format_move(char *buf, move_s *move, int bare) {
+int format_move(char *buf, struct move *move, int bare) {
   char *ptr = buf;
   int len;
   if ((len = format_square(ptr, move->from)) < 2) return -1;
@@ -150,7 +150,7 @@ void print_pv(FILE *f, struct pv *pv) {
   char buf[8];
   int i;
   for (i = 0; i < pv->length; i++) {
-    format_move_san(buf, &pv->moves[i]);
+    format_struct movean(buf, &pv->moves[i]);
     fprintf(f, "%s ", buf);
   }
 }
@@ -160,13 +160,13 @@ void print_pv(FILE *f, struct pv *pv) {
  */
 
 /* Print the board, current position, and other data */
-void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
+void print_board(struct position *position, bitboard_t mask1, bitboard_t mask2) {
   int rank, file;
   int term;
 
   term = is_terminal(stdout);
 
-  ttentry_s *tte = tt_probe(state->hash);
+  ttentry_s *tte = tt_probe(position->hash);
 
   if (tte) {
     mask1 = square2bit[tte->best_move.from];
@@ -183,7 +183,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     for (file = 0; file <= 7; file++)
 #endif
     {
-      int piece = state->piece_at[rank * 8 + file];
+      int piece = position->piece_at[rank * 8 + file];
       /* Print square colours if a terminal */
       if (term) {
         if (mask1 & square2bit[rank * 8 + file]) {
@@ -218,11 +218,11 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     char buf[100];
     switch (rank) {
       case 7:
-        get_fen(state, buf, sizeof(buf));
+        get_fen(position, buf, sizeof(buf));
         printf("     %s", buf);
         break;
       case 6:
-        printf("     %016llx", state->hash);
+        printf("     %016llx", position->hash);
         break;
       default:
         break;
@@ -232,7 +232,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
     if (tte) {
       switch (rank) {
         case 5:
-          format_move_san(buf, &tte->best_move);
+          format_struct movean(buf, &tte->best_move);
           printf("     %s", buf);
           break;
         case 4:
@@ -257,7 +257,7 @@ void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, 
 }
 
 /* Print a move */
-void print_move(move_s *move) {
+void print_move(struct move *move) {
   char buf[100];
   format_move(buf, move, 0);
   printf("%s\n", buf);

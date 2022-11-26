@@ -5,9 +5,9 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-struct engine_s_;
-typedef void (*ui_fn)(struct engine_s_ *);
+struct struct engine;
+typedef void (*ui_fn)(struct struct engine *);
 
-int accept_command(struct engine_s_ *, const char *);
+int accept_command(struct struct engine *, const char *);
 
 #endif /* COMMANDS_H */

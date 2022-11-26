@@ -21,23 +21,23 @@ enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 /*
  *  Clocks
  */
-static inline void reset_time(engine_s *engine) {
+static inline void reset_time(struct engine *engine) {
   engine->start_time = clock();
   engine->elapsed_time = 0;
 }
-static inline void mark_time(engine_s *engine) {
+static inline void mark_time(struct engine *engine) {
   engine->elapsed_time = clock() - engine->start_time;
 }
-static inline clock_t get_time(engine_s *engine) { return engine->elapsed_time; }
+static inline clock_t get_time(struct engine *engine) { return engine->elapsed_time; }
 
-static inline int ai_turn(engine_s *engine) {
+static inline int ai_turn(struct engine *engine) {
   if (engine->game.turn != engine->mode)
     return 0;
   else
     return 1;
 }
 
-static inline int is_in_normal_play(engine_s *engine) {
+static inline int is_in_normal_play(struct engine *engine) {
   if (engine->mode >= ENGINE_FORCE_MODE)
     return 0;
   else
@@ -47,7 +47,7 @@ static inline int is_in_normal_play(engine_s *engine) {
 /*
  *  Output
  */
-static inline void print_statistics(engine_s *engine, search_result_s *result) {
+static inline void print_statistics(struct engine *engine, struct search_result *result) {
   if (!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
@@ -60,7 +60,7 @@ static inline void print_statistics(engine_s *engine, search_result_s *result) {
   }
 }
 
-static inline void print_game_state(engine_s *engine) {
+static inline void print_game_position(struct engine *engine) {
   if (!engine->xboard_mode) {
     print_board(&engine->game, 0, 0);
     if (in_check(&engine->game)) {
@@ -69,7 +69,7 @@ static inline void print_game_state(engine_s *engine) {
   }
 }
 
-static inline void print_prompt(engine_s *engine) {
+static inline void print_prompt(struct engine *engine) {
   if (!engine->xboard_mode) {
     if (engine->mode != ENGINE_FORCE_MODE) {
       printf("%s %s> ", player_text[engine->game.turn],
@@ -80,7 +80,7 @@ static inline void print_prompt(engine_s *engine) {
   }
 }
 
-static inline void print_ai_resign(engine_s *engine) {
+static inline void print_ai_resign(struct engine *engine) {
   if (engine->xboard_mode) {
     printf("resign\n");
   } else {
@@ -88,7 +88,7 @@ static inline void print_ai_resign(engine_s *engine) {
   }
 }
 
-static inline void print_ai_move(engine_s *engine, search_result_s *result) {
+static inline void print_ai_move(struct engine *engine, struct search_result *result) {
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];
@@ -98,12 +98,12 @@ static inline void print_ai_move(engine_s *engine, search_result_s *result) {
   } else {
     print_statistics(engine, result);
     print_prompt(engine);
-    format_move_san(buf, &result->move);
+    format_struct movean(buf, &result->move);
     printf("%s\n", buf);
   }
 }
 
-static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e to) {
+static void print_msg(struct engine *engine, const char *fmt, enum square from, enum square to) {
   if (!engine->xboard_mode) {
     if (from >= 0) {
       char from_buf[POS_BUF_SIZE];
@@ -124,7 +124,7 @@ static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e
 /*
  *  Move Checking
  */
-int ui_no_piece_at_square(engine_s *engine, square_e square) {
+int ui_no_piece_at_square(struct engine *engine, enum square square) {
   if ((square2bit[square] & engine->game.total_a) == 0) {
     print_msg(engine, "There is no piece at %s.\n", square, -1);
     return 1;
@@ -132,7 +132,7 @@ int ui_no_piece_at_square(engine_s *engine, square_e square) {
   return 0;
 }
 
-int move_is_illegal(engine_s *engine, move_s *move) {
+int move_is_illegal(struct engine *engine, struct move *move) {
   int result = check_legality(&engine->game, move);
 
   switch (result) {
@@ -155,7 +155,7 @@ int move_is_illegal(engine_s *engine, move_s *move) {
   return result;
 }
 
-void init_engine(engine_s *engine) {
+void init_engine(struct engine *engine) {
   memset(engine, 0, sizeof *engine);
   reset_board(&engine->game);
   history_clear(&engine->history);
@@ -167,7 +167,7 @@ void init_engine(engine_s *engine) {
   engine->depth = 8;
 }
 
-void finished_move(engine_s *engine) {
+void finished_move(struct engine *engine) {
   /* It is now the other players turn */
   change_player(&engine->game);
   /* move_n holds number of complete moves, incremented when it is
@@ -178,11 +178,11 @@ void finished_move(engine_s *engine) {
 }
 
 #ifdef DEBUG
-static inline void log_ai_move(move_s *move, int captured, int check) {}
+static inline void log_ai_move(struct move *move, int captured, int check) {}
 #endif
 
-static inline void do_ai_move(engine_s *engine) {
-  search_result_s result;
+static inline void do_ai_move(struct engine *engine) {
+  struct search_result result;
   search(engine->depth, &engine->history, &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages */
@@ -206,7 +206,7 @@ static inline void do_ai_move(engine_s *engine) {
   mark_time(engine);
   print_ai_move(engine, &result);
   finished_move(engine);
-  print_game_state(engine);
+  print_game_position(engine);
   reset_time(engine);
 
   /* Search at depth 1 to see if human has any moves, then print
@@ -226,8 +226,8 @@ static inline void do_ai_move(engine_s *engine) {
    Return:  0 - Valid move
             1 - Well formed but not valid
             2 - Not recognised */
-static inline int accept_move(engine_s *engine, const char *input) {
-  move_s move;
+static inline int accept_move(struct engine *engine, const char *input) {
+  struct move move;
 
   if (parse_move(input, &move)) {
     return 2;
@@ -249,7 +249,7 @@ static inline int accept_move(engine_s *engine, const char *input) {
     print_statistics(engine, 0);
   }
   finished_move(engine);
-  print_game_state(engine);
+  print_game_position(engine);
   return 0;
 }
 
@@ -260,7 +260,7 @@ static inline int accept_message(const char *input) {
   return 1;
 }
 
-static inline void get_user_input(engine_s *engine) {
+static inline void get_user_input(struct engine *engine) {
   print_prompt(engine);
   const char *input;
   input = get_input();
@@ -274,9 +274,9 @@ static inline void get_user_input(engine_s *engine) {
 /*
  *  UI Main Loop
  */
-void run_engine(engine_s *engine) {
+void run_engine(struct engine *engine) {
   if (!engine->xboard_mode) print_program_info();
-  print_game_state(engine);
+  print_game_position(engine);
 
   while (engine->mode != ENGINE_QUIT) {
     if (ai_turn(engine)) {
@@ -288,7 +288,7 @@ void run_engine(engine_s *engine) {
 }
 
 /* Permanently enter XBoard mode and disable Ctrl-C */
-void enter_xboard_mode(engine_s *e) {
+void enter_xboard_mode(struct engine *e) {
   e->xboard_mode = 1;
   ignore_sigint();
 }
