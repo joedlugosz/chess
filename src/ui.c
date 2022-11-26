@@ -1,5 +1,5 @@
 /*
- *  Program entry point and user interface.
+ *  UI and XBoard Interface
  */
 
 #include <ctype.h>

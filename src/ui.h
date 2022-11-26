@@ -1,5 +1,5 @@
 /*
- *  Program entry point and user interface.
+ *  UI and XBoard Interface
  */
 
 #ifndef UI_H
