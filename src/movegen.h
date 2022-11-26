@@ -8,7 +8,7 @@
 #include "search.h"
 
 /* Perft statistics */
-typedef struct perft_s_ {
+struct perft_stats {
   unsigned long long moves;
   unsigned long captures;
   unsigned long promotions;
@@ -17,7 +17,7 @@ typedef struct perft_s_ {
   unsigned long castles;
   unsigned long checks;
   unsigned long checkmates;
-} perft_s;
+};
 
 int generate_search_movelist(struct position *s, struct move_list **);
 int generate_quiescence_movelist(struct position *s, struct move_list **);

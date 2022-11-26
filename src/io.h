@@ -27,8 +27,8 @@ int parse_square(const char *, enum square *);
 int parse_move(const char *, struct move *);
 int format_square(char *, enum square);
 int format_move(char *, struct move *, int);
-int format_struct movean(char *buf, struct move *move);
-void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, clock_t time,
+int format_move_san(char *buf, struct move *move);
+void xboard_thought(struct search_job *job, struct pv *pv, int depth, score_t score, clock_t time,
                     int nodes);
 
 #endif /* IO_H */

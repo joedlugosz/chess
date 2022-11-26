@@ -116,12 +116,12 @@ int generate_quiescence_movelist(struct position *position, struct move_list **m
   return count;
 }
 
-void perft(perft_s *data, struct position *position, int depth, moveresult_t result) {
+void perft(struct perft_stats *data, struct position *position, int depth, moveresult_t result) {
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry, *move_buf_head = move_buf;
   int i;
   struct position next_position;
-  perft_s next_data;
+  struct perft_stats next_data;
 
   memset(data, 0, sizeof(*data));
 
@@ -184,7 +184,7 @@ void perft_divide(struct position *position, int depth) {
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry, *move_buf_head = move_buf;
   struct position next_position;
-  perft_s next_data;
+  struct perft_stats next_data;
   char buf[6];
 
   generate_search_movelist(position, &move_buf_head);
@@ -196,7 +196,7 @@ void perft_divide(struct position *position, int depth) {
     if (!in_check(&next_position)) {
       change_player(&next_position);
       perft(&next_data, &next_position, depth - 1, list_entry->move.result);
-      format_struct movean(buf, &list_entry->move);
+      format_move_san(buf, &list_entry->move);
       printf("%s: %lld\n", buf, next_data.moves);
     }
     list_entry = list_entry->next;
@@ -207,7 +207,7 @@ void perft_total(struct position *position, int depth) {
   printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", "Captures", "E.P.",
          "Castles", "Promotions", "Checks", "Disco Chx", "Double Chx", "Checkmates");
   for (int i = 1; i <= depth; i++) {
-    perft_s data;
+    struct perft_stats data;
     perft(&data, position, i, 0);
     printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", i, data.moves, data.captures,
            data.ep_captures, data.castles, data.promotions, data.checks, "X", "X", data.checkmates);

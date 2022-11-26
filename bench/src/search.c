@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "fen.h"
 #include "hash.c"
 #include "history.h"
-#include "fen.h"
+#include "io.h"
 #include "position.h"
 
 int max_depth = 8;

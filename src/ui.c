@@ -98,7 +98,7 @@ static inline void print_ai_move(struct engine *engine, struct search_result *re
   } else {
     print_statistics(engine, result);
     print_prompt(engine);
-    format_struct movean(buf, &result->move);
+    format_move_san(buf, &result->move);
     printf("%s\n", buf);
   }
 }
