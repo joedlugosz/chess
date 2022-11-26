@@ -167,7 +167,7 @@ void print_board(struct position *position, bitboard_t mask1,
 
   term = is_terminal(stdout);
 
-  ttentry_s *tte = tt_probe(position->hash);
+  struct tt_entry *tte = tt_probe(position->hash);
 
   if (tte) {
     mask1 = square2bit[tte->best_move.from];

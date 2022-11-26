@@ -67,14 +67,14 @@ int updates;
 int update_collisions;
 
 /* Transposition table object */
-ttentry_s *tt;
+struct tt_entry *tt;
 
 /* Initialise transposition table memory. Call at program init. */
 void tt_init(void) {
-  tt = (ttentry_s *)calloc(TT_SIZE, sizeof(ttentry_s));
+  tt = (struct tt_entry *)calloc(TT_SIZE, sizeof(struct tt_entry));
   if (!tt) {
     printf("Can't allocate %lu bytes for transposition table\n",
-           TT_SIZE * sizeof(ttentry_s));
+           TT_SIZE * sizeof(struct tt_entry));
     exit(1);
   }
 }
@@ -98,7 +98,7 @@ double tt_collisions(void) {
 
 /* Get an entry from the transposition table with the index that corresponds
    to the supplied hash. The entry might not match the hash. */
-static inline ttentry_s *tt_get(hash_t hash) {
+static inline struct tt_entry *tt_get(hash_t hash) {
   hash_t index = hash % (hash_t)TT_SIZE;
   return &tt[index];
 }
@@ -106,9 +106,9 @@ static inline ttentry_s *tt_get(hash_t hash) {
 /* Update an entry in the transposition table, if the new information is found
    at a greater depth than the existing entry. If the new entry has a hashes a
    different position, a collision is recorded but the update is still made. */
-ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score,
-                     const struct move *best_move) {
-  ttentry_s *ret = tt_get(hash);
+struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
+                           score_t score, const struct move *best_move) {
+  struct tt_entry *ret = tt_get(hash);
   if (ret->depth < depth) {
     if (ret->hash != 0 && ret->hash != hash) update_collisions++;
     ret->hash = hash;
@@ -123,8 +123,8 @@ ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score,
 
 /* Probe the transposition table to get an entry which exactly matches the
    supplied hash, or return zero if none is found. */
-ttentry_s *tt_probe(hash_t hash) {
-  ttentry_s *ret = tt_get(hash);
+struct tt_entry *tt_probe(hash_t hash) {
+  struct tt_entry *ret = tt_get(hash);
   if (ret->hash != hash) {
     return 0;
   }

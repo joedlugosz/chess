@@ -37,7 +37,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                               struct pv *pv, struct position *position,
                               int depth, score_t *best_score, score_t *alpha,
                               score_t beta, struct move *move,
-                              struct move **best_move, tt_type_e *type,
+                              struct move **best_move, enum tt_entry_type *type,
                               int *n_legal) {
   struct position next_position;
   copy_position(&next_position, position);
@@ -142,7 +142,7 @@ static score_t search_ply(struct search_job *job, struct pv *parent_pv,
 
   /* Default node type - this will change to TT_EXACT on alpha update or TT_BETA
      on beta cutoff */
-  tt_type_e type = TT_ALPHA;
+  enum tt_entry_type type = TT_ALPHA;
 
   /* Try to get a beta cutoff or alpha update from a killer move */
   if (OPT_KILLER && (depth >= 0) &&
@@ -154,7 +154,7 @@ static score_t search_ply(struct search_job *job, struct pv *parent_pv,
   }
 
   /* Probe the transposition table at higher levels */
-  ttentry_s *tte = 0;
+  struct tt_entry *tte = 0;
   if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(position->hash);
 
   /* If the position has already been searched at the same or greater depth, use
