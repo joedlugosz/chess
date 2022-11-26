@@ -30,28 +30,28 @@ hash_t prng_rand(void);
  */
 
 /* Transposition table entry type */
-typedef enum tt_type_e_ {
+enum tt_entry_type {
   TT_ALPHA,
   TT_BETA,
   TT_EXACT,
-} tt_type_e;
+};
 
 /* Transposition table entry */
-typedef struct ttentry_s_ {
+struct tt_entry {
   hash_t hash;
-  tt_type_e type;
+  enum tt_entry_type type;
   int depth;
   score_t score;
   struct move best_move;
-} ttentry_s;
+};
 
 void tt_exit(void);
 void tt_zero(void);
 double tt_collisions(void);
 void tt_init(void);
 void tt_clear(void);
-ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score,
-                     const struct move *best_move);
-ttentry_s *tt_probe(hash_t hash);
+struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
+                           score_t score, const struct move *best_move);
+struct tt_entry *tt_probe(hash_t hash);
 
 #endif /* HASH_H */
