@@ -28,7 +28,9 @@ static inline void reset_time(struct engine *engine) {
 static inline void mark_time(struct engine *engine) {
   engine->elapsed_time = clock() - engine->start_time;
 }
-static inline clock_t get_time(struct engine *engine) { return engine->elapsed_time; }
+static inline clock_t get_time(struct engine *engine) {
+  return engine->elapsed_time;
+}
 
 static inline int ai_turn(struct engine *engine) {
   if (engine->game.turn != engine->mode)
@@ -47,14 +49,15 @@ static inline int is_in_normal_play(struct engine *engine) {
 /*
  *  Output
  */
-static inline void print_statistics(struct engine *engine, struct search_result *result) {
+static inline void print_statistics(struct engine *engine,
+                                    struct search_result *result) {
   if (!engine->xboard_mode) {
     double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
     printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
     if (ai_turn(engine) && result) {
-      printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions", result->n_leaf,
-             result->branching_factor, (double)result->n_leaf / (time * 1000.0),
-             result->collisions);
+      printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions",
+             result->n_leaf, result->branching_factor,
+             (double)result->n_leaf / (time * 1000.0), result->collisions);
     }
     printf("\n\n");
   }
@@ -88,7 +91,8 @@ static inline void print_ai_resign(struct engine *engine) {
   }
 }
 
-static inline void print_ai_move(struct engine *engine, struct search_result *result) {
+static inline void print_ai_move(struct engine *engine,
+                                 struct search_result *result) {
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];
@@ -103,7 +107,8 @@ static inline void print_ai_move(struct engine *engine, struct search_result *re
   }
 }
 
-static void print_msg(struct engine *engine, const char *fmt, enum square from, enum square to) {
+static void print_msg(struct engine *engine, const char *fmt, enum square from,
+                      enum square to) {
   if (!engine->xboard_mode) {
     if (from >= 0) {
       char from_buf[POS_BUF_SIZE];
@@ -140,13 +145,15 @@ int move_is_illegal(struct engine *engine, struct move *move) {
       print_msg(engine, "There is no piece at %s.\n", move->from, -1);
       break;
     case ERR_SRC_EQUAL_DEST:
-      print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
+      print_msg(engine, "The origin %s is the same as the destination.\n",
+                move->from, -1);
       break;
     case ERR_NOT_MY_PIECE:
       print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
       break;
     case ERR_CANT_MOVE_THERE:
-      print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
+      print_msg(engine, "The piece at %s cannot move to %s.\n", move->from,
+                move->to);
       break;
     default:
       break;
@@ -190,7 +197,8 @@ static inline void do_ai_move(struct engine *engine) {
   } else if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       mark_time(engine);
-      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK],
+             engine->game.check[WHITE]);
       print_ai_resign(engine);
       engine->mode = ENGINE_FORCE_MODE;
     } else {
@@ -214,7 +222,8 @@ static inline void do_ai_move(struct engine *engine) {
   search(1, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
-      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK], engine->game.check[WHITE]);
+      printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK],
+             engine->game.check[WHITE]);
     } else {
       printf("\nStalemate - 1/2-1/2\n\n");
     }
@@ -268,7 +277,9 @@ static inline void get_user_input(struct engine *engine) {
   if (!accept_message(input)) return;
   if (!accept_command(engine, input)) return;
   if (!accept_move(engine, input)) return;
-  print_msg(engine, "Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
+  print_msg(engine,
+            "Unrecognised command\nEnter 'help' for a list of commands.\n", -1,
+            -1);
 }
 
 /*

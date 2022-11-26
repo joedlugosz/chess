@@ -12,7 +12,8 @@
 
 const score_t player_fact[N_PLAYERS] = {1, -1};
 
-static inline void sort_compare(struct move_list **head, struct move_list *insert) {
+static inline void sort_compare(struct move_list **head,
+                                struct move_list *insert) {
   struct move_list *current;
   if (!*head || (*head)->score <= insert->score) {
     insert->next = *head;
@@ -56,12 +57,15 @@ static int sort_evaluate(struct position *position, struct move *move) {
 
 /* Add movelist entries for a given from and to position.  Add promotion
    moves if necessary */
-static inline void add_movelist_entries(struct position *position, enum square from, enum square to,
-                                        struct move_list *move_buf,          /* in */
-                                        struct move_list **prev, int *index) /* in, out */
+static inline void add_movelist_entries(struct position *position,
+                                        enum square from, enum square to,
+                                        struct move_list *move_buf, /* in */
+                                        struct move_list **prev,
+                                        int *index) /* in, out */
 {
   enum piece piece = piece_type[position->piece_at[from]];
-  enum piece promotion = (piece == PAWN && is_promotion_move(position, from, to)) ? QUEEN : PAWN;
+  enum piece promotion =
+      (piece == PAWN && is_promotion_move(position, from, to)) ? QUEEN : PAWN;
 
   do {
     ASSERT(*index < N_MOVES);
@@ -79,8 +83,10 @@ static inline void add_movelist_entries(struct position *position, enum square f
   } while (--promotion > PAWN);
 }
 
-/* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
-int generate_search_movelist(struct position *position, struct move_list **move_buf) {
+/* Move generation - generates a linked list of moves within move_buf, sorted
+ * (or not) */
+int generate_search_movelist(struct position *position,
+                             struct move_list **move_buf) {
   struct move_list *prev = 0;
   int count = 0;
   bitboard_t pieces = get_my_pieces(position);
@@ -97,11 +103,14 @@ int generate_search_movelist(struct position *position, struct move_list **move_
   return count;
 }
 
-/* Move generation - generates a linked list of moves within move_buf, sorted (or not) */
-int generate_quiescence_movelist(struct position *position, struct move_list **move_buf) {
+/* Move generation - generates a linked list of moves within move_buf, sorted
+ * (or not) */
+int generate_quiescence_movelist(struct position *position,
+                                 struct move_list **move_buf) {
   struct move_list *prev = 0;
   int count = 0;
-  bitboard_t victims = position->claim[position->turn] & get_opponents_pieces(position);
+  bitboard_t victims =
+      position->claim[position->turn] & get_opponents_pieces(position);
   while (victims) {
     bitboard_t to_mask = take_next_bit_from(&victims);
     enum square to = bit2square(to_mask);
@@ -116,7 +125,8 @@ int generate_quiescence_movelist(struct position *position, struct move_list **m
   return count;
 }
 
-void perft(struct perft_stats *data, struct position *position, int depth, moveresult_t result) {
+void perft(struct perft_stats *data, struct position *position, int depth,
+           moveresult_t result) {
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry, *move_buf_head = move_buf;
   int i;
@@ -204,12 +214,14 @@ void perft_divide(struct position *position, int depth) {
 }
 
 void perft_total(struct position *position, int depth) {
-  printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes", "Captures", "E.P.",
-         "Castles", "Promotions", "Checks", "Disco Chx", "Double Chx", "Checkmates");
+  printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes",
+         "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx",
+         "Double Chx", "Checkmates");
   for (int i = 1; i <= depth; i++) {
     struct perft_stats data;
     perft(&data, position, i, 0);
-    printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", i, data.moves, data.captures,
-           data.ep_captures, data.castles, data.promotions, data.checks, "X", "X", data.checkmates);
+    printf("%8d%16lld%12ld%12ld%12ld%12ld%12ld%12s%12s%12ld\n", i, data.moves,
+           data.captures, data.ep_captures, data.castles, data.promotions,
+           data.checks, "X", "X", data.checkmates);
   }
 }

@@ -20,12 +20,13 @@
 /* Arrays of options are declared in other modules */
 extern const struct options eval_opts;
 
-// const struct options *const module_opts[] = {&search_opts, &eval_opts, &engine_options,
-// &log_opts};
+// const struct options *const module_opts[] = {&search_opts, &eval_opts,
+// &engine_options, &log_opts};
 const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
-/* Names passed to XBoard describing option types - see definition of enum option_type */
+/* Names passed to XBoard describing option types - see definition of enum
+ * option_type */
 const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
                                               "string", "button", "combo"};
 
@@ -63,8 +64,8 @@ void list_options(void) {
           /* e.g. `feature option="foo -combo *opt1///opt2///opt3"\n` */
           for (int k = 0; k < opt->combo_vals->n_vals; k++) {
             const struct combo_val *val = &opt->combo_vals->vals[k];
-            printf(" %s%s%s", (k == 0) ? "" : "/// ", ((*opt->value.integer) == k) ? "*" : "",
-                   val->name);
+            printf(" %s%s%s", (k == 0) ? "" : "/// ",
+                   ((*opt->value.integer) == k) ? "*" : "", val->name);
           }
         }
         default:

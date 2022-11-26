@@ -28,7 +28,8 @@ static void ui_quit(struct engine *e) { e->mode = ENGINE_QUIT; }
 static void ui_force(struct engine *e) { e->mode = ENGINE_FORCE_MODE; }
 
 /* "Leave force mode and set the engine to play the color that is on move."
- * Can also be used in game mode to switch sides and make AI play the current turn */
+ * Can also be used in game mode to switch sides and make AI play the current
+ * turn */
 static void ui_go(struct engine *e) { e->mode = e->game.turn; }
 
 /* Not used by CECP v2 */
@@ -120,7 +121,8 @@ static void ui_fen(struct engine *e) {
   get_input_to_buf(halfmove, sizeof(halfmove));
   char fullmove[100];
   get_input_to_buf(fullmove, sizeof(fullmove));
-  if (load_fen(&e->game, placement, active, castling, enpassant, halfmove, fullmove)) {
+  if (load_fen(&e->game, placement, active, castling, enpassant, halfmove,
+               fullmove)) {
     printf("sFEN string not recognised\n");
   }
 }
@@ -146,7 +148,8 @@ static void ui_attacks(struct engine *e) {
   if (ui_no_piece_at_square(e, target)) {
     return;
   }
-  print_board(&(e->game), target, get_attacks(&(e->game), target, opponent[e->game.turn]));
+  print_board(&(e->game), target,
+              get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
 
 /* Print board showing squares a piece can move to */
@@ -249,13 +252,17 @@ enum { N_UI_CMDS = sizeof(cmds) / sizeof(*cmds) };
 /* Help command - display a list of all commands, grouped by type */
 static void ui_help(struct engine *e) {
   printf("\n  Command List\n");
-  printf("\n   The following commands are used for starting and controlling games:\n");
+  printf(
+      "\n   The following commands are used for starting and controlling "
+      "games:\n");
   for (int i = 0; i < N_UI_CMDS; i++) {
     if (cmds[i].type == CT_GAMECTL) {
       printf("    %-10s%s\n", cmds[i].cmd, cmds[i].desc);
     }
   }
-  printf("\n   The following commands are used to display the position of the game:\n");
+  printf(
+      "\n   The following commands are used to display the position of the "
+      "game:\n");
   for (int i = 0; i < N_UI_CMDS; i++) {
     if (cmds[i].type == CT_DISPLAY) {
       printf("    %-10s%s\n", cmds[i].cmd, cmds[i].desc);
@@ -268,7 +275,8 @@ static void ui_help(struct engine *e) {
     }
   }
   printf(
-      "\n   The following commands are accepted for compatibility with XBoard, but have no "
+      "\n   The following commands are accepted for compatibility with XBoard, "
+      "but have no "
       "effect:");
   int j = 0;
   for (int i = 0; i < N_UI_CMDS; i++) {

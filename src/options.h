@@ -21,10 +21,10 @@ struct combo {
 enum option_type {
   BOOL_OPT = 0, /* Check box */
   SPIN_OPT,     /* Spin control */
-  INT_OPT,      /* Integer - presented as a text input to XBoard then validated */
-  TEXT_OPT,     /* Text control */
-  CMD_OPT,      /* Button */
-  COMBO_OPT,    /* Combo box */
+  INT_OPT,   /* Integer - presented as a text input to XBoard then validated */
+  TEXT_OPT,  /* Text control */
+  CMD_OPT,   /* Button */
+  COMBO_OPT, /* Combo box */
   N_OPTION_T
 };
 
@@ -34,9 +34,9 @@ struct option {
   enum option_type type;
 
   union {
-    int *integer;   /* type == BOOL_OPT || SPIN_OPT || INT_OPT - ptr to int value
-                       type == COMBO_OPT - ptr to int index into combo_vals */
-    char *text;     /* type == TEXT_OPT - ptr to start of text */
+    int *integer; /* type == BOOL_OPT || SPIN_OPT || INT_OPT - ptr to int value
+                     type == COMBO_OPT - ptr to int index into combo_vals */
+    char *text;   /* type == TEXT_OPT - ptr to start of text */
     ui_fn function; /* type == CMD_OPT - ptr to command function */
   } value;
 

@@ -32,9 +32,9 @@ const char piece_text_ascii[N_PLANES][6] = {"p ", "R ", "N ", "B ", "Q ", "K ",
                                             "p*", "R*", "N*", "B*", "Q*", "K*"};
 
 #if (TERM_UNICODE)
-const char piece_text_unicode[N_PLANES][6] = {"\u265f ", "\u265c ", "\u265e ", "\u265d ",
-                                              "\u265b ", "\u265a ", "\u2659 ", "\u2656 ",
-                                              "\u2658 ", "\u2657 ", "\u2655 ", "\u2654 "};
+const char piece_text_unicode[N_PLANES][6] = {
+    "\u265f ", "\u265c ", "\u265e ", "\u265d ", "\u265b ", "\u265a ",
+    "\u2659 ", "\u2656 ", "\u2658 ", "\u2657 ", "\u2655 ", "\u2654 "};
 #  define PIECE_TEXT_TERM piece_text_unicode
 #  define PIECE_TEXT_FILE piece_text_ascii
 #else
@@ -101,7 +101,7 @@ int format_square(char *buf, enum square square) {
 }
 
 /* Format a move to a string in Standard Algebraic Notation */
-int format_move_san(char *buf, struct move *move) {
+int format_move_san(char *buf, const struct move *move) {
   char *ptr = buf;
 
   if (move->piece != PAWN) {
@@ -146,7 +146,7 @@ int format_move(char *buf, struct move *move, int bare) {
 }
 
 /* Print the principal variation */
-void print_pv(FILE *f, struct pv *pv) {
+void print_pv(FILE *f, const struct pv *pv) {
   char buf[8];
   int i;
   for (i = 0; i < pv->length; i++) {
@@ -160,7 +160,8 @@ void print_pv(FILE *f, struct pv *pv) {
  */
 
 /* Print the board, current position, and other data */
-void print_board(struct position *position, bitboard_t mask1, bitboard_t mask2) {
+void print_board(struct position *position, bitboard_t mask1,
+                 bitboard_t mask2) {
   int rank, file;
   int term;
 
@@ -249,9 +250,10 @@ void print_board(struct position *position, bitboard_t mask1, bitboard_t mask2) 
 }
 
 /* Print thoughts in a format compatible with XBoard */
-void xboard_thought(struct search_job *job, struct pv *pv, int depth, score_t score, clock_t time,
-                    int nodes) {
-  printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
+void xboard_thought(struct search_job *job, struct pv *pv, int depth,
+                    score_t score, clock_t time, int nodes) {
+  printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100),
+         nodes);
   print_pv(stdout, pv);
   printf("\n");
 }

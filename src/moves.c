@@ -66,12 +66,12 @@ const bitboard_t starting_a[N_PLANES] = {
 };
 /* clang-format on */
 
-const bitboard_t king_castle_slides[N_PLAYERS][2] = {{0x0cull, 0x60ull},
-                                                     {0x0cull << 56, 0x60ull << 56}};
-const bitboard_t rook_castle_slides[N_PLAYERS][2] = {{0x0eull, 0x60ull},
-                                                     {0x0eull << 56, 0x60ull << 56}};
-const bitboard_t castle_destinations[N_PLAYERS][2] = {{0x04ull, 0x40ull},
-                                                      {0x04ull << 56, 0x40ull << 56}};
+const bitboard_t king_castle_slides[N_PLAYERS][2] = {
+    {0x0cull, 0x60ull}, {0x0cull << 56, 0x60ull << 56}};
+const bitboard_t rook_castle_slides[N_PLAYERS][2] = {
+    {0x0eull, 0x60ull}, {0x0eull << 56, 0x60ull << 56}};
+const bitboard_t castle_destinations[N_PLAYERS][2] = {
+    {0x04ull, 0x40ull}, {0x04ull << 56, 0x40ull << 56}};
 
 extern const enum square square_a2b[N_SQUARES];
 extern const enum square square_a2c[N_SQUARES];
@@ -92,14 +92,17 @@ rank_t mask_d[N_SQUARES];
 /* Knight and king moves */
 bitboard_t knight_moves[N_SQUARES], king_moves[N_SQUARES];
 /* Pawn advances and takes */
-bitboard_t pawn_advances[N_PLAYERS][N_SQUARES], pawn_takes[N_PLAYERS][N_SQUARES];
+bitboard_t pawn_advances[N_PLAYERS][N_SQUARES],
+    pawn_takes[N_PLAYERS][N_SQUARES];
 
 /* Returns the valid rook moves for a given position, taking into account
    blockages by other pieces.  Also returns moves where rooks can take their
    own side's pieces (these are filtered out elsewhere). */
-static bitboard_t get_rook_moves(struct position *position, enum square a_square) {
+static bitboard_t get_rook_moves(struct position *position,
+                                 enum square a_square) {
   /* A-stack */
-  /* The shift that is required to move the rank containing square down to rank zero */
+  /* The shift that is required to move the rank containing square down to rank
+   * zero */
   int a_shift = a_square & ~7ul;
   /* Position within that rank */
   int a_file = a_square & 7ul;
@@ -159,7 +162,8 @@ bitboard_t get_bishop_moves(struct position *position, enum square a_square) {
 
 /* Returns the valid king moves for a given position, including king
    destinations for castling if possible */
-bitboard_t get_king_moves(struct position *position, enum square from, enum player player) {
+bitboard_t get_king_moves(struct position *position, enum square from,
+                          enum player player) {
   /* All non-castling king moves minus any that would lead into check */
   bitboard_t moves = king_moves[from] & ~position->claim[opponent[player]];
 
@@ -201,23 +205,25 @@ bitboard_t get_king_moves(struct position *position, enum square from, enum play
 }
 
 /* Returns the set of all pieces that can attack a given position */
-bitboard_t get_attacks(const struct position *position, enum square target, enum player attacking) {
+bitboard_t get_attacks(const struct position *position, enum square target,
+                       enum player attacking) {
   bitboard_t attacks = 0;
   bitboard_t target_mask = square2bit[target];
   int base = attacking * N_PIECE_T;
-  /* Check player is not trying to attack own piece (checking an empty square is ok because
-   * it needs to be done for castling) */
+  /* Check player is not trying to attack own piece (checking an empty square is
+   * ok because it needs to be done for castling) */
   ASSERT(position->piece_at[target] == EMPTY ||
          piece_player[(int)position->piece_at[target]] != attacking);
   /* Note - viewed as if the non-attacking player is attacking */
   attacks = pawn_takes[opponent[attacking]][target] & position->a[base + PAWN];
   attacks |= knight_moves[target] & position->a[base + KNIGHT];
   attacks |= king_moves[target] & position->a[base + KING];
-  bitboard_t sliders =
-      position->a[base + ROOK] | position->a[base + BISHOP] | position->a[base + QUEEN];
+  bitboard_t sliders = position->a[base + ROOK] | position->a[base + BISHOP] |
+                       position->a[base + QUEEN];
   while (sliders) {
     bitboard_t attacker = take_next_bit_from(&sliders);
-    if (target_mask & position->moves[(int)position->index_at[bit2square(attacker)]])
+    if (target_mask &
+        position->moves[(int)position->index_at[bit2square(attacker)]])
       attacks |= attacker;
   }
   return attacks;
@@ -248,7 +254,8 @@ void calculate_moves(struct position *position) {
         /* Special case for double advance to prevent jumping */
         /* Remove the pawn so it does not block itself */
         block &= ~square2bit[square];
-        /* Blocking piece does not just block its own square but also the next */
+        /* Blocking piece does not just block its own square but also the next
+         */
         if (player == WHITE) {
           block |= block << 8;
         } else {
@@ -257,12 +264,13 @@ void calculate_moves(struct position *position) {
         /* Apply block to pawn advances */
         moves = pawn_advances[player][square] & ~block;
         /* Add actual taking moves */
-        moves |=
-            pawn_takes[player][square] &
-            (position->player_a[opponent[player]] |
-             (position->en_passant & ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
+        moves |= pawn_takes[player][square] &
+                 (position->player_a[opponent[player]] |
+                  (position->en_passant &
+                   ((player == BLACK) ? 0xffffffffull : 0xffffffffull << 32)));
         /* Claim for pawns is only taking moves */
-        position->claim[player] |= pawn_takes[player][square] & ~position->player_a[player];
+        position->claim[player] |=
+            pawn_takes[player][square] & ~position->player_a[player];
       } break;
       case ROOK:
         moves = get_rook_moves(position, square);
@@ -274,7 +282,8 @@ void calculate_moves(struct position *position) {
         moves = get_bishop_moves(position, square);
         break;
       case QUEEN:
-        moves = get_bishop_moves(position, square) | get_rook_moves(position, square);
+        moves = get_bishop_moves(position, square) |
+                get_rook_moves(position, square);
         break;
       case KING:
         /* Player info is required for castling checking */
@@ -302,7 +311,8 @@ void calculate_moves(struct position *position) {
     int piece = position->piece_at[square];
     if (piece_type[piece] != KING) continue;
     enum player player = piece_player[piece];
-    bitboard_t moves = get_king_moves(position, position->piece_square[index], player);
+    bitboard_t moves =
+        get_king_moves(position, position->piece_square[index], player);
     /* You can't take your own piece */
     moves &= ~position->player_a[player];
     position->moves[index] = moves;
@@ -349,7 +359,8 @@ void init_moves(void) {
       /* 2. Set of all pieces to the left of square */
       l_pieces = l_squares & rank;
       if (l_pieces) {
-        /* 3. First occupied square to the left of square (count trailing zeroes) */
+        /* 3. First occupied square to the left of square (count trailing
+         * zeroes) */
         l_first_occupied = ctz(l_pieces);
         /* 4. Set of all squares to the left of the first occupied */
         l_mask = 0xff << (l_first_occupied + 1);
