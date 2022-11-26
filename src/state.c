@@ -82,6 +82,7 @@ const player_e piece_player[N_PIECE_T * N_PLAYERS] = {
 
 const player_e opponent[N_PLAYERS] = {BLACK, WHITE};
 bitboard_t _square2bit[N_SQUARES + 1];
+/* Convert square coordinate to bitboard bit */
 bitboard_t *square2bit;
 
 /*
@@ -169,7 +170,7 @@ static inline void do_rook_castling_move(state_s *state, square_e king_square, s
   add_piece(state, king_square + to_offset, rook_piece, rook_index);
 }
 
-/* Alters the game state to effect a move.  There is no validity checking. */
+/* Alter the position to make a move.  There is no validity checking. */
 void make_move(state_s *state, move_s *move) {
   ASSERT(is_valid_square(move->from));
   ASSERT(is_valid_square(move->to));

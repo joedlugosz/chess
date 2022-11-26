@@ -1,5 +1,4 @@
 /* 
- * bench/src/search.c
  * Search benchmarking app
  * Builds executable bench_search
  * 

@@ -1,5 +1,8 @@
 /*
- *  Static evaluation
+ *  Static position evaluation
+ *
+ *  Uses Shannon's method and scores, x10. Scoring is from the point of view of
+ *  the current player, positive when leading.
  */
 
 #include "evaluate.h"
@@ -11,10 +14,11 @@
 #include "options.h"
 #include "state.h"
 
+/* Factor to negate the score for black */
 const score_t player_factor[N_PLAYERS] = {1, -1};
 
 /*
- *  Options
+ *  User options
  */
 
 /* Shannon's weights * 10 */
@@ -28,7 +32,7 @@ int blocked = 50;
 /* Small random value 0-9 */
 int randomness = 0;
 
-/* All the options can be changed */
+/* Evaluation user options. */
 const option_s _eval_opts[] = {
     /* clang-format off */
   { "Pawn value",            INT_OPT,  .value.integer = &piece_weights[PAWN],    0, 0, 0 },
@@ -49,7 +53,7 @@ const options_s eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]), _eval_o
  *  Functions
  */
 
-/* Evaluate one player's pieces */
+/* Evaluate one player's pieces, producing a positive score */
 static inline score_t evaluate_player(state_s *state, player_e player) {
   int score = 0;
   int pt_first;
@@ -90,7 +94,8 @@ static inline score_t evaluate_player(state_s *state, player_e player) {
   return score;
 }
 
-/* Evalate the position */
+/* Evaluate a position, producing a score which is positive if the current
+   player is leading */
 score_t evaluate(state_s *state) {
   return (evaluate_player(state, WHITE) - evaluate_player(state, BLACK)) *
          player_factor[state->turn];

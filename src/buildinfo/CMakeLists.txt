@@ -2,10 +2,13 @@
 
 # Generate buildinfo.c
 # buildinfo.c contains variables with the build information. As a generated
-# file, it is a build artifact and not part of the repo, so it is placed in the
-# binary directory. `cmake -P` sets all directory variables to the working
-# dir, so the binary dir is supplied as an argument, and the supplied working directory
-# is the source dir to access git information.
+# file, it is not part of the repo, so it is placed in the binary directory.
+# `cmake -P` sets all directory variables to the working dir, so the binary dir
+# is supplied as an argument, and the supplied working directory is the source
+# dir to access git information. This target is always run on builds (ALL) so
+# that commit info is always current. The output file is specified as BYPRODUCTS
+# so that its timestamp doesn't change unless its contents change. This avoids
+# unnecessary rebuilds of dependencies.
 add_custom_target (
   buildinfo_src ALL
   BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c
@@ -17,8 +20,11 @@ add_custom_target (
 add_library (buildinfo STATIC ${CMAKE_CURRENT_BINARY_DIR}/buildinfo.c)
 include_directories(buildinfo ${CMAKE_CURRENT_SOURCE_DIR})
 
+#
 # Generate a string containing the compiler flags that are used in the build,
 # separated by spaces.
+#
+
 # flags_list is a combination of MAKE_CXX_FLAGS_<BUILD> and whatever flags are added
 # using add_compile_options
 string (TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" type_name)

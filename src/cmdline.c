@@ -1,4 +1,6 @@
-/* Portable command line parsing */
+/*
+ * Command line parsing functions
+ */
 
 #include "cmdline.h"
 

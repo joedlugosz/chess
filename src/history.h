@@ -1,5 +1,5 @@
 /*
- *   Move history
+ *  Position history stack and repetition checking
  */
 
 #ifndef HISTORY_H
@@ -8,9 +8,10 @@
 #include "search.h"
 #include "state.h"
 
+/* Position history stack */
 struct history {
   int index;
-  int breaking[REPEAT_HISTORY_SIZE];
+  int is_breaking_move[REPEAT_HISTORY_SIZE];
   hash_t hash[REPEAT_HISTORY_SIZE];
 };
 

@@ -1,4 +1,4 @@
-/* src/buildinfo/buildinfo.h 
+/*
  * extern definitions from buildinfo.c
  */
 

@@ -1,6 +1,7 @@
 # CMake script to generate the contents of buildinfo.c
 # 
-# The destination directory for buildinfo.c must be specified
+# The destination directory for buildinfo.c must be specified.
+# The working directory must contain the git repo.
 #
 # Invocation and arguments (all are required)
 # 0     1  2               3  4
