@@ -18,13 +18,13 @@
 /* Options */
 
 /* Arrays of options are declared in other modules */
-extern const options_s eval_opts;
+extern const struct options eval_opts;
 
-// const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
-const options_s *const module_opts[] = {&eval_opts};
+// const struct options *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
+const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
-/* Names passed to XBoard describing option types - see definition of option_type_e */
+/* Names passed to XBoard describing option types - see definition of enum option_type */
 const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
                                               "string", "button", "combo"};
 
@@ -32,10 +32,10 @@ const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
 void list_options(void) {
   /* For each program module */
   for (int i = 0; i < N_MODULES; i++) {
-    const options_s *const mod = module_opts[i];
+    const struct options *const mod = module_opts[i];
     /* For each option within the module */
     for (int j = 0; j < mod->n_opts; j++) {
-      const option_s *opt = &mod->opts[j];
+      const struct option *opt = &mod->opts[j];
 
       /* Describe option to XBoard */
       printf("feature option=\"%s -%s", opt->name, option_controls[opt->type]);
@@ -61,7 +61,7 @@ void list_options(void) {
         case COMBO_OPT: {
           /* e.g. `feature option="foo -combo *opt1///opt2///opt3"\n` */
           for (int k = 0; k < opt->combo_vals->n_vals; k++) {
-            const combo_val_s *val = &opt->combo_vals->vals[k];
+            const struct combo_val *val = &opt->combo_vals->vals[k];
             printf(" %s%s%s", (k == 0) ? "" : "/// ", ((*opt->value.integer) == k) ? "*" : "",
                    val->name);
           }
@@ -92,7 +92,7 @@ void read_option_text(char *buf) {
   }
 }
 
-int set_option(engine_s *e, const char *name) {
+int set_option(struct engine *e, const char *name) {
   int found = 0;
   int i, j;
   int val;
@@ -100,9 +100,9 @@ int set_option(engine_s *e, const char *name) {
   const char *val_txt = "";
   /* Go through all options for all modules to look for one that matches name */
   for (i = 0; i < N_MODULES && !err; i++) {
-    const options_s *const mod = module_opts[i];
+    const struct options *const mod = module_opts[i];
     for (j = 0; j < mod->n_opts && !err; j++) {
-      const option_s *opt = &mod->opts[j];
+      const struct option *opt = &mod->opts[j];
       /* If a match is found... */
       if (strcmp(name, opt->name) == 0) {
         /* Read arguments */

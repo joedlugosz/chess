@@ -9,7 +9,7 @@
 #include "debug.h"
 #include "epd.h"
 #include "hash.h"
-#include "state.h"
+#include "position.h"
 
 void display_usage(void);
 

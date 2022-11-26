@@ -20,7 +20,7 @@ set (
     moves.c
     options.c
     search.c
-    state.c
+    position.c
     ui.c
 )
 

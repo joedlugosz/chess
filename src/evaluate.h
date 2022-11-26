@@ -8,7 +8,7 @@
 /* Position evaluation score */
 typedef int score_t;
 
-struct state_s_;
-score_t evaluate(struct state_s_ *);
+struct struct position_;
+score_t evaluate(struct struct position_ *);
 
 #endif /* EVAL_H */

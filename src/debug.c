@@ -12,7 +12,7 @@
 #include "io.h"
 #include "os.h"
 #include "search.h"
-#include "state.h"
+#include "position.h"
 
 /* File handle used for logging */
 FILE *logfile;

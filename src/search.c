@@ -19,33 +19,33 @@
 
 enum { TT_MIN_DEPTH = 4, BOUNDARY = 10000, CHECKMATE_SCORE = -BOUNDARY, DRAW_SCORE = 0 };
 
-move_s mate_move = {.result = CHECK | MATE};
+struct move mate_move = {.result = CHECK | MATE};
 
-static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
+static score_t search_ply(search_job_s *job, struct pv *parent_pv, struct position *position, int depth,
                           score_t alpha, score_t beta);
 
 /* Search a single move - call search_ply after making the move. In/out args are
    updated on an alpha update: alpha, best_move. Returns 1 for a beta cutoff,
    and 0 in all other cases including impossible moves into check. */
 static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv *pv,
-                              state_s *state, int depth, score_t *best_score, score_t *alpha,
-                              score_t beta, move_s *move, move_s **best_move, tt_type_e *type,
+                              struct position *position, int depth, score_t *best_score, score_t *alpha,
+                              score_t beta, struct move *move, struct move **best_move, tt_type_e *type,
                               int *n_legal) {
-  state_s next_state;
-  copy_state(&next_state, state);
-  make_move(&next_state, move);
+  struct position next_position;
+  copy_position(&next_position, position);
+  make_move(&next_position, move);
 
   /* Return early if moving into check. All other moves are legal. */
-  if (in_check(&next_state)) return 0;
+  if (in_check(&next_position)) return 0;
   if (n_legal) (*n_legal)++;
 
-  history_push(job->history, state->hash, move);
-  change_player(&next_state);
+  history_push(job->history, position->hash, move);
+  change_player(&next_position);
 
   /* Record whether this move gives check to the opponent */
-  if (in_check(&next_state)) move->result |= CHECK;
+  if (in_check(&next_position)) move->result |= CHECK;
 
-  score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
+  score_t score = -search_ply(job, pv, &next_position, depth - 1, -beta, -*alpha);
 
   history_pop(job->history);
 
@@ -81,7 +81,7 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
 }
 
 /* Update the result if at the top level */
-static inline void update_result(search_job_s *job, state_s *state, int depth, move_s *move,
+static inline void update_result(search_job_s *job, struct position *position, int depth, struct move *move,
                                  score_t score) {
   if (depth == job->depth) {
     job->result.score = score;
@@ -93,7 +93,7 @@ static inline void update_result(search_job_s *job, state_s *state, int depth, m
 
 /* Search a single position and all possible moves - call search_move for each
    move */
-static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
+static score_t search_ply(search_job_s *job, struct pv *parent_pv, struct position *position, int depth,
                           score_t alpha, score_t beta) {
   if (job->halt) return 0;
 
@@ -104,7 +104,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   if (depth == 0) job->result.n_leaf++;
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
-  if (state->halfmove > 50 || is_repeated_position(job->history, state->hash, 3)) {
+  if (position->halfmove > 50 || is_repeated_position(job->history, position->hash, 3)) {
     return DRAW_SCORE;
   }
 
@@ -113,7 +113,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   /* If there are any moves, best_move and best_score will be updated by the end
      of the function */
   score_t best_score = -BOUNDARY;
-  move_s *best_move = 0;
+  struct move *best_move = 0;
 
   /* Struct holding the princpal variation of children for this node */
   struct pv pv;
@@ -121,8 +121,8 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Standing pat - in a quiescence search, evaluate taking no action - this
      could be better than the consequences of taking a piece. */
-  if (depth <= 0 && !in_check(state)) {
-    best_score = evaluate(state);
+  if (depth <= 0 && !in_check(position)) {
+    best_score = evaluate(position);
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
   }
@@ -132,16 +132,16 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   tt_type_e type = TT_ALPHA;
 
   /* Try to get a beta cutoff or alpha update from a killer move */
-  if (OPT_KILLER && (depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
-      search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
+  if (OPT_KILLER && (depth >= 0) && !check_legality(position, &job->killer_moves[depth]) &&
+      search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha, beta,
                   &job->killer_moves[depth], &best_move, &type, 0)) {
-    update_result(job, state, depth, &job->killer_moves[depth], best_score);
+    update_result(job, position, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
 
   /* Probe the transposition table at higher levels */
   ttentry_s *tte = 0;
-  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
+  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(position->hash);
 
   /* If the position has already been searched at the same or greater depth, use
      the result from the tt. At root level, this is the move that will be made,
@@ -153,7 +153,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
       if (tte->type == TT_EXACT) return tte->score;
     } else {
       if (tte->type == TT_EXACT) {
-        update_result(job, state, depth, &tte->best_move, tte->score);
+        update_result(job, position, depth, &tte->best_move, tte->score);
         return tte->score;
       }
     }
@@ -161,10 +161,10 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* If there is a valid best move from the transposition table, try to get a
      beta cutoff or alpha update. */
-  if (tte && !check_legality(state, &tte->best_move) &&
-      search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta, &tte->best_move,
+  if (tte && !check_legality(position, &tte->best_move) &&
+      search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha, beta, &tte->best_move,
                   &best_move, &type, 0)) {
-    update_result(job, state, depth, &tte->best_move, best_score);
+    update_result(job, position, depth, &tte->best_move, best_score);
     return beta;
   }
 
@@ -172,13 +172,13 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
 
   /* Generate the list of pseudo-legal moves. list_entry will point to the first
      sorted item. */
-  movelist_s move_buf[N_MOVES];
-  movelist_s *list_entry = move_buf;
+  struct move_list move_buf[N_MOVES];
+  struct move_list *list_entry = move_buf;
   int n_pseudo_legal_moves;
-  if (depth > 0 || state->check[WHITE] || state->check[BLACK]) {
-    n_pseudo_legal_moves = generate_search_movelist(state, &list_entry);
+  if (depth > 0 || position->check[WHITE] || position->check[BLACK]) {
+    n_pseudo_legal_moves = generate_search_movelist(position, &list_entry);
   } else {
-    n_pseudo_legal_moves = generate_quiescence_movelist(state, &list_entry);
+    n_pseudo_legal_moves = generate_quiescence_movelist(position, &list_entry);
     if (n_pseudo_legal_moves == 0) return best_score;
   }
 
@@ -188,9 +188,9 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   if (n_pseudo_legal_moves > 0) {
     while (list_entry) {
       if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-        if (search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
+        if (search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha, beta,
                         &list_entry->move, &best_move, &type, &n_legal_moves)) {
-          update_result(job, state, depth, &list_entry->move, beta);
+          update_result(job, position, depth, &list_entry->move, beta);
           return beta;
         }
       }
@@ -202,7 +202,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
      from root to mate. */
   if (n_legal_moves == 0) {
     type = TT_EXACT;
-    if (in_check(state)) {
+    if (in_check(position)) {
       alpha = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
     } else {
@@ -211,18 +211,18 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   }
 
   /* Update the result if at the top level */
-  update_result(job, state, depth, best_move, alpha);
+  update_result(job, position, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
-    tt_update(state->hash, type, depth, alpha, best_move);
+    tt_update(position->hash, type, depth, alpha, best_move);
   }
 
   return alpha;
 }
 
 /* Entry point to recursive search */
-void search(int depth, struct history *history, state_s *state, search_result_s *res,
+void search(int depth, struct history *history, struct position *position, struct search_result *res,
             int show_thoughts) {
   search_job_s job;
   memset(&job, 0, sizeof(job));
@@ -234,7 +234,7 @@ void search(int depth, struct history *history, state_s *state, search_result_s 
   tt_zero();
 
   struct pv pv;
-  search_ply(&job, &pv, state, job.depth, -BOUNDARY, BOUNDARY);
+  search_ply(&job, &pv, position, job.depth, -BOUNDARY, BOUNDARY);
 
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);

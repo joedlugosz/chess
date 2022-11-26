@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "io.h"
-#include "state.h"
+#include "position.h"
 
 /* FEN piece letters */
 static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
@@ -24,14 +24,14 @@ struct castle_rights_entry {
 static const struct castle_rights_entry castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {
     {'K', WHITE_KINGSIDE}, {'Q', WHITE_QUEENSIDE}, {'k', BLACK_KINGSIDE}, {'q', BLACK_QUEENSIDE}};
 
-/* Load a board state given in FEN, into state */
-int load_fen(state_s *state, const char *placement_text, const char *active_player_text,
+/* Load a board position given in FEN, into position */
+int load_fen(struct position *position, const char *placement_text, const char *active_player_text,
              const char *castling_text, const char *en_passant_text, const char *halfmove_text,
              const char *fullmove_text) {
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
   /* Array representing pieces on the board, to be passed to setup_board() */
-  piece_e board[N_SQUARES];
+  enum piece board[N_SQUARES];
   int file = 0;
   int rank = 7;
   const char *ptr = placement_text;
@@ -65,7 +65,7 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
       for (piece = 0; piece < N_PLANES; piece++) {
         if (*ptr == piece_letter[piece]) {
           /* Set index, increment counters */
-          board[rank * 8 + file] = (piece_e)piece;
+          board[rank * 8 + file] = (enum piece)piece;
           count[piece]++;
           break;
         }
@@ -93,7 +93,7 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
   }
 
   /* Turn */
-  player_e turn;
+  enum player turn;
   error_text = active_player_text;
   if (active_player_text[0] == 'w' && active_player_text[1] == 0) {
     turn = WHITE;
@@ -127,7 +127,7 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
   if (*ptr == '-') {
     en_passant = 0;
   } else {
-    square_e ep_square;
+    enum square ep_square;
     if (parse_square(en_passant_text, &ep_square)) {
       printf("FEN: Invalid en-passant input\n");
       goto error;
@@ -147,8 +147,8 @@ int load_fen(state_s *state, const char *placement_text, const char *active_play
     goto error;
   }
 
-  /* Success - write the new positions to state */
-  setup_board(state, board, turn, castling_rights, en_passant, halfmove, fullmove);
+  /* Success - write the new positions to position */
+  setup_board(position, board, turn, castling_rights, en_passant, halfmove, fullmove);
   return 0;
 
   /* Input error - display location */
@@ -158,14 +158,14 @@ error:
   return 1;
 }
 
-/* Format a FEN string from a state */
-int get_fen(const state_s *state, char *out, size_t outsize) {
+/* Format a FEN string from a position */
+int get_fen(const struct position *position, char *out, size_t outsize) {
   /* Placement */
   int empty_file_count = 0;
   char *ptr = out;
   for (int rank = 7; rank >= 0; rank--) {
     for (int file = 0; file < 8; file++) {
-      int piece = state->piece_at[rank * 8 + file];
+      int piece = position->piece_at[rank * 8 + file];
       if (piece == EMPTY) {
         empty_file_count++;
       } else {
@@ -191,27 +191,27 @@ int get_fen(const state_s *state, char *out, size_t outsize) {
   *ptr++ = ' ';
 
   /* Turn */
-  *ptr++ = (state->turn == WHITE) ? 'w' : 'b';
+  *ptr++ = (position->turn == WHITE) ? 'w' : 'b';
   *ptr++ = ' ';
 
   /* Castling rights */
   for (int i = 0; i < N_CASTLE_RIGHTS_MASKS; i++) {
-    if (state->castling_rights & castling_rights_letter[i].bits) {
+    if (position->castling_rights & castling_rights_letter[i].bits) {
       *ptr++ = castling_rights_letter[i].c;
     }
   }
-  if (!state->castling_rights) *ptr++ = '-';
+  if (!position->castling_rights) *ptr++ = '-';
   *ptr++ = ' ';
 
   /* En passant */
-  if (state->en_passant == 0) {
+  if (position->en_passant == 0) {
     *ptr++ = '-';
   } else {
-    format_square(ptr, bit2square(state->en_passant));
+    format_square(ptr, bit2square(position->en_passant));
     ptr += 2;
   }
 
   /* Halfmove and fullmove counts */
-  sprintf(ptr, " %d %d", state->halfmove, state->fullmove);
+  sprintf(ptr, " %d %d", position->halfmove, position->fullmove);
   return 0;
 }

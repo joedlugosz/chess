@@ -6,7 +6,7 @@
 #define HASH_H
 
 #include "evaluate.h"
-#include "state.h"
+#include "position.h"
 
 /*
  *  Zobrist keys
@@ -42,7 +42,7 @@ typedef struct ttentry_s_ {
   tt_type_e type;
   int depth;
   score_t score;
-  move_s best_move;
+  struct move best_move;
 } ttentry_s;
 
 void tt_exit(void);
@@ -50,7 +50,7 @@ void tt_zero(void);
 double tt_collisions(void);
 void tt_init(void);
 void tt_clear(void);
-ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, move_s *best_move);
+ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, struct move *best_move);
 ttentry_s *tt_probe(hash_t hash);
 
 #endif /* HASH_H */

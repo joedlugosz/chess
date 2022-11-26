@@ -1,8 +1,8 @@
 #ifndef MOVES_H
 #define MOVES_H
 
-#include "state.h"
+#include "position.h"
 
-void calculate_moves(state_s *state);
+void calculate_moves(struct position *position);
 
 #endif
