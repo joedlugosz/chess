@@ -7,11 +7,12 @@
  * both. Currently, only a few commands are implemented. Commands return a PASS
  * or FAIL result, and an overall PASS/FAIL is recorded for each case.
  *
- * Cases can be identified and organised into sets by the "id" command which specifies
- * the name of the set and the number of the case within the set, e.g. `id "BK.01";`
- * Results are organised by set.
+ * Cases can be identified and organised into sets by the "id" command which
+ * specifies the name of the set and the number of the case within the set, e.g.
+ * `id "BK.01";` Results are organised by set.
  */
 #include <ctype.h>
+#include <malloc.h>
 #include <stdio.h>
 
 #include "fen.h"
@@ -94,7 +95,8 @@ static void add_result(const char *name, int pass) {
 /* Print the total pass/fail results by set */
 static void print_results(void) {
   for (int i = 0; i < n_sets; i++) {
-    printf("   %-60s %d/%d %0.2lf%%\n", epd_sets[i].name, epd_sets[i].n_pass, epd_sets[i].n_total,
+    printf("   %-60s %d/%d %0.2lf%%\n", epd_sets[i].name, epd_sets[i].n_pass,
+           epd_sets[i].n_total,
            (double)epd_sets[i].n_pass / (double)epd_sets[i].n_total * 100.0);
   }
 }
@@ -186,17 +188,21 @@ static epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
 }
 
 /* Run an EPD case */
-int epd_run(char *epd_line, int depth) {
+int epd_run(const char *epd_line, int depth) {
   struct position position;
   int pass = 1;
   direct_mate = 0;
 
-  char *placement_text = strtok(epd_line, " ");
+  char *line_buf = (char *)malloc(strlen(epd_line) + 1);
+  strcpy(line_buf, epd_line);
+
+  char *placement_text = strtok(line_buf, " ");
   char *active_player_text = strtok(0, " ");
   char *castling_text = strtok(0, " ");
   char *en_passant_text = strtok(0, " ");
 
-  load_fen(&position, placement_text, active_player_text, castling_text, en_passant_text, "0", "1");
+  load_fen(&position, placement_text, active_player_text, castling_text,
+           en_passant_text, "0", "1");
 
   if (show_board) print_board(&position, 0, 0);
 
@@ -271,6 +277,9 @@ int epd_run(char *epd_line, int depth) {
       }
     }
   }
+
+  free(line_buf);
+
   return pass;
 }
 
@@ -318,7 +327,8 @@ int epd_test(const char *filename, int depth) {
     printf("\nResults by category:\n");
     print_results();
     printf("\nTotal:\n");
-    printf("   %d/%d %0.2lf%%\n", n_pass, n_tests, (double)n_pass / (double)n_tests);
+    printf("   %d/%d %0.2lf%%\n", n_pass, n_tests,
+           (double)n_pass / (double)n_tests);
   }
 
   return 0;
