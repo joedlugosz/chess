@@ -1,5 +1,5 @@
 /*
- *  UI commands
+ *  Commands for XBoard interface and UI
  */
 
 #ifndef COMMANDS_H
