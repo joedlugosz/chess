@@ -89,7 +89,8 @@ bitboard_t *square2bit;
  *  Functions
  */
 
-static inline void add_piece(struct position *position, enum square square, enum piece piece, int index) {
+static inline void add_piece(struct position *position, enum square square, enum piece piece,
+                             int index) {
   ASSERT(piece != EMPTY);
   ASSERT(index != EMPTY);
   ASSERT(position->piece_at[square] == EMPTY);
@@ -142,7 +143,8 @@ static inline void remove_piece(struct position *position, enum square square) {
   position->hash ^= placement_key[piece][square];
 }
 
-static inline void clear_rook_castling_rights(struct position *position, enum square square, enum player player) {
+static inline void clear_rook_castling_rights(struct position *position, enum square square,
+                                              enum player player) {
   for (enum boardside side = QUEENSIDE; side <= KINGSIDE; side++) {
     if (square == rook_start_square[player][side]) {
       if (position->castling_rights & castling_rights[player][side]) {
@@ -162,8 +164,8 @@ static inline void clear_king_castling_rights(struct position *position, enum pl
   }
 }
 
-static inline void do_rook_castling_move(struct position *position, enum square king_square, enum square from_offset,
-                                         enum square to_offset) {
+static inline void do_rook_castling_move(struct position *position, enum square king_square,
+                                         enum square from_offset, enum square to_offset) {
   uint8_t rook_piece = position->piece_at[king_square + from_offset];
   int8_t rook_index = position->index_at[king_square + from_offset];
   remove_piece(position, king_square + from_offset);
@@ -282,7 +284,8 @@ int check_legality(struct position *position, struct move *move) {
   if ((square2bit[move->from] & get_my_pieces(position)) == 0) return ERR_NOT_MY_PIECE;
   if ((square2bit[move->to] & get_moves(position, move->from)) == 0) return ERR_CANT_MOVE_THERE;
   if ((is_promotion_move(position, move->from, move->to) &&
-       (position->piece_at[move->from] == PAWN || position->piece_at[move->from] == PAWN + N_PIECE_T)) ^
+       (position->piece_at[move->from] == PAWN ||
+        position->piece_at[move->from] == PAWN + N_PIECE_T)) ^
       (move->promotion > PAWN))
     return ERR_PROMOTION;
   return 0;

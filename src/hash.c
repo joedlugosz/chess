@@ -103,7 +103,8 @@ static inline ttentry_s *tt_get(hash_t hash) {
 /* Update an entry in the transposition table, if the new information is found
    at a greater depth than the existing entry. If the new entry has a hashes a
    different position, a collision is recorded but the update is still made. */
-ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, struct move *best_move) {
+ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score,
+                     struct move *best_move) {
   ttentry_s *ret = tt_get(hash);
   if (ret->depth < depth) {
     if (ret->hash != 0 && ret->hash != hash) update_collisions++;

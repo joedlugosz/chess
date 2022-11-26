@@ -16,8 +16,8 @@
 
 #include "fen.h"
 #include "history.h"
-#include "search.h"
 #include "position.h"
+#include "search.h"
 
 enum {
   EPD_CMD_LENGTH_MAX = 1000,
@@ -122,7 +122,9 @@ int epd_dm_pre(char *args, struct search_result *result) {
 }
 
 /* "dm" <N> - direct mate in N moves - FAIL if search result > N */
-int epd_dm_post(char *args, struct search_result *result) { return (full_move > direct_mate) ? 1 : 0; }
+int epd_dm_post(char *args, struct search_result *result) {
+  return (full_move > direct_mate) ? 1 : 0;
+}
 
 /* "id" - set id of case */
 int epd_id(char *args, struct search_result *result) {

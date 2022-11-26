@@ -59,16 +59,7 @@ enum {
 };
 
 /* Piece type */
-enum piece {
-  EMPTY = -1,
-  PAWN = 0,
-  ROOK,
-  KNIGHT,
-  BISHOP,
-  QUEEN,
-  KING,
-  N_PIECE_T
-};
+enum piece { EMPTY = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING, N_PIECE_T };
 
 enum {
   /* Number of pieces */
@@ -95,23 +86,23 @@ enum {
 /* Position, game position, and pre-calculated moves */
 struct position {
   /* The stacks */
-  bitboard_t a[N_PLANES];          /* -  Horizontal    */
-  bitboard_t b[N_PLANES];          /* |  Vertical      */
-  bitboard_t c[N_PLANES];          /* /  Diagonal      */
-  bitboard_t d[N_PLANES];          /* \  Diagonal      */
-  bitboard_t player_a[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t player_b[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t player_c[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t player_d[N_PLAYERS];  /* Set of each players pieces */
-  bitboard_t total_a;              /* Set of all pieces */
-  bitboard_t total_b;              /* Set of all pieces */
-  bitboard_t total_c;              /* Set of all pieces */
-  bitboard_t total_d;              /* Set of all pieces */
-  bitboard_t moves[N_PIECES];      /* Set of squares each piece can move to */
-  bitboard_t claim[N_PLAYERS];     /* Set of all squares each player can move to */
+  bitboard_t a[N_PLANES];             /* -  Horizontal    */
+  bitboard_t b[N_PLANES];             /* |  Vertical      */
+  bitboard_t c[N_PLANES];             /* /  Diagonal      */
+  bitboard_t d[N_PLANES];             /* \  Diagonal      */
+  bitboard_t player_a[N_PLAYERS];     /* Set of each players pieces */
+  bitboard_t player_b[N_PLAYERS];     /* Set of each players pieces */
+  bitboard_t player_c[N_PLAYERS];     /* Set of each players pieces */
+  bitboard_t player_d[N_PLAYERS];     /* Set of each players pieces */
+  bitboard_t total_a;                 /* Set of all pieces */
+  bitboard_t total_b;                 /* Set of all pieces */
+  bitboard_t total_c;                 /* Set of all pieces */
+  bitboard_t total_d;                 /* Set of all pieces */
+  bitboard_t moves[N_PIECES];         /* Set of squares each piece can move to */
+  bitboard_t claim[N_PLAYERS];        /* Set of all squares each player can move to */
   enum square piece_square[N_PIECES]; /* Square location of each piece */
-  int8_t piece_at[N_SQUARES];      /* Type of piece at each square */
-  int8_t index_at[N_SQUARES];      /* Piece index at each board position */
+  int8_t piece_at[N_SQUARES];         /* Type of piece at each square */
+  int8_t index_at[N_SQUARES];         /* Piece index at each board position */
   int halfmove;
   int fullmove;
   status_t turn : 1;         /* Player to move next */
@@ -159,7 +150,8 @@ extern const enum player opponent[N_PLAYERS];
 
 void init_board(void);
 void reset_board(struct position *position);
-void setup_board(struct position *, const enum piece *, enum player, castle_rights_t, bitboard_t, int, int);
+void setup_board(struct position *, const enum piece *, enum player, castle_rights_t, bitboard_t,
+                 int, int);
 
 bitboard_t get_attacks(struct position *position, enum square target, enum player attacking);
 void make_move(struct position *position, struct move *move);
@@ -173,14 +165,18 @@ static inline int move_equal(struct move *move1, struct move *move2) {
 }
 
 /* Square coordinate is valid, rejecting NO_SQUARE */
-static inline int is_valid_square(enum square square) { return (square >= 0 && square < N_SQUARES); }
+static inline int is_valid_square(enum square square) {
+  return (square >= 0 && square < N_SQUARES);
+}
 /* Convert bitboard bit to square coordinate */
 static inline enum square bit2square(bitboard_t mask) {
   ASSERT(is_valid_square((enum square)ctz(mask)));
   return (enum square)ctz(mask);
 }
 /* Clear the position to an empty board */
-static inline void clear_position(struct position *position) { memset(position, 0, sizeof(struct position)); }
+static inline void clear_position(struct position *position) {
+  memset(position, 0, sizeof(struct position));
+}
 /* memcpy the position */
 static inline void copy_position(struct position *dst, const struct position *src) {
   memcpy(dst, src, sizeof(struct position));
@@ -190,7 +186,9 @@ static inline bitboard_t get_moves(struct position *position, enum square square
   return position->moves[(int)position->index_at[square]];
 }
 /* Return the set of squares containing the moving player's pieces */
-static inline bitboard_t get_my_pieces(struct position *position) { return position->player_a[position->turn]; }
+static inline bitboard_t get_my_pieces(struct position *position) {
+  return position->player_a[position->turn];
+}
 /* Return the set of squares containing the non-moving player's pieces */
 static inline bitboard_t get_opponents_pieces(struct position *position) {
   return position->player_a[position->turn];

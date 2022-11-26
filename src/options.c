@@ -20,7 +20,8 @@
 /* Arrays of options are declared in other modules */
 extern const struct options eval_opts;
 
-// const struct options *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
+// const struct options *const module_opts[] = {&search_opts, &eval_opts, &engine_options,
+// &log_opts};
 const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 

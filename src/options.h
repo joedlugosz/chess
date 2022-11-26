@@ -46,7 +46,6 @@ struct option {
 
   /* type == COMBO_OPT - array of options indexed by *value.integer */
   const struct combo *combo_vals;
-
 };
 
 /* Set of options for a module */
