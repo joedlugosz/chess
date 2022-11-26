@@ -82,7 +82,7 @@ struct epd_set *find_set(const char *name) {
 }
 
 /* Add an EPD test result for a test within a set */
-void add_result(const char *name, int pass) {
+static void add_result(const char *name, int pass) {
   struct epd_set *set = find_set(name);
   if (!set) set = add_set(name);
   if (set) {
@@ -92,7 +92,7 @@ void add_result(const char *name, int pass) {
 }
 
 /* Print the total pass/fail results by set */
-void print_results(void) {
+static void print_results(void) {
   for (int i = 0; i < n_sets; i++) {
     printf("   %-60s %d/%d %0.2lf%%\n", epd_sets[i].name, epd_sets[i].n_pass, epd_sets[i].n_total,
            (double)epd_sets[i].n_pass / (double)epd_sets[i].n_total * 100.0);
@@ -100,7 +100,7 @@ void print_results(void) {
 }
 
 /* "bm" <MOVE> - best move is MOVE - FAIL if search result is different */
-int epd_bm(char *args, struct search_result *result) {
+static int epd_bm(char *args, struct search_result *result) {
   char san[10];
   format_move_san(san, &result->move);
 
@@ -117,18 +117,18 @@ int epd_bm(char *args, struct search_result *result) {
 }
 
 /* "dm" <N> - direct mate in N moves - read the argument */
-int epd_dm_pre(char *args, struct search_result *result) {
+static int epd_dm_pre(char *args, struct search_result *result) {
   if (sscanf(args, "%d", &direct_mate) != 1) return 1;
   return 0;
 }
 
 /* "dm" <N> - direct mate in N moves - FAIL if search result > N */
-int epd_dm_post(char *args, struct search_result *result) {
+static int epd_dm_post(char *args, struct search_result *result) {
   return (full_move > direct_mate) ? 1 : 0;
 }
 
 /* "id" - set id of case */
-int epd_id(char *args, struct search_result *result) {
+static int epd_id(char *args, struct search_result *result) {
   char *src = args;
   while (isspace(*src)) src++;
   if (*src == '\"') src++;
@@ -145,7 +145,7 @@ int epd_id(char *args, struct search_result *result) {
 }
 
 /* Handle EPD comments with no effect */
-int epd_comment(char *args, struct search_result *result) { return 0; }
+static int epd_comment(char *args, struct search_result *result) { return 0; }
 
 /* EPD command function */
 typedef int (*epd_fn)(char *, struct search_result *);
@@ -173,7 +173,7 @@ struct epd_cmd epd_cmds_pre[] = {
 };
 
 /* Find an command function from a table */
-epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
+static epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
   struct epd_cmd *cmd = epd_cmds;
 
   while (cmd->name[0]) {

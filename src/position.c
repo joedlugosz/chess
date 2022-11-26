@@ -23,10 +23,10 @@ enum square square_a2b[N_SQUARES];
 
 /* Mapping from A-square to C-square */
 const enum square square_a2c[N_SQUARES] = {
-  0,  1,  3,  6, 10, 15, 21, 28,
-  2,  4,  7, 11, 16, 22, 29, 36,
-  5,  8, 12, 17, 23, 30, 37, 43,
-  9, 13, 18, 24, 31, 38, 44, 49,
+   0,  1,  3,  6, 10, 15, 21, 28,
+   2,  4,  7, 11, 16, 22, 29, 36,
+   5,  8, 12, 17, 23, 30, 37, 43,
+   9, 13, 18, 24, 31, 38, 44, 49,
   14, 19, 25, 32, 39, 45, 50, 54,
   20, 26, 33, 40, 46, 51, 55, 58,
   27, 34, 41, 47, 52, 56, 59, 61,
@@ -172,7 +172,8 @@ static inline void do_rook_castling_move(struct position *position, enum square 
   add_piece(position, king_square + to_offset, rook_piece, rook_index);
 }
 
-/* Alter the position to make a move.  There is no validity checking. */
+/* Alter the position to make a move, without validity checking. Update `move`
+   with the result */
 void make_move(struct position *position, struct move *move) {
   ASSERT(is_valid_square(move->from));
   ASSERT(is_valid_square(move->to));
@@ -278,7 +279,7 @@ void change_player(struct position *position) {
   position->hash ^= turn_key;
 }
 
-int check_legality(struct position *position, struct move *move) {
+int check_legality(const struct position *position, const struct move *move) {
   if (no_piece_at_square(position, move->from)) return ERR_NO_PIECE;
   if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
   if ((square2bit[move->from] & get_my_pieces(position)) == 0) return ERR_NOT_MY_PIECE;

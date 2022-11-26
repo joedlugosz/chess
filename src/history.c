@@ -33,7 +33,7 @@ void history_clear(struct history *history) { memset(history, 0, sizeof(*history
    which makes it impossible for the position to be repeated, there is no need
    to continue searching. Return true if there is are more repetitions than
    allowed.  */
-int is_repeated_position(struct history *history, hash_t hash, int repetitions) {
+int is_repeated_position(const struct history *history, hash_t hash, int repetitions) {
   int index = history->index;
   int count = 0;
   while (index > 0) {

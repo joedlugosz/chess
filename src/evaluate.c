@@ -54,7 +54,7 @@ const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]), _e
  */
 
 /* Evaluate one player's pieces, producing a positive score */
-static inline score_t evaluate_player(struct position *position, enum player player) {
+static inline score_t evaluate_player(const struct position *position, enum player player) {
   int score = 0;
   int pt_first;
   bitboard_t pieces;
@@ -68,8 +68,8 @@ static inline score_t evaluate_player(struct position *position, enum player pla
   /* Mobility - for each piece count the number of moves */
   pieces = position->player_a[player];
   while (pieces) {
-    enum square pos = bit2square(take_next_bit_from(&pieces));
-    score += mobility * pop_count(get_moves(position, pos));
+    enum square square = bit2square(take_next_bit_from(&pieces));
+    score += mobility * pop_count(get_moves(position, square));
   }
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
   pieces = position->b[PAWN + pt_first];
@@ -82,8 +82,8 @@ static inline score_t evaluate_player(struct position *position, enum player pla
   /* Blocked pawns - look for pawns with no moves */
   pieces = position->a[PAWN + pt_first];
   while (pieces) {
-    enum square pos = bit2square(take_next_bit_from(&pieces));
-    if (pop_count(get_moves(position, pos) == 0ull)) {
+    enum square square = bit2square(take_next_bit_from(&pieces));
+    if (pop_count(get_moves(position, square) == 0ull)) {
       score -= blocked;
     }
   }
@@ -96,7 +96,7 @@ static inline score_t evaluate_player(struct position *position, enum player pla
 
 /* Evaluate a position, producing a score which is positive if the current
    player is leading */
-score_t evaluate(struct position *position) {
+score_t evaluate(const struct position *position) {
   return (evaluate_player(position, WHITE) - evaluate_player(position, BLACK)) *
          player_factor[position->turn];
 }
