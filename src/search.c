@@ -26,13 +26,13 @@ enum {
 
 struct move mate_move = {.result = CHECK | MATE};
 
-static score_t search_ply(struct search_job *job, struct pv *parent_pv,
-                          struct position *position, int depth, score_t alpha,
-                          score_t beta);
+static score_t search_position(struct search_job *job, struct pv *parent_pv,
+                               struct position *position, int depth,
+                               score_t alpha, score_t beta);
 
-/* Search a single move - call search_ply after making the move. In/out args are
-   updated on an alpha update: alpha, best_move. Returns 1 for a beta cutoff,
-   and 0 in all other cases including impossible moves into check. */
+/* Search a single move - call search_position after making the move. In/out
+   args are updated on an alpha update: alpha, best_move. Returns 1 for a beta
+   cutoff, and 0 in all other cases including impossible moves into check. */
 static inline int search_move(struct search_job *job, struct pv *parent_pv,
                               struct pv *pv, struct position *position,
                               int depth, score_t *best_score, score_t *alpha,
@@ -54,7 +54,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (in_check(&next_position)) move->result |= CHECK;
 
   score_t score =
-      -search_ply(job, pv, &next_position, depth - 1, -beta, -*alpha);
+      -search_position(job, pv, &next_position, depth - 1, -beta, -*alpha);
 
   history_pop(job->history);
 
@@ -104,9 +104,9 @@ static inline void update_result(struct search_job *job,
 
 /* Search a single position and all possible moves - call search_move for each
    move */
-static score_t search_ply(struct search_job *job, struct pv *parent_pv,
-                          struct position *position, int depth, score_t alpha,
-                          score_t beta) {
+static score_t search_position(struct search_job *job, struct pv *parent_pv,
+                               struct position *position, int depth,
+                               score_t alpha, score_t beta) {
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
@@ -239,18 +239,20 @@ static score_t search_ply(struct search_job *job, struct pv *parent_pv,
 /* Entry point to recursive search */
 void search(int depth, struct history *history, struct position *position,
             struct search_result *res, int show_thoughts) {
+  /* Prepare for search */
   struct search_job job;
   memset(&job, 0, sizeof(job));
   job.depth = depth;
   job.start_time = clock();
   job.history = history;
   job.show_thoughts = show_thoughts;
-
   tt_zero();
 
+  /* Enter recursive search with the current position as the root */
   struct pv pv;
-  search_ply(&job, &pv, position, job.depth, -BOUNDARY, BOUNDARY);
+  search_position(&job, &pv, position, job.depth, -BOUNDARY, BOUNDARY);
 
+  /* Copy results and calculate stats */
   memcpy(res, &job.result, sizeof(*res));
   res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
   res->time = clock() - job.start_time;
