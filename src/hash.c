@@ -1,3 +1,7 @@
+/*
+ *  Transposition table, random number, and Zobrist hashing functions
+ */
+
 #include "hash.h"
 
 #include <stdio.h>
@@ -6,24 +10,38 @@
 
 #include "state.h"
 
-enum { N_HASH = N_PLANES * N_SQUARES };
+/*
+ * Transposition table size - number of entries, a prime number
+ * Zobrist PRNG seed value - hardcoded for repeatable results
+ */
+enum {
+  TT_SIZE = 15485867,
+  ZOBRIST_SEED = 4587987,
+};
 
+/*
+ *  Pseudo-random number generator
+ *  TODO: Much better prng scheme
+ */
+
+/* Seed the pseudo-random number generator */
+void prng_seed(hash_t seed) { srand(seed); }
+
+/* Get a number from the pseudo-random number generator */
+hash_t prng_rand(void) { return ((hash_t)rand() << 32) + (hash_t)rand(); }
+
+/*
+ *  Zobrist keys
+ */
 hash_t init_key;
 hash_t placement_key[N_PLANES][N_SQUARES];
 hash_t castle_rights_key[N_PLAYERS][N_BOARDSIDE];
 hash_t turn_key;
 hash_t en_passant_key[N_FILES];
 
-int updates;
-int update_collisions;
-
-void prng_seed(hash_t seed) { srand(seed); }
-
-/* TODO: better prng scheme */
-hash_t prng_rand(void) { return ((hash_t)rand() << 32) + (hash_t)rand(); }
-
+/* Initialise the random Zobrist keys */
 void hash_init(void) {
-  prng_seed(4587987);
+  prng_seed(ZOBRIST_SEED);
   init_key = prng_rand();
   turn_key = prng_rand();
   for (int i = 0; i < N_PLANES; i++) {
@@ -41,13 +59,17 @@ void hash_init(void) {
   }
 }
 
-/* Transposition table size - prime number */
-enum { TT_SIZE = 15485867 };
-// enum { TT_SIZE = (1ull << 21) + 7};
-// enum { TT_SIZE = 7};
+/*
+ *  Transposition table
+ */
 
+int updates;
+int update_collisions;
+
+/* Transposition table object */
 ttentry_s *tt;
 
+/* Initialise transposition table memory. Call at program init. */
 void tt_init(void) {
   tt = (ttentry_s *)calloc(TT_SIZE, sizeof(ttentry_s));
   if (!tt) {
@@ -56,22 +78,31 @@ void tt_init(void) {
   }
 }
 
+/* Free transposition table memory. Call at program exit. */
 void tt_exit(void) {
   if (tt) free(tt);
 }
 
+/* Reset collision counters for transposition table */
 void tt_zero(void) {
   updates = 0;
   update_collisions = 0;
 }
 
+/* Return percentage of transposition table updates resulting in collisions
+   since last call to tt_zero */
 double tt_collisions(void) { return (double)update_collisions * 100.0 / (double)updates; }
 
+/* Get an entry from the transposition table with the index that corresponds
+   to the supplied hash. The entry might not match the hash. */
 static inline ttentry_s *tt_get(hash_t hash) {
   hash_t index = hash % (hash_t)TT_SIZE;
   return &tt[index];
 }
 
+/* Update an entry in the transposition table, if the new information is found
+   at a greater depth than the existing entry. If the new entry has a hashes a
+   different position, a collision is recorded but the update is still made. */
 ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, move_s *best_move) {
   ttentry_s *ret = tt_get(hash);
   if (ret->depth < depth) {
@@ -86,6 +117,8 @@ ttentry_s *tt_update(hash_t hash, tt_type_e type, int depth, score_t score, move
   return ret;
 }
 
+/* Probe the transposition table to get an entry which exactly matches the
+   supplied hash, or return zero if none is found. */
 ttentry_s *tt_probe(hash_t hash) {
   ttentry_s *ret = tt_get(hash);
   if (ret->hash != hash) {

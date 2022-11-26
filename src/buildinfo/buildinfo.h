@@ -1,3 +1,7 @@
+/*
+ * extern definitions from buildinfo.c
+ */
+
 #ifndef BUILD_H
 #define BUILD_H
 

@@ -1,6 +1,4 @@
-# The app
-
-# Executable target
+# Target to make the application
 add_executable (chess main.c)
 target_link_libraries (chess common)
 target_include_directories (chess PRIVATE ../src)

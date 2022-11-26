@@ -1,20 +1,22 @@
 /*
- *  Program information
+ *  Program build info banner
  */
 
 #include <stdio.h>
 
 #include "buildinfo/buildinfo.h"
 
-/* Program info data */
 enum { COL_WIDTH = 50 };
 
+/* A line of program information */
 struct info_line {
   char key[COL_WIDTH];
   const char *value;
 };
 
 /* clang-format off */
+
+/* The lines to display */
 const struct info_line lines[] = {
   { "",              0                           },
   { "Joe's Chess Engine", 0                      },
@@ -34,7 +36,7 @@ const struct info_line lines[] = {
 };
 /* clang-format on */
 
-/* Prints a program info banner */
+/* Print a program info banner */
 void print_program_info() {
   char buf[1000];
   printf("\n");

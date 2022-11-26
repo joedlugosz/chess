@@ -1,4 +1,6 @@
-/* Portable command line parsing */
+/*
+ * Command line parsing functions
+ */
 
 #ifndef CMDLINE_H
 #define CMDLINE_H
@@ -6,7 +8,7 @@
 /* Internal context for command line parser */
 struct cmdline;
 
-/* Callback to recieve an argument */
+/* Callback for client to recieve an argument value */
 typedef int (*arg_fn)(struct cmdline *);
 
 /* Argument definition provided in an array by client */

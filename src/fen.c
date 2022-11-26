@@ -1,6 +1,6 @@
 
 /*
- *   Forsyth-Edwards Notation input and output
+ *  Forsyth-Edwards Notation input and output
  */
 
 #include <stdio.h>
@@ -13,11 +13,14 @@ static const char piece_letter[N_PLANES + 1] = "PRNBQKprnbqk";
 
 enum { N_CASTLE_RIGHTS_MASKS = 4 };
 
+/* Mapping between a FEN castling rights letter and a bit in the castling
+   rights bitmask */
 struct castle_rights_entry {
   char c;
   castle_rights_t bits;
 };
 
+/* Mapping of FEN castling rights letters to castling rights bits */
 static const struct castle_rights_entry castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {
     {'K', WHITE_KINGSIDE}, {'Q', WHITE_QUEENSIDE}, {'k', BLACK_KINGSIDE}, {'q', BLACK_QUEENSIDE}};
 
@@ -208,6 +211,7 @@ int get_fen(const state_s *state, char *out, size_t outsize) {
     ptr += 2;
   }
 
+  /* Halfmove and fullmove counts */
   sprintf(ptr, " %d %d", state->halfmove, state->fullmove);
   return 0;
 }

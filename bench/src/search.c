@@ -1,3 +1,9 @@
+/* 
+ * Search benchmarking app
+ * Builds executable bench_search
+ * 
+ * Plays AI-AI games at increasing depths and prints moves and statistics.
+ */
 
 #include "search.h"
 

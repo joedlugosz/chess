@@ -1,3 +1,8 @@
+/*
+ *  Entry point to the chess engine app
+ *  Builds executable chess
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

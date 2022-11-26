@@ -1,5 +1,5 @@
 /*
- *  Debug logging
+ *  Debug logging and assertion functions
  */
 
 #ifndef DEBUG_H

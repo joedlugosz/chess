@@ -35,14 +35,14 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
   copy_state(&next_state, state);
   make_move(&next_state, move);
 
-  /* Can't move into check. All other moves are legal options */
+  /* Return early if moving into check. All other moves are legal. */
   if (in_check(&next_state)) return 0;
   if (n_legal) (*n_legal)++;
 
   history_push(job->history, state->hash, move);
   change_player(&next_state);
 
-  /* If this move gives check */
+  /* Record whether this move gives check to the opponent */
   if (in_check(&next_state)) move->result |= CHECK;
 
   score_t score = -search_ply(job, pv, &next_state, depth - 1, -beta, -*alpha);
@@ -81,7 +81,6 @@ static inline int search_move(search_job_s *job, struct pv *parent_pv, struct pv
 }
 
 /* Update the result if at the top level */
-/* This only happens when score = beta = BOUNDARY...? */
 static inline void update_result(search_job_s *job, state_s *state, int depth, move_s *move,
                                  score_t score) {
   if (depth == job->depth) {
@@ -92,8 +91,8 @@ static inline void update_result(search_job_s *job, state_s *state, int depth, m
   }
 }
 
-/* Search a single ply and all possible moves - call search_move for each move
- */
+/* Search a single position and all possible moves - call search_move for each
+   move */
 static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *state, int depth,
                           score_t alpha, score_t beta) {
   if (job->halt) return 0;
@@ -109,12 +108,10 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     return DRAW_SCORE;
   }
 
-  /* The first phase of searching a node involves trying to find ways to return
-     early, before the work of generating and searching all the possible moves
-     for the node. */
+  /* First phase - try to exit early */
 
-  /* If there are any moves, this will point to the best move by the end of the
-     function */
+  /* If there are any moves, best_move and best_score will be updated by the end
+     of the function */
   score_t best_score = -BOUNDARY;
   move_s *best_move = 0;
 
@@ -122,8 +119,8 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   struct pv pv;
   pv.length = 0;
 
-  /* Quiescence - evaluate taking no action - this could be better than the
-     consequences of taking the piece. */
+  /* Standing pat - in a quiescence search, evaluate taking no action - this
+     could be better than the consequences of taking a piece. */
   if (depth <= 0 && !in_check(state)) {
     best_score = evaluate(state);
     if (best_score >= beta) return beta;
@@ -134,7 +131,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
      on beta cutoff */
   tt_type_e type = TT_ALPHA;
 
-  /* Try to get a cutoff from a killer move */
+  /* Try to get a beta cutoff or alpha update from a killer move */
   if (OPT_KILLER && (depth >= 0) && !check_legality(state, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta,
                   &job->killer_moves[depth], &best_move, &type, 0)) {
@@ -142,13 +139,13 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     return beta;
   }
 
-  /* Probe the transposition table, but only at higher levels */
+  /* Probe the transposition table at higher levels */
   ttentry_s *tte = 0;
   if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(state->hash);
 
   /* If the position has already been searched at the same or greater depth, use
-     the result from the tt. At root level, accapt only exact and copy out the
-     move */
+     the result from the tt. At root level, this is the move that will be made,
+     so accept only an exact result, and record the move */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
       if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
@@ -162,9 +159,8 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     }
   }
 
-  /* If there is a best move from the transposition table, try searching it
-     first. A beta cutoff will avoid move generation, otherwise alpha will get a
-     good starting value. */
+  /* If there is a valid best move from the transposition table, try to get a
+     beta cutoff or alpha update. */
   if (tte && !check_legality(state, &tte->best_move) &&
       search_move(job, parent_pv, &pv, state, depth, &best_score, &alpha, beta, &tte->best_move,
                   &best_move, &type, 0)) {
@@ -172,20 +168,10 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     return beta;
   }
 
-  /* The second phase of searching a node occurs if an early exit was not
-     achieved. This involves a search through all possible moves for this
-     position, with an earlier exit if a beta cutoff is found. */
+  /* Second phase - generate and search all moves */
 
-  /* Generate the list of pseudo-legal moves. These are moves which appear to be
-     legal without considering check. It is easier to test for check once the
-     move has been made, then abandon the move if it turns out to be illegal. To
-     assist with sorting, moves are are stored as a linked list within the array
-     move_buf. list_entry will point to the first sorted item. In front of the
-     search horizon, a list is generated for a normal search, with all moves
-     that can be made for all pieces. At and beyond the horizon, a separate
-     function is used to generate a list of only moves which are interesting
-     enough to extend the search, such as a capture of the piece just moved.
-     If no moves are generated, recursion stops. */
+  /* Generate the list of pseudo-legal moves. list_entry will point to the first
+     sorted item. */
   movelist_s move_buf[N_MOVES];
   movelist_s *list_entry = move_buf;
   int n_pseudo_legal_moves;
@@ -197,8 +183,7 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
   }
 
   /* Search through the list of pseudo-legal moves. search_move will update
-     best_score, best_move, alpha, and type, and will increment n_legal_moves
-     whenever a genuine legal move is found which does not lead into check */
+     best_score, best_move, alpha, and type, and n_legal_moves. */
   int n_legal_moves = 0;
   if (n_pseudo_legal_moves > 0) {
     while (list_entry) {
@@ -213,10 +198,8 @@ static score_t search_ply(search_job_s *job, struct pv *parent_pv, state_s *stat
     }
   }
 
-  /* If no genuine legal moves were found in the search, it means a checkmate or
-     stalemate. For checkmate, reduce the checkmate score by the distance from
-     root to mate, so that the shortest path to mate has the strongest score.
-     Stalemate causes a draw score of zero, which is a goal for the losing side */
+  /* Checkmate or stalemate. For checkmate, reduce the score by the distance
+     from root to mate. */
   if (n_legal_moves == 0) {
     type = TT_EXACT;
     if (in_check(state)) {

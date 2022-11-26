@@ -26,6 +26,7 @@ int is_terminal(FILE *f) { return _isatty(_fileno(f)); }
 #define BG_MASK (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define FG_MASK (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
 
+/* Set console text attribute */
 void set_console_attr(DWORD attr, DWORD mask) {
   CONSOLE_SCREEN_BUFFER_INFO cbsi;
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -37,13 +38,9 @@ void set_console_attr(DWORD attr, DWORD mask) {
 
 void set_console_hilight1(void) { set_console_attr(HLITE1_SQUARE, BG_MASK); }
 void set_console_hilight2(void) { set_console_attr(HLITE2_SQUARE, BG_MASK); }
-
 void set_console_white_square(void) { set_console_attr(WHITE_SQUARE, BG_MASK); }
-
 void set_console_black_square(void) { set_console_attr(BLACK_SQUARE, BG_MASK); }
-
 void set_console_white_piece(void) { set_console_attr(WHITE_PIECE, FG_MASK); }
-
 void set_console_black_piece(void) { set_console_attr(BLACK_PIECE, FG_MASK); }
 
 /*

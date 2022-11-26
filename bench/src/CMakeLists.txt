@@ -1,3 +1,5 @@
+# bench/src/CMakeLists.txt
+# Targets for benchmarking programs
 
 add_executable (bench_search search.c)
 target_link_libraries (bench_search common)
