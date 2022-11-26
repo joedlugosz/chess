@@ -57,6 +57,6 @@ struct options {
 void list_features(void);
 void feature_accepted(const char *name);
 void list_options(void);
-int set_option(struct struct engine_ *e, const char *name);
+int set_option(struct engine *e, const char *name);
 
 #endif /* OPTIONS_H */

@@ -101,7 +101,7 @@ int format_square(char *buf, enum square square) {
 }
 
 /* Format a move to a string in Standard Algebraic Notation */
-int format_struct movean(char *buf, struct move *move) {
+int format_move_san(char *buf, struct move *move) {
   char *ptr = buf;
 
   if (move->piece != PAWN) {
@@ -150,7 +150,7 @@ void print_pv(FILE *f, struct pv *pv) {
   char buf[8];
   int i;
   for (i = 0; i < pv->length; i++) {
-    format_struct movean(buf, &pv->moves[i]);
+    format_move_san(buf, &pv->moves[i]);
     fprintf(f, "%s ", buf);
   }
 }
@@ -232,7 +232,7 @@ void print_board(struct position *position, bitboard_t mask1, bitboard_t mask2) 
     if (tte) {
       switch (rank) {
         case 5:
-          format_struct movean(buf, &tte->best_move);
+          format_move_san(buf, &tte->best_move);
           printf("     %s", buf);
           break;
         case 4:
@@ -249,7 +249,7 @@ void print_board(struct position *position, bitboard_t mask1, bitboard_t mask2) 
 }
 
 /* Print thoughts in a format compatible with XBoard */
-void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, clock_t time,
+void xboard_thought(struct search_job *job, struct pv *pv, int depth, score_t score, clock_t time,
                     int nodes) {
   printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
   print_pv(stdout, pv);

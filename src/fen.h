@@ -5,8 +5,7 @@
 #ifndef FEN_H
 #define FEN_H
 
-#include "io.h"
-#include "position.h"
+struct position;
 
 int get_fen(const struct position *position, char *out, size_t outsize);
 int load_fen(struct position *position, const char *placement, const char *active,

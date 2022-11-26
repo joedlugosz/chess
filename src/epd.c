@@ -16,6 +16,7 @@
 
 #include "fen.h"
 #include "history.h"
+#include "io.h"
 #include "position.h"
 #include "search.h"
 
@@ -101,7 +102,7 @@ void print_results(void) {
 /* "bm" <MOVE> - best move is MOVE - FAIL if search result is different */
 int epd_bm(char *args, struct search_result *result) {
   char san[10];
-  format_struct movean(san, &result->move);
+  format_move_san(san, &result->move);
 
   char *bm = strtok(args, " ");
   while (bm) {

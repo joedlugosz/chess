@@ -30,7 +30,7 @@ struct search_result {
 enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
 
 struct history;
-typedef struct search_job_s_ {
+struct search_job {
   /* Parameters */
   int depth; /* Search depth before quiescence */
   int halt;  /* Halt search */
@@ -43,7 +43,7 @@ typedef struct search_job_s_ {
   int n_ai_moves;
   /* Results */
   struct search_result result;
-} search_job_s;
+};
 
 void search(int, struct history *history, struct position *, struct search_result *, int);
 

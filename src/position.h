@@ -83,7 +83,7 @@ enum {
   N_PLANES = N_PIECE_T * N_PLAYERS,
 };
 
-/* Position, game position, and pre-calculated moves */
+/* Position, game state, and pre-calculated moves */
 struct position {
   /* The stacks */
   bitboard_t a[N_PLANES];             /* -  Horizontal    */

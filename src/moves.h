@@ -1,7 +1,7 @@
 #ifndef MOVES_H
 #define MOVES_H
 
-#include "position.h"
+struct position;
 
 void calculate_moves(struct position *position);
 
