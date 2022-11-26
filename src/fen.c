@@ -21,12 +21,16 @@ struct castle_rights_entry {
 };
 
 /* Mapping of FEN castling rights letters to castling rights bits */
-static const struct castle_rights_entry castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {
-    {'K', WHITE_KINGSIDE}, {'Q', WHITE_QUEENSIDE}, {'k', BLACK_KINGSIDE}, {'q', BLACK_QUEENSIDE}};
+static const struct castle_rights_entry
+    castling_rights_letter[N_CASTLE_RIGHTS_MASKS] = {{'K', WHITE_KINGSIDE},
+                                                     {'Q', WHITE_QUEENSIDE},
+                                                     {'k', BLACK_KINGSIDE},
+                                                     {'q', BLACK_QUEENSIDE}};
 
 /* Load a board position given in FEN, into position */
-int load_fen(struct position *position, const char *placement_text, const char *active_player_text,
-             const char *castling_text, const char *en_passant_text, const char *halfmove_text,
+int load_fen(struct position *position, const char *placement_text,
+             const char *active_player_text, const char *castling_text,
+             const char *en_passant_text, const char *halfmove_text,
              const char *fullmove_text) {
   /* Counters for number of each piece type already placed on the board */
   int count[N_PIECE_T * 2];
@@ -148,7 +152,8 @@ int load_fen(struct position *position, const char *placement_text, const char *
   }
 
   /* Success - write the new positions to position */
-  setup_board(position, board, turn, castling_rights, en_passant, halfmove, fullmove);
+  setup_board(position, board, turn, castling_rights, en_passant, halfmove,
+              fullmove);
   return 0;
 
   /* Input error - display location */

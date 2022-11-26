@@ -144,8 +144,8 @@ void print_backtrace(FILE *f) {
     /* Run nm to look up base address of function, and add to rel_addr */
     uintptr_t base_addr = 0;
     if (bt[i].function[0]) {
-      snprintf(cmd, sizeof(cmd), "nm %s 2>/dev/null | grep -w %s", ((const char *)bt[i].module),
-               bt[i].function);
+      snprintf(cmd, sizeof(cmd), "nm %s 2>/dev/null | grep -w %s",
+               ((const char *)bt[i].module), bt[i].function);
       FILE *proc = popen(cmd, "r");
       if (proc) {
         if (!fscanf(proc, "%zx", &base_addr)) {
@@ -157,26 +157,29 @@ void print_backtrace(FILE *f) {
     }
 
     /* Run addr2line to get function names and line numbers */
-    snprintf(cmd, sizeof(cmd), "addr2line -f -s -e %s %p", ((const char *)bt[i].module),
-             (void *)bt[i].rel_addr);
+    snprintf(cmd, sizeof(cmd), "addr2line -f -s -e %s %p",
+             ((const char *)bt[i].module), (void *)bt[i].rel_addr);
     FILE *proc = popen(cmd, "r");
     if (proc) {
       if (!fgets(bt[i].a2l_function, sizeof(bt[i].a2l_function), proc))
         sprintf(bt[i].a2l_function, "%s", "???");
       bt[i].a2l_function[strlen(bt[i].a2l_function) - 1] = 0;
-      if (!fgets(bt[i].line, sizeof(bt[i].line), proc)) sprintf(bt[i].line, "%s", "???");
+      if (!fgets(bt[i].line, sizeof(bt[i].line), proc))
+        sprintf(bt[i].line, "%s", "???");
       bt[i].line[strlen(bt[i].line) - 1] = 0;
       pclose(proc);
     }
 
-    /* If backtrace_symbols didn't return a function name, use the one from addr2line */
+    /* If backtrace_symbols didn't return a function name, use the one from
+     * addr2line */
     if (!bt[i].function[0]) strcpy(bt[i].function, bt[i].a2l_function);
   }
 
   /* Print backtrace */
   fprintf(logfile, "\n{ Call stack: }\n");
   for (int i = 3; i < n_bt; i++) {
-    fprintf(logfile, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function, bt[i].line);
+    fprintf(logfile, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function,
+            bt[i].line);
     if (strcmp(bt[i].function, "main") == 0) break;
   }
 }

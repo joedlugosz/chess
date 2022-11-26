@@ -47,14 +47,16 @@ const struct option _eval_opts[] = {
   { "Randomness",            SPIN_OPT, .value.integer = &randomness,          0, 2000, 0 },
     /* clang-format on */
 };
-const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]), _eval_opts};
+const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
+                                  _eval_opts};
 
 /*
  *  Functions
  */
 
 /* Evaluate one player's pieces, producing a positive score */
-static inline score_t evaluate_player(const struct position *position, enum player player) {
+static inline score_t evaluate_player(const struct position *position,
+                                      enum player player) {
   int score = 0;
   int pt_first;
   bitboard_t pieces;

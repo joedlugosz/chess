@@ -12,7 +12,8 @@
 
 #ifdef ASSERTS
 
-void assert_fail(const char *file, const char *func, const int line, const char *condition);
+void assert_fail(const char *file, const char *func, const int line,
+                 const char *condition);
 
 #  define ASSERT(x)                                  \
     if (!(x)) {                                      \
@@ -29,8 +30,8 @@ void assert_fail(const char *file, const char *func, const int line, const char 
 struct search_job;
 struct pv;
 
-void debug_thought(const struct search_job *job, const struct pv *pv, int depth, score_t score,
-                   score_t alpha, score_t beta);
+void debug_thought(const struct search_job *job, const struct pv *pv, int depth,
+                   score_t score, score_t alpha, score_t beta);
 
 #else
 #  define DEBUG_THOUGHT(j, p, d, s, a, b)

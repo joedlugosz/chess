@@ -73,7 +73,8 @@ ttentry_s *tt;
 void tt_init(void) {
   tt = (ttentry_s *)calloc(TT_SIZE, sizeof(ttentry_s));
   if (!tt) {
-    printf("Can't allocate %lu bytes for transposition table\n", TT_SIZE * sizeof(ttentry_s));
+    printf("Can't allocate %lu bytes for transposition table\n",
+           TT_SIZE * sizeof(ttentry_s));
     exit(1);
   }
 }
@@ -91,7 +92,9 @@ void tt_zero(void) {
 
 /* Return percentage of transposition table updates resulting in collisions
    since last call to tt_zero */
-double tt_collisions(void) { return (double)update_collisions * 100.0 / (double)updates; }
+double tt_collisions(void) {
+  return (double)update_collisions * 100.0 / (double)updates;
+}
 
 /* Get an entry from the transposition table with the index that corresponds
    to the supplied hash. The entry might not match the hash. */

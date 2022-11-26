@@ -16,8 +16,8 @@ struct cmdline {
 };
 
 /* Initialise a parsing job */
-static void cmdline_init(struct cmdline *args, const struct cmdline_def *defs, int argc,
-                         const char **argv) {
+static void cmdline_init(struct cmdline *args, const struct cmdline_def *defs,
+                         int argc, const char **argv) {
   args->argc = argc;
   args->argv = argv;
   args->defs = defs;

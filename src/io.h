@@ -15,7 +15,8 @@
 
 struct pv;
 
-void print_board(const struct position *position, bitboard_t hl1, bitboard_t hl2);
+void print_board(const struct position *position, bitboard_t hl1,
+                 bitboard_t hl2);
 void print_plane(bitboard_t plane, bitboard_t indicator);
 void print_move(const struct move *move);
 void print_plane_rank(unsigned char rank, unsigned char indicator);
@@ -28,7 +29,7 @@ int parse_move(const char *in, struct move *move);
 int format_square(char *out, enum square);
 int format_move(char *out, struct move *move, int bare);
 int format_move_san(char *out, struct move *move);
-void xboard_thought(struct search_job *job, struct pv *pv, int depth, score_t score, clock_t time,
-                    int nodes);
+void xboard_thought(struct search_job *job, struct pv *pv, int depth,
+                    score_t score, clock_t time, int nodes);
 
 #endif /* IO_H */

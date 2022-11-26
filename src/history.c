@@ -12,7 +12,8 @@
 /* Push position data onto the top of the history stack */
 void history_push(struct history *history, hash_t hash, struct move *move) {
   history->hash[history->index] = hash;
-  history->is_breaking_move[history->index] = (move->result & (CAPTURED | PROMOTED)) ? 1 : 0;
+  history->is_breaking_move[history->index] =
+      (move->result & (CAPTURED | PROMOTED)) ? 1 : 0;
   history->index++;
 }
 
@@ -24,7 +25,9 @@ hash_t history_pop(struct history *history) {
 }
 
 /* Clear the position history */
-void history_clear(struct history *history) { memset(history, 0, sizeof(*history)); }
+void history_clear(struct history *history) {
+  memset(history, 0, sizeof(*history));
+}
 
 /* Check for whether a position has been encountered before, to satisfy three-
    or fivefold repetition rules. Search back every 2nd position from most recent
@@ -33,7 +36,8 @@ void history_clear(struct history *history) { memset(history, 0, sizeof(*history
    which makes it impossible for the position to be repeated, there is no need
    to continue searching. Return true if there is are more repetitions than
    allowed.  */
-int is_repeated_position(const struct history *history, hash_t hash, int repetitions) {
+int is_repeated_position(const struct history *history, hash_t hash,
+                         int repetitions) {
   int index = history->index;
   int count = 0;
   while (index > 0) {

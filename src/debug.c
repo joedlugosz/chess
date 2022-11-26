@@ -58,8 +58,8 @@ void debug_exit() {
 }
 
 /* Report an error to stderror and as an xboard message to stdout */
-static void report_error(const char *src_file, const char *func, const int line, const char *msg1,
-                         const char *msg2) {
+static void report_error(const char *src_file, const char *func, const int line,
+                         const char *msg1, const char *msg2) {
   if (logfile != stdout) {
     fprintf(stderr, "Process: %d\n", get_process_id());
     fprintf(stderr, "At: %s %s:%d\n", src_file, func, line);
@@ -74,15 +74,16 @@ static void report_error(const char *src_file, const char *func, const int line,
 }
 
 /* Called when ASSERT() fails. Resign and abort */
-void assert_fail(const char *src_file, const char *func, const int line, const char *condition) {
+void assert_fail(const char *src_file, const char *func, const int line,
+                 const char *condition) {
   report_error(src_file, func, line, "Debug assertation failed: ", condition);
   printf("resign\n");
   abort();
 }
 
 /* Print alpha, beta, search history to logfile or stdout */
-void debug_thought(const struct search_job *job, const struct pv *pv, int depth, score_t score,
-                   score_t alpha, score_t beta) {
+void debug_thought(const struct search_job *job, const struct pv *pv, int depth,
+                   score_t score, score_t alpha, score_t beta) {
   fprintf(logfile, "%2d %10d ", depth, job->result.n_leaf);
   if (alpha > -100000)
     fprintf(logfile, "%7d ", alpha);
