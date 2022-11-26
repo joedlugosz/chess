@@ -1,5 +1,6 @@
-/*  app/main.c
+/*
  *  Entry point to the chess engine app
+ *  Builds executable chess
  */
 
 #include <stdio.h>

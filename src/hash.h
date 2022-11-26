@@ -1,22 +1,42 @@
+/*
+ *  Transposition table, random number, and Zobrist hashing functions
+ */
+
 #ifndef HASH_H
 #define HASH_H
 
 #include "evaluate.h"
 #include "state.h"
 
+/*
+ *  Zobrist keys
+ */
 extern hash_t init_key;
 extern hash_t placement_key[N_PLANES][N_SQUARES];
 extern hash_t castle_rights_key[N_PLAYERS][N_BOARDSIDE];
 extern hash_t turn_key;
 extern hash_t en_passant_key[N_FILES];
+void hash_init(void);
 
+/*
+ *  Pseudo-random number generator
+ *  TODO: Much better prng scheme
+ */
 void prng_seed(hash_t seed);
 hash_t prng_rand(void);
 
-void hash_init(void);
+/*
+ *  Transposition table
+ */
 
-typedef enum tt_type_e_ { TT_ALPHA, TT_BETA, TT_EXACT } tt_type_e;
+/* Transposition table entry type */
+typedef enum tt_type_e_ {
+  TT_ALPHA,
+  TT_BETA,
+  TT_EXACT,
+} tt_type_e;
 
+/* Transposition table entry */
 typedef struct ttentry_s_ {
   hash_t hash;
   tt_type_e type;

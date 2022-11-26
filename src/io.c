@@ -24,10 +24,12 @@
 #  define SELECT_SQUARE "*"
 #endif
 
+/*
+ *  Piece text for display - "*" indicates a black piece. Unicode chess symbols
+ *  can be used if available
+ */
 const char piece_text_ascii[N_PLANES][6] = {"p ", "R ", "N ", "B ", "Q ", "K ",
                                             "p*", "R*", "N*", "B*", "Q*", "K*"};
-static const char piece_letter[] = "prnbq";
-static const char piece_letter_san[] = "RNBQK";
 
 #if (TERM_UNICODE)
 const char piece_text_unicode[N_PLANES][6] = {"\u265f ", "\u265c ", "\u265e ", "\u265d ",
@@ -40,11 +42,19 @@ const char piece_text_unicode[N_PLANES][6] = {"\u265f ", "\u265c ", "\u265e ", "
 #endif
 #define PIECE_TEXT_FILE piece_text_ascii
 
+/* Piece letters for promotion user input e.g. "d7d8q" */
+static const char piece_letter[] = "prnbq";
+
+/* Piece letters for SAN output indexed by Rook */
+static const char piece_letter_san[] = "RNBQK";
+
 const char player_text[N_PLAYERS][6] = {"WHITE", "BLACK"};
 
 /*
  *  Instruction encoding and decoding
  */
+
+/* Parse a string with square coordinates to a square_e */
 int parse_square(const char *buf, square_e *square) {
   const char *ptr = buf;
   *square = NO_SQUARE;
@@ -61,6 +71,7 @@ int parse_square(const char *buf, square_e *square) {
   return 0;
 }
 
+/* Parse a string with a move to a move_s */
 int parse_move(const char *buf, move_s *move) {
   if (parse_square(buf, &move->from)) return 1;
   if (parse_square(buf + 2, &move->to)) return 1;
@@ -77,6 +88,7 @@ int parse_move(const char *buf, move_s *move) {
   return 1;
 }
 
+/* Format a square_e to a string of square coords */
 int format_square(char *buf, square_e square) {
   if (square < 0 || square >= N_SQUARES) {
     buf[0] = 0;
@@ -88,6 +100,7 @@ int format_square(char *buf, square_e square) {
   return 2;
 }
 
+/* Format a move to a string in Standard Algebraic Notation */
 int format_move_san(char *buf, move_s *move) {
   char *ptr = buf;
 
@@ -113,6 +126,7 @@ int format_move_san(char *buf, move_s *move) {
   return (int)(ptr - buf);
 }
 
+/* Format a move to a string in coordinate format */
 int format_move(char *buf, move_s *move, int bare) {
   char *ptr = buf;
   int len;
@@ -131,6 +145,7 @@ int format_move(char *buf, move_s *move, int bare) {
   return (int)(ptr - buf);
 }
 
+/* Print the principal variation */
 void print_pv(FILE *f, struct pv *pv) {
   char buf[8];
   int i;
@@ -143,6 +158,8 @@ void print_pv(FILE *f, struct pv *pv) {
 /*
  *  Board printing
  */
+
+/* Print the board, current position, and other data */
 void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
   int rank, file;
   int term;
@@ -231,7 +248,7 @@ void print_board(state_s *state, bitboard_t mask1, bitboard_t mask2) {
   printf("\n");
 }
 
-/* Thoughts shown by XBoard */
+/* Print thoughts in a format compatible with XBoard */
 void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, clock_t time,
                     int nodes) {
   printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100), nodes);
@@ -239,6 +256,7 @@ void xboard_thought(search_job_s *job, struct pv *pv, int depth, score_t score, 
   printf("\n");
 }
 
+/* Print a move */
 void print_move(move_s *move) {
   char buf[100];
   format_move(buf, move, 0);
@@ -246,7 +264,7 @@ void print_move(move_s *move) {
 }
 
 /*
- *  Tokeniser
+ *  Custom input tokeniser
  */
 
 /* Strip leading whitespace then get text from stdin up to the next whitespace

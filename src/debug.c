@@ -1,5 +1,5 @@
 /*
- *  Debug logging
+ *  Debug logging and assertion functions
  */
 
 #include "debug.h"
@@ -14,11 +14,13 @@
 #include "search.h"
 #include "state.h"
 
+/* File handle used for logging */
 FILE *logfile;
 
 #define USE_LOGFILE 0
 #define LOGFILE_PID 0
 
+/* Initialise logging. Call at program init. */
 void debug_init() {
   if (USE_LOGFILE) {
     char filename[100];
@@ -39,6 +41,7 @@ void debug_init() {
   }
 }
 
+/* Print a debug message to log file or stdout */
 void debug_print(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -47,6 +50,7 @@ void debug_print(const char *fmt, ...) {
   }
 }
 
+/* Close logging. Call at program exit. */
 void debug_exit() {
   if (logfile && logfile != stdout) {
     fclose(logfile);
@@ -76,7 +80,7 @@ void assert_fail(const char *src_file, const char *func, const int line, const c
   abort();
 }
 
-/* Print alpha, beta, search history */
+/* Print alpha, beta, search history to logfile or stdout */
 void debug_thought(struct search_job_s_ *job, struct pv *pv, int depth, score_t score,
                    score_t alpha, score_t beta) {
   fprintf(logfile, "%2d %10d ", depth, job->result.n_leaf);

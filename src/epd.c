@@ -1,3 +1,16 @@
+/*
+ * Functions which run Extended Position Description (EPD) test cases
+ *
+ * EPD specifies a test case as a line of text containing a position to be
+ * searched in PGN, with multiple commands. Some commands have actions which are
+ * executed before the search, some have actions after the search, and some have
+ * both. Currently, only a few commands are implemented. Commands return a PASS
+ * or FAIL result, and an overall PASS/FAIL is recorded for each case.
+ *
+ * Cases can be identified and organised into sets by the "id" command which specifies
+ * the name of the set and the number of the case within the set, e.g. `id "BK.01";`
+ * Results are organised by set.
+ */
 #include <ctype.h>
 #include <stdio.h>
 
@@ -6,9 +19,24 @@
 #include "search.h"
 #include "state.h"
 
-char epd_cmd[100][1000];
-char *epd_arg[100];
-char id[1000];
+enum {
+  EPD_CMD_LENGTH_MAX = 1000,
+  EPD_N_CMD_MAX = 100,
+  MAX_SET = 100,
+  MAX_SET_NAME = 100,
+  MAX_OP_NAME = 100,
+};
+
+/* Array holding parsed input commands */
+char epd_cmd[EPD_N_CMD_MAX][EPD_CMD_LENGTH_MAX];
+
+/* Array holding arguments for input commands */
+char *epd_arg[EPD_N_CMD_MAX];
+
+/* Array holding ID strings of cases */
+char id[EPD_N_CMD_MAX];
+
+/* Output of cases */
 char output[1100];
 
 int show_pass = 1;
@@ -17,26 +45,34 @@ int show_total = 1;
 int show_board = 0;
 int show_thought = 0;
 
+/* Target value for "dm" moves */
 int direct_mate = 0;
+/* Number of fullmoves to mate */
 int full_move = 0;
 
-enum { MAX_SET = 100, MAX_SET_NAME = 100 };
-
+/* A set of EPD cases */
 struct epd_set {
   char name[MAX_SET_NAME];
   int n_pass;
   int n_total;
 };
 
+/* List of all EPD sets */
 struct epd_set epd_sets[MAX_SET];
+
+/* The total number of EPD sets recorded so far */
 int n_sets;
+
+/* The set of the current command */
 char current_set[MAX_SET_NAME];
 
+/* Add a new set of EPD cases to the global list */
 struct epd_set *add_set(const char *name) {
   strcpy(epd_sets[n_sets].name, name);
   return &epd_sets[n_sets++];
 }
 
+/* Find an existing set of EPD cases in the global list */
 struct epd_set *find_set(const char *name) {
   for (int i = 0; i < n_sets; i++) {
     if (strcmp(epd_sets[i].name, name) == 0) return &epd_sets[i];
@@ -44,6 +80,7 @@ struct epd_set *find_set(const char *name) {
   return 0;
 }
 
+/* Add an EPD test result for a test within a set */
 void add_result(const char *name, int pass) {
   struct epd_set *set = find_set(name);
   if (!set) set = add_set(name);
@@ -53,6 +90,7 @@ void add_result(const char *name, int pass) {
   }
 }
 
+/* Print the total pass/fail results by set */
 void print_results(void) {
   for (int i = 0; i < n_sets; i++) {
     printf("   %-60s %d/%d %0.2lf%%\n", epd_sets[i].name, epd_sets[i].n_pass, epd_sets[i].n_total,
@@ -60,8 +98,7 @@ void print_results(void) {
   }
 }
 
-typedef int (*epd_fn)(char *, search_result_s *);
-
+/* "bm" <MOVE> - best move is MOVE - FAIL if search result is different */
 int epd_bm(char *args, search_result_s *result) {
   char san[10];
   format_move_san(san, &result->move);
@@ -78,13 +115,16 @@ int epd_bm(char *args, search_result_s *result) {
   return 1;
 }
 
+/* "dm" <N> - direct mate in N moves - read the argument */
 int epd_dm_pre(char *args, search_result_s *result) {
   if (sscanf(args, "%d", &direct_mate) != 1) return 1;
   return 0;
 }
 
+/* "dm" <N> - direct mate in N moves - FAIL if search result > N */
 int epd_dm_post(char *args, search_result_s *result) { return (full_move > direct_mate) ? 1 : 0; }
 
+/* "id" - set id of case */
 int epd_id(char *args, search_result_s *result) {
   char *src = args;
   while (isspace(*src)) src++;
@@ -101,17 +141,35 @@ int epd_id(char *args, search_result_s *result) {
   return 0;
 }
 
+/* Handle EPD comments with no effect */
 int epd_comment(char *args, search_result_s *result) { return 0; }
 
+/* EPD command function */
+typedef int (*epd_fn)(char *, search_result_s *);
+
+/* Entry in a table of EPD command definitions */
 struct epd_cmd {
-  char name[100];
+  char name[MAX_OP_NAME];
   epd_fn fn;
 };
 
-struct epd_cmd epd_cmds_post[] = {{"bm", epd_bm}, {"dm", epd_dm_post}, {"#", epd_comment}, {"", 0}};
+/* Zero-terminated table of EPD command definitions to be executed post-search
+ */
+struct epd_cmd epd_cmds_post[] = {
+    {"bm", epd_bm},
+    {"dm", epd_dm_post},
+    {"#", epd_comment},
+    {"", 0},
+};
 
-struct epd_cmd epd_cmds_pre[] = {{"dm", epd_dm_pre}, {"id", epd_id}, {"", 0}};
+/* Zero-terminated table of EPD command definitions to be executed pre-search */
+struct epd_cmd epd_cmds_pre[] = {
+    {"dm", epd_dm_pre},
+    {"id", epd_id},
+    {"", 0},
+};
 
+/* Find an command function from a table */
 epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
   struct epd_cmd *cmd = epd_cmds;
 
@@ -124,6 +182,7 @@ epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
   return 0;
 }
 
+/* Run an EPD case */
 int epd_run(char *epd_line, int depth) {
   state_s position;
   int pass = 1;
@@ -138,7 +197,7 @@ int epd_run(char *epd_line, int depth) {
 
   if (show_board) print_board(&position, 0, 0);
 
-  /* Parse remainder of line into list of EPD operations, delimited by ';' */
+  /* Parse remainder of line into list of EPD commands, delimited by ';' */
   char *op;
   int n_ops = 0;
   while ((op = strtok(0, ";"))) {
@@ -149,7 +208,7 @@ int epd_run(char *epd_line, int depth) {
     n_ops++;
   }
 
-  /* Parse each EPD operation into command and arguments, delimited by ' ' */
+  /* Parse each EPD command into command and arguments, delimited by ' ' */
   for (int i = 0; i < n_ops; i++) {
     strtok(epd_cmd[i], " ");
     epd_arg[i] = strtok(0, "");
@@ -158,7 +217,7 @@ int epd_run(char *epd_line, int depth) {
   output[0] = 0;
   current_set[0] = 0;
 
-  /* Match operations that should be executed before search */
+  /* Match and execute commands that should be executed before search */
   for (int i = 0; i < n_ops; i++) {
     char *name = epd_cmd[i];
     if (!epd_cmd[i][0]) break;
@@ -166,6 +225,7 @@ int epd_run(char *epd_line, int depth) {
     if ((fn = epd_find_cmd(name, epd_cmds_pre))) (*fn)(epd_arg[i], 0);
   }
 
+  /* Do the search */
   struct history history;
   memset(&history, 0, sizeof(history));
   full_move = 0;
@@ -190,7 +250,7 @@ int epd_run(char *epd_line, int depth) {
     }
   }
 
-  /* Match operations that should be executed after search */
+  /* Match and execute commands that should be executed after search */
   for (int i = 0; i < n_ops; i++) {
     char *name = epd_cmd[i];
     if (!epd_cmd[i][0]) break;
@@ -201,10 +261,10 @@ int epd_run(char *epd_line, int depth) {
         ;
       strcat(output, buf);
       if ((*fn)(epd_arg[i], &first_result)) {
-        strcat(output, "FAIL; ");
+        strcat(output, " FAIL; ");
         pass = 0;
       } else {
-        strcat(output, "PASS; ");
+        strcat(output, " PASS; ");
       }
     }
   }
@@ -212,7 +272,7 @@ int epd_run(char *epd_line, int depth) {
 }
 
 /* Run tests from a file of EPD positions. Each line of the file contains
-   and EPD phrase */
+   and EPD case */
 int epd_test(const char *filename, int depth) {
   FILE *f = fopen(filename, "r");
   if (!f) {

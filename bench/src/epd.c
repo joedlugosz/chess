@@ -1,5 +1,4 @@
 /* 
- * bench/src/epd.c
  * Runner for EPD test cases
  * Builds executable bench_epd
  * 

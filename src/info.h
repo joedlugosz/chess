@@ -1,5 +1,5 @@
 /*
- *  Build information
+ *  Build info banner
  */
 
 #ifndef INFO_H

@@ -1,3 +1,7 @@
+/*
+ *  Structure for the state of the engine for XBoard or interactive mode
+ */
+
 #ifndef ENGINE_H
 #define ENGINE_H
 
