@@ -1,5 +1,5 @@
 /*
- *    Options and features interface to XBoard
+ * Options and features interface to XBoard
  */
 
 #include "options.h"
@@ -15,33 +15,33 @@
 #include "io.h"
 #include "search.h"
 
-/* Options */
+/*
+ * Options
+ */
 
-/* Arrays of options are declared in other modules */
+/*
+ * Arrays of options are declared in other modules
+ */
 extern const struct options eval_opts;
 
-// const struct options *const module_opts[] = {&search_opts, &eval_opts,
-// &engine_options, &log_opts};
+/* Array of options from each module */
 const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
-/* Names passed to XBoard describing option types - see definition of enum
- * option_type */
+/* Names which are passed to XBoard describing option types - see definition of
+ * `enum option_type` */
 const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
                                               "string", "button", "combo"};
 
-/* List available options in response to a `protover` request from XBoard */
+/* List the available options in response to a `protover` request from XBoard */
 void list_options(void) {
-  /* For each program module */
+  /* For each program module and each option within the module, describe the
+   * option to XBoard. */
   for (int i = 0; i < N_MODULES; i++) {
     const struct options *const mod = module_opts[i];
-    /* For each option within the module */
     for (int j = 0; j < mod->n_opts; j++) {
       const struct option *opt = &mod->opts[j];
-
-      /* Describe option to XBoard */
       printf("feature option=\"%s -%s", opt->name, option_controls[opt->type]);
-
       switch (opt->type) {
         case SPIN_OPT:
           /* e.g. `feature option="foo -spin 50 1 100"\n` */
@@ -76,38 +76,22 @@ void list_options(void) {
   }
 }
 
-void read_option_text(char *buf) {
-  char in = 0;
-  /* Skip any whitespace at the start */
-  while (isspace(in = fgetc(stdin)))
-    ;
-  /* Read option text into buf up to newline */
-  char *ptr = buf;
-  while (in != '\n') {
-    *ptr++ = in;
-    in = fgetc(stdin);
-  }
-  /* Trim any whitespace at the end */
-  *ptr-- = 0;
-  while (isspace(*ptr)) {
-    *ptr-- = 0;
-  }
-}
-
+/* Set an option in response to an `option` request from XBoard */
 int set_option(struct engine *e, const char *name) {
+  /*
+   * Go through all options for all modules to look for one that matches `name`.
+   * If a match is found, read the arguments as a string terminated by newline.
+   * Interpret the arguments as string, int, function call, etc. then validate
+   * as necessary.
+   */
   int found = 0;
-  int i, j;
-  int val;
   int err = 0;
-  const char *val_txt = "";
-  /* Go through all options for all modules to look for one that matches name */
-  for (i = 0; i < N_MODULES && !err; i++) {
+  for (int i = 0; i < N_MODULES && !err; i++) {
     const struct options *const mod = module_opts[i];
-    for (j = 0; j < mod->n_opts && !err; j++) {
+    for (int j = 0; j < mod->n_opts && !err; j++) {
       const struct option *opt = &mod->opts[j];
-      /* If a match is found... */
       if (strcmp(name, opt->name) == 0) {
-        /* Read arguments */
+        const char *val_txt = "";
         switch (opt->type) {
           default:
             break;
@@ -119,12 +103,12 @@ int set_option(struct engine *e, const char *name) {
           case INT_OPT:
           case TEXT_OPT:
           case COMBO_OPT:
-            /* Arguments are passed as a string terminated by newline */
             val_txt = get_delim('\n');
             break;
         }
 
         /* Interpretation */
+        int val = 0;
         switch (opt->type) {
           default:
             break;
