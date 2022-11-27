@@ -1,3 +1,6 @@
+/*
+ *  Functions describing piece moves and relationships
+ */
 #ifndef MOVES_H
 #define MOVES_H
 
