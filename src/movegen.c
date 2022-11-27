@@ -10,10 +10,11 @@
 #include "io.h"
 #include "position.h"
 
-const score_t player_fact[N_PLAYERS] = {1, -1};
-
-static inline void sort_compare(struct move_list **head,
-                                struct move_list *insert) {
+/* Comparison and insertion for insertion sort.  Insert `insert` at the first
+ * position in the list where `insert->score` > the score of the next item.  If
+ * this results in insertion at the head, `head` is updated. */
+static inline void sort_compare_insert(struct move_list **head /* in/out */,
+                                       struct move_list *insert) {
   struct move_list *current;
   if (!*head || (*head)->score <= insert->score) {
     insert->next = *head;
@@ -28,40 +29,57 @@ static inline void sort_compare(struct move_list **head,
   }
 }
 
-static inline void sort_moves(struct move_list **head) {
+/* In-place insertion sort.  Iterate over all list items, calling
+ * `sort_compare_insert` to sort them. */
+static inline void sort_moves(struct move_list **head /* in/out */) {
   struct move_list *sorted = 0;
   struct move_list *current = *head;
   while (current) {
     struct move_list *next = current->next;
-    sort_compare(&sorted, current);
+    sort_compare_insert(&sorted, current);
     current = next;
   }
   *head = sorted;
 }
 
-static int sort_evaluate(struct position *position, struct move *move) {
+/* Move-ordering heuristic.  Return a quick evaluation score for the move in the
+ * context of the current position, which can be performed without making the
+ * move.  This is used for search movelist generation in an attempt to search
+ * the best moves first. */
+static int sort_evaluate(const struct position *position,
+                         const struct move *move) {
+  /* For non-capture moves, score +value of moving piece.
+   * For captures, score +10 +/-difference in piece values (e.g. pawn takes
+   * queen is best).
+   * Additionally, for promotion moves, score +20 +value of piece after
+   * promotion.
+   */
+
   int score = 0;
   enum piece moving_type = piece_type[(int)position->piece_at[move->from]];
+
+  if (position->piece_at[move->to] == EMPTY) {
+    score += moving_type;
+  } else {
+    score += 10 - moving_type + piece_type[(int)position->piece_at[move->to]];
+  }
 
   if (move->promotion > PAWN) {
     score += 20 + move->promotion - PAWN;
   }
-  if (position->piece_at[move->to] == EMPTY) {
-    score += moving_type;
-  } else {
-    /* Moves which take get a bonus of 10 + difference between piece values */
-    score += 10 - moving_type + piece_type[(int)position->piece_at[move->to]];
-  }
+
   return score;
 }
 
-/* Add movelist entries for a given from and to position.  Add promotion
-   moves if necessary */
-static inline void add_movelist_entries(struct position *position,
+/* Add movelist entries for a given from and to position.  For promoting moves,
+ * add entries for all possible promotion pieces, otherwise add a single entry.
+ * Add a move-ordering heuristic score from `sort_evaluate` to enable sorting.
+ */
+static inline void add_movelist_entries(const struct position *position,
                                         enum square from, enum square to,
-                                        struct move_list *move_buf, /* in */
-                                        struct move_list **prev,
-                                        int *index) /* in, out */
+                                        struct move_list *move_buf,
+                                        struct move_list **prev, /* in/out */
+                                        int *index)              /* in/out */
 {
   enum piece piece = piece_type[position->piece_at[from]];
   enum piece promotion =
@@ -83,10 +101,11 @@ static inline void add_movelist_entries(struct position *position,
   } while (--promotion > PAWN);
 }
 
-/* Move generation - generates a linked list of moves within move_buf, sorted
- * (or not) */
-int generate_search_movelist(struct position *position,
-                             struct move_list **move_buf) {
+/* Generate a sorted linked list of moves at the buffer beginning at `move_buf`,
+ * for a normal search from `position`, including all possible moves.  Update
+ * `move_buf` to the head of the sorted list. */
+int generate_search_movelist(const struct position *position,
+                             struct move_list **move_buf /* in/out */) {
   struct move_list *prev = 0;
   int count = 0;
   bitboard_t pieces = get_my_pieces(position);
@@ -94,8 +113,7 @@ int generate_search_movelist(struct position *position,
     enum square from = bit2square(take_next_bit_from(&pieces));
     bitboard_t moves = get_moves(position, from);
     while (moves) {
-      bitboard_t to_mask = take_next_bit_from(&moves);
-      enum square to = bit2square(to_mask);
+      enum square to = bit2square(take_next_bit_from(&moves));
       add_movelist_entries(position, from, to, *move_buf, &prev, &count);
     }
   }
@@ -103,10 +121,11 @@ int generate_search_movelist(struct position *position,
   return count;
 }
 
-/* Move generation - generates a linked list of moves within move_buf, sorted
- * (or not) */
-int generate_quiescence_movelist(struct position *position,
-                                 struct move_list **move_buf) {
+/* Generate a sorted linked list of moves at the buffer beginning at `move_buf`,
+ * for a quiescence search from `position`.  Update `move_buf` to the head of
+ * the sorted list.  Quiescence search consists of all attacks to all pieces. */
+int generate_quiescence_movelist(const struct position *position,
+                                 struct move_list **move_buf /* in/out */) {
   struct move_list *prev = 0;
   int count = 0;
   bitboard_t victims =
@@ -125,51 +144,53 @@ int generate_quiescence_movelist(struct position *position,
   return count;
 }
 
+/* perft - A standard test to perform high-level validation of move generation
+ * by recursively generating a tree of all moves for a given position to a given
+ * depth, and counting the total moves and features (captured, en-passant,
+ * castled, etc.) at leaf nodes, which can be compared to reference data. */
 void perft(struct perft_stats *data, struct position *position, int depth,
            moveresult_t result) {
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry, *move_buf_head = move_buf;
-  int i;
   struct position next_position;
   struct perft_stats next_data;
 
   memset(data, 0, sizeof(*data));
 
+  /* Leaf node - count one instance of a move and assess the features of the
+   * move_result of the move made by the parent iteration.  Test for check in
+   * the resulting position.  If in check, extend the search to test for
+   * checkmate by trying to find moves out of check. */
   if (depth == 0) {
     data->moves = 1;
-    if (result & CAPTURED) {
-      data->captures = 1;
-    }
-    if (result & EN_PASSANT) {
-      data->ep_captures = 1;
-    }
-
+    if (result & CAPTURED) data->captures = 1;
+    if (result & EN_PASSANT) data->ep_captures = 1;
     if (result & CASTLED) data->castles = 1;
     if (result & PROMOTED) data->promotions = 1;
-    /* If in check, see if there are any valid moves out of check */
+
     if (in_check(position)) {
       data->checks = 1;
       generate_search_movelist(position, &move_buf_head);
       list_entry = move_buf_head;
-      i = 0;
+      int found_escape = 0;
       while (list_entry) {
         copy_position(&next_position, position);
         make_move(&next_position, &list_entry->move);
-        /* Count moves out of check */
         if (!in_check(&next_position)) {
-          i++;
+          found_escape = 1;
+          break;
         }
         list_entry = list_entry->next;
       }
-      /* If not, checkmate */
-      if (i == 0) data->checkmates = 1;
+      if (!found_escape) data->checkmates = 1;
     }
     return;
   }
 
+  /* Branch node - generate all moves, make each one, recurse into `perft`, and
+   * total the data for all moves. */
   generate_search_movelist(position, &move_buf_head);
   list_entry = move_buf_head;
-  i = 0;
   while (list_entry) {
     copy_position(&next_position, position);
     make_move(&next_position, &list_entry->move);
@@ -184,12 +205,13 @@ void perft(struct perft_stats *data, struct position *position, int depth,
       data->checks += next_data.checks;
       data->checkmates += next_data.checkmates;
       data->ep_captures += next_data.ep_captures;
-      i++;
     }
     list_entry = list_entry->next;
   }
 }
 
+/* For each move from a given position, perform a perft on the following
+ * position, and report the number of moves. */
 void perft_divide(struct position *position, int depth) {
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry, *move_buf_head = move_buf;
@@ -213,6 +235,8 @@ void perft_divide(struct position *position, int depth) {
   }
 }
 
+/* Perform multiple perft tests to increasing depths and print the results in a
+ * formatted table. */
 void perft_total(struct position *position, int depth) {
   printf("%8s%16s%12s%12s%12s%12s%12s%12s%12s%12s\n", "Depth", "Nodes",
          "Captures", "E.P.", "Castles", "Promotions", "Checks", "Disco Chx",
