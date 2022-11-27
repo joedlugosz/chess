@@ -19,8 +19,8 @@
 
 enum {
   TT_MIN_DEPTH = 4,
-  BOUNDARY = 10000,
-  CHECKMATE_SCORE = -BOUNDARY,
+  INFINITY_SCORE = 10000,
+  CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0
 };
 
@@ -30,31 +30,37 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
                                score_t alpha, score_t beta);
 
-/* Search a single move - call search_position after making the move. In/out
-   args are updated on an alpha update: alpha, best_move. Returns 1 for a beta
-   cutoff, and 0 in all other cases including impossible moves into check. */
+/* Search a single move - call search_position after making the move. Return 1
+   for a beta cutoff, and 0 in all other cases including self-check. */
 static inline int search_move(struct search_job *job, struct pv *parent_pv,
-                              struct pv *pv, struct position *position,
-                              int depth, score_t *best_score, score_t *alpha,
+                              struct pv *pv,
+                              const struct position *from_position, int depth,
+                              score_t *best_score, /* in/out */
+                              score_t *alpha,      /* in/out */
                               score_t beta, struct move *move,
-                              struct move **best_move, enum tt_entry_type *type,
-                              int *n_legal) {
-  struct position next_position;
-  copy_position(&next_position, position);
-  make_move(&next_position, move);
+                              struct move **best_move,  /* in/out */
+                              enum tt_entry_type *type, /* in/out */
+                              int *n_legal_moves /* in/out */) {
+  struct position position;
 
-  /* Return early if moving into check. All other moves are legal. */
-  if (in_check(&next_position)) return 0;
-  if (n_legal) (*n_legal)++;
+  /* Copy and move */
+  copy_position(&position, from_position);
+  make_move(&position, move);
 
-  history_push(job->history, position->hash, move);
-  change_player(&next_position);
+  /* Return early if moving into self-check. All other moves are legal. */
+  if (in_check(&position)) return 0;
+  if (n_legal_moves) (*n_legal_moves)++;
 
-  /* Record whether this move gives check to the opponent */
-  if (in_check(&next_position)) move->result |= CHECK;
+  /* Move history is hashed against the position being moved from */
+  history_push(job->history, from_position->hash, move);
+  change_player(&position);
 
+  /* Record whether this move puts the opponent in check */
+  if (in_check(&position)) move->result |= CHECK;
+
+  /* Recurse into search_position */
   score_t score =
-      -search_position(job, pv, &next_position, depth - 1, -beta, -*alpha);
+      -search_position(job, pv, &position, depth - 1, -beta, -*alpha);
 
   history_pop(job->history);
 
@@ -125,7 +131,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* If there are any moves, best_move and best_score will be updated by the end
      of the function */
-  score_t best_score = -BOUNDARY;
+  score_t best_score = -INFINITY_SCORE;
   struct move *best_move = 0;
 
   /* Struct holding the princpal variation of children for this node */
@@ -236,7 +242,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   return alpha;
 }
 
-/* Entry point to recursive search */
+/* Perform a search */
 void search(int depth, struct history *history, struct position *position,
             struct search_result *res, int show_thoughts) {
   /* Prepare for search */
@@ -250,7 +256,8 @@ void search(int depth, struct history *history, struct position *position,
 
   /* Enter recursive search with the current position as the root */
   struct pv pv;
-  search_position(&job, &pv, position, job.depth, -BOUNDARY, BOUNDARY);
+  search_position(&job, &pv, position, job.depth, -INFINITY_SCORE,
+                  INFINITY_SCORE);
 
   /* Copy results and calculate stats */
   memcpy(res, &job.result, sizeof(*res));

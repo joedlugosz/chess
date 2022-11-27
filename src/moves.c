@@ -78,114 +78,121 @@ extern const enum square square_a2c[N_SQUARES];
 extern const enum square square_a2d[N_SQUARES];
 extern const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE];
 
-/* Rank blocking table for Rook, Bishop and Queen moves */
-unsigned int blocking[8][256];
-/* For B,C,D-stacks, masks taking rank occupancy back into a vertical or
-   diagonal in A-plane */
+/* Lookup table of permitted slide moves for a rank, given file position and
+ * rank occupancy, used to calculate Rook, Bishop and Queen moves */
+rank_t permitted_slide_moves[8][256];
+
+/* For B,C,D-stacks, bitboards which convert rank occupancy into a vertical or
+   diagonal bitboard in A-plane */
 bitboard_t occ_b2a[256], occ_c2a[256], occ_d2a[256];
 
-/* These are reflections in the vertical axis of their C-square counterparts
-   which are calculated at run-time */
+/*
+ * These are reflections in the vertical axis of their C-square counterparts
+ * which are generated at runtime.
+ */
 rank_t shift_d[N_SQUARES];
 rank_t mask_d[N_SQUARES];
 
-/* Knight and king moves */
+/* Bitboards for knight and king moves which are generated at runtime. */
 bitboard_t knight_moves[N_SQUARES], king_moves[N_SQUARES];
-/* Pawn advances and takes */
+
+/* Bitboards for pawn advances and takes which are generated at runtime. */
 bitboard_t pawn_advances[N_PLAYERS][N_SQUARES],
     pawn_takes[N_PLAYERS][N_SQUARES];
 
-/* Returns the valid rook moves for a given position, taking into account
-   blockages by other pieces.  Also returns moves where rooks can take their
-   own side's pieces (these are filtered out elsewhere). */
+/* Return a bitboard containing the valid rook move destinations for a given
+ * position, taking into account captures and blockages by other pieces.  For
+ * simplicity, include moves where rooks can take their own side's pieces (these
+ * are filtered out elsewhere). */
 static bitboard_t get_rook_moves(struct position *position,
                                  enum square a_square) {
-  /* A-stack */
-  /* The shift that is required to move the rank containing square down to rank
-   * zero */
+  /*
+   * Rook move generation reduces to a case for a single 8-bit rank which is
+   * handled by an 8 x 256 lookup table.  To calculate horizontal moves, for the
+   * rank containing the piece, calculate:
+   *  - the shift required to the bitboard to shift the rank down to rank zero
+   *  - the file of the moving piece within the rank
+   *  - the piece occupancy of other pieces in the rank
+   * Then look up the permitted moves for the piece, given the occupancy and
+   * file, then shift the permitted moves back onto a bitboard at the original
+   * rank. The process is repeated on the 90-degree-rotated B-stack to calculate
+   * the vertical moves, and a lookup table is used to convert the moves to a
+   * bitboard in the A-stack which is shifted to the correct file, and finally
+   * combined with the horizontal moves.
+   */
   int a_shift = a_square & ~7ul;
-  /* Position within that rank */
   int a_file = a_square & 7ul;
-  /* Piece occupancy of the rank in the A-stack */
-  rank_t a_occ = (rank_t)((position->total_a >> a_shift) & 0xfful);
-  /* Permitted moves within the rank */
-  rank_t a_moves = blocking[a_file][a_occ];
-  /* A-mask of permitted horizontal moves */
+  rank_t a_occupancy = (rank_t)((position->total_a >> a_shift) & 0xfful);
+  rank_t a_moves = permitted_slide_moves[a_file][a_occupancy];
   bitboard_t h_mask = (bitboard_t)a_moves << a_shift;
-  /* B-stack */
-  /* B-position */
+
   int b_square = square_a2b[a_square];
-  /* Shift required to shift the B-rank containing square down to rank zero */
   int b_shift = b_square & ~7ul;
   int b_file = b_square & 7ul;
   rank_t b_occ = (rank_t)((position->total_b >> b_shift) & 0xfful);
-  rank_t b_moves = blocking[b_file][b_occ];
-  /* A-mask (note) of permitted vertical moves in file 0 */
+  rank_t b_moves = permitted_slide_moves[b_file][b_occ];
   bitboard_t b_mask = occ_b2a[b_moves];
-  /* Shift A-mask to correct file position */
   bitboard_t v_mask = b_mask << a_file;
-  /* Or the horizontal and vertical masks */
+
   return (h_mask | v_mask);
 }
 
-/* Returns the valid bishop moves for a given position, taking into account
-   blockages by other pieces.  Also returns moves where bishops can take their
-   own side's pieces (these are filtered out elsewhere). */
+/* Return a bitboard containing the valid bishop move destinations for a given
+ * position, taking into account captures and blockages by other pieces. For
+ * simplicity, include moves where bishops can capture their own side's pieces
+ * (these are filtered out elsewhere). */
 bitboard_t get_bishop_moves(struct position *position, enum square a_square) {
-  /* C-square */
-  /* Shift required to shift the rank containing square down to rank zero */
+  /*
+   * Move generation for bishops is similar to rooks, but with sliding move
+   * calculations performed on the 45-degree-rotated C- and D-stacks.
+   * Calculation of shifts and masks is more complicated because the board
+   * is diamond-shaped from these perspectives, so the ranks are of different
+   * lengths.  Lookup tables are used to get the mask and shift used to isolate
+   * the rank, and also to get the bitboard of the moves and the amount it needs
+   * to be shifted.
+   */
   int c_shift = shift_c[a_square];
   rank_t c_mask = mask_c[a_square];
-  /* Effective file within C-rank is calculated from the square and the shift */
   int c_file = square_a2c[a_square] - c_shift;
-  /* Piece occupancy of the rank in the C-stack */
   rank_t c_occ = (rank_t)((position->total_c) >> c_shift) & c_mask;
-  /* Permitted moves within the rank */
-  rank_t c_moves = blocking[c_file][c_occ] & c_mask;
-  /* A-mask of permitted C moves */
+  rank_t c_moves = permitted_slide_moves[c_file][c_occ] & c_mask;
   bitboard_t c_ret = occ_c2a[c_moves] << shift_c2a[a_square];
-  /* D-square */
-  /* Shift required to shift the rank containing square down to rank zero */
+
   int d_shift = shift_d[a_square];
   rank_t d_mask = mask_d[a_square];
-  /* Effective file within C-rank is calculated from the square and the shift */
   int d_file = square_a2d[a_square] - d_shift;
-  /* Piece occupancy of the rank in the D-stack */
   rank_t d_occ = (rank_t)((position->total_d) >> d_shift) & d_mask;
-  /* Permitted moves within the rank */
-  rank_t d_moves = blocking[d_file][d_occ] & d_mask;
-  /* A-mask of permitted D moves */
+  rank_t d_moves = permitted_slide_moves[d_file][d_occ] & d_mask;
   bitboard_t d_ret = occ_d2a[d_moves] << shift_d2a[a_square];
 
   return (c_ret | d_ret);
 }
 
-/* Returns the valid king moves for a given position, including king
-   destinations for castling if possible */
+/* Return a bitboard containing the valid king move destinations for a given
+   position, including any castling destinations. */
 bitboard_t get_king_moves(struct position *position, enum square from,
                           enum player player) {
-  /* All non-castling king moves minus any that would lead into check */
+  /*
+   * Take all non-castling king moves from a lookup table, removing any that
+   * would lead into check.  Return these moves if there are no castling rights
+   * or the king is under attack.  Otherwise, for each board side with castling
+   * rights, look for any occupied squares which would block the rook from
+   * sliding, then any squares under attack which would block the king from
+   * sliding.  If there are none, add the castling destinations to the moves.
+   */
   bitboard_t moves = king_moves[from] & ~position->claim[opponent[player]];
 
-  /* Castling */
-  /* There must be some castling rights for this player and the king must not
-   * be under attack. */
-  if (!(position->castling_rights & castling_rights[player][BOTHSIDES])) {
+  if (!(position->castling_rights & castling_rights[player][BOTHSIDES]) ||
+      get_attacks(position, from, opponent[player])) {
     return moves;
   }
-  if (get_attacks(position, from, opponent[player])) {
-    return moves;
-  }
-  /* Get all pieces in the board which might block castling */
+
   bitboard_t all = position->total_a;
   for (int side = 0; side < 2; side++) {
-    /* Castling rights must exist for this board side */
     if (!(position->castling_rights & castling_rights[player][side])) {
       continue;
     }
-    /* Look for any occupied sqares which would block the rook from
-     * sliding, then any squares under attack which would block the king
-     * from sliding.  */
+
     bitboard_t blocked = all & rook_castle_slides[player][side];
     if (!blocked) {
       bitboard_t king_slides = king_castle_slides[player][side];
@@ -196,7 +203,7 @@ bitboard_t get_king_moves(struct position *position, enum square from,
         }
       }
     }
-    /* If it is possible to castle add the destination as a valid move */
+
     if (!blocked) {
       moves |= castle_destinations[player][side];
     }
@@ -204,17 +211,26 @@ bitboard_t get_king_moves(struct position *position, enum square from,
   return moves;
 }
 
-/* Returns the set of all pieces that can attack a given position */
+/* Return a bitboard containing the set of all squares with pieces that
+ * can attack a given target square, for a given attacking player. */
 bitboard_t get_attacks(const struct position *position, enum square target,
                        enum player attacking) {
+  /*
+   * This calculation works on the principle that attacking moves are
+   * reciprocal, e.g. if a hypothetical knight at the target square could
+   * legally attack a certain square, and there is a knight at that square,
+   * then that square is also an attacker of the target.  This is applied
+   * here to get attackers for all piece types.
+   */
   bitboard_t attacks = 0;
   bitboard_t target_mask = square2bit[target];
   int base = attacking * N_PIECE_T;
+
   /* Check player is not trying to attack own piece (checking an empty square is
    * ok because it needs to be done for castling) */
   ASSERT(position->piece_at[target] == EMPTY ||
          piece_player[(int)position->piece_at[target]] != attacking);
-  /* Note - viewed as if the non-attacking player is attacking */
+
   attacks = pawn_takes[opponent[attacking]][target] & position->a[base + PAWN];
   attacks |= knight_moves[target] & position->a[base + KNIGHT];
   attacks |= king_moves[target] & position->a[base + KING];
@@ -229,12 +245,15 @@ bitboard_t get_attacks(const struct position *position, enum square target,
   return attacks;
 }
 
-/* Returns the set of all positions that a piece can move to, given the
-   position of the moving piece. */
+/* Pre-calculate bitboards within the given position struct containing the set
+   of all squares that each piece can move to.  This is called after a move is
+   made. */
 void calculate_moves(struct position *position) {
   position->claim[0] = 0;
   position->claim[1] = 0;
 
+  /* For each piece apart from kings, get the moves for the piece including
+   * taking moves for all pieces */
   for (int8_t index = 0; index < N_PIECES; index++) {
     enum square square = position->piece_square[index];
     if (square == NO_SQUARE) {
@@ -242,11 +261,10 @@ void calculate_moves(struct position *position) {
     }
     ASSERT(position->index_at[square] == index);
     int piece = position->piece_at[square];
-    /* King handled at the end */
     if (piece_type[piece] == KING) continue;
+
     enum player player = piece_player[piece];
     bitboard_t moves;
-    /* Get moves for the piece including taking moves for all pieces */
     switch (piece_type[piece]) {
       case PAWN: {
         /* Pawns are blocked from moving ahead by any piece */
@@ -382,7 +400,7 @@ void init_moves(void) {
 
       /* Combine left and right masks and negate to get set of all possible
              moves on the rank. */
-      blocking[square][rank] = ~(r_mask | l_mask);
+      permitted_slide_moves[square][rank] = ~(r_mask | l_mask);
     }
   }
 

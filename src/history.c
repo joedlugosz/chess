@@ -9,7 +9,7 @@
 #include "debug.h"
 #include "search.h"
 
-/* Push position data onto the top of the history stack */
+/* Push position hash onto the top of the history stack */
 void history_push(struct history *history, hash_t hash, struct move *move) {
   history->hash[history->index] = hash;
   history->is_breaking_move[history->index] =
@@ -17,7 +17,7 @@ void history_push(struct history *history, hash_t hash, struct move *move) {
   history->index++;
 }
 
-/* Pop position data from the top of history stack */
+/* Pop position hash from the top of history stack */
 hash_t history_pop(struct history *history) {
   ASSERT(history->index >= 0);
   history->index--;
