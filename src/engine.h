@@ -26,7 +26,7 @@ struct engine {
   clock_t elapsed_time;
 
   unsigned long otim;
-  int move_n;
+  //  int move_n;
   int game_n;
 
   struct position game;

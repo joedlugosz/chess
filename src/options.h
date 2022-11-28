@@ -1,3 +1,7 @@
+/*
+ * Options and features interface to XBoard
+ */
+
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
@@ -21,11 +25,11 @@ struct combo {
 enum option_type {
   BOOL_OPT = 0, /* Check box */
   SPIN_OPT,     /* Spin control */
-  INT_OPT,   /* Integer - presented as a text input to XBoard then validated */
-  TEXT_OPT,  /* Text control */
-  CMD_OPT,   /* Button */
-  COMBO_OPT, /* Combo box */
-  N_OPTION_T
+  INT_OPT,    /* Integer - presented as a text input to XBoard then validated */
+  TEXT_OPT,   /* Text control */
+  CMD_OPT,    /* Button */
+  COMBO_OPT,  /* Combo box */
+  N_OPTION_T, /* Number of option types */
 };
 
 /* Tagged union for an option */

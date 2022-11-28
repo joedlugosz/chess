@@ -118,7 +118,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
   ASSERT(depth <= job->depth);
 
-  /* Count leaf nodes at depth 0 only (even if they extend) */
+  /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
@@ -190,8 +190,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Second phase - generate and search all moves */
 
-  /* Generate the list of pseudo-legal moves. list_entry will point to the first
-     sorted item. */
+  /* Generate the list of pseudo-legal moves (including those leading into
+     self-check). list_entry will point to the first sorted item. */
   struct move_list move_buf[N_MOVES];
   struct move_list *list_entry = move_buf;
   int n_pseudo_legal_moves;
@@ -231,7 +231,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     }
   }
 
-  /* Update the result if at the top level */
+  /* Update the result if at root */
   update_result(job, position, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
