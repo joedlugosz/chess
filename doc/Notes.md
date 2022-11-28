@@ -11,21 +11,24 @@ The searching algorithm has the following features:
  - Killer move heuristic
  - Transposition table with best move
 
-It is a recursive depth-first search to a fixed initial depth. To avoid the
-horizon effect, the search is extended beyond the initial depth in a quiescence
-search considering only moves which are interesting enough, for example
-captures. There is a mutual recursion between `search_ply` and `search_move`.
-`search_ply` generates multiple moves for a position, calling `search_move` for
-each one. `search_move` makes the move and calls into `search_ply` with the new
+This is a recursive depth-first search to a fixed initial depth. At the root of
+the search, the `depth` argument to `search_position` is set to the intended
+depth, and it is decreased with each recursion down to zero at full depth. To
+avoid the horizon effect, the search is extended beyond the initial depth in a
+quiescence search considering only moves which are interesting enough, for
+example captures. Beyond the horizon, the depth is negative. There is a mutual
+recursion between `search_position` and `search_move`. `search_position`
+generates multiple moves for a position, calling `search_move` for each one.
+`search_move` makes the move and calls into `search_position` with the new
 position. 
 
-For efficiency, search_ply works in two phases. The first phase involves
-using heuristics or hashed information to try to return early by finding a
-beta cutoff without the hard work of an exhaustive search. Even if this
-doesn't work, the process usually updates alpha to a good starting value.
-The second phase occurs if an early exit was not achieved. This involves a
-search through all remaining possible moves for this position, with an
-earlier exit if a beta cutoff is found.
+For efficiency, `search_position` works in two phases. The first phase involves
+using heuristics or hashed information to try to return early by finding a beta
+cutoff without the hard work of an exhaustive search. Even if this doesn't work,
+the process usually updates alpha to a good starting value. The second phase
+occurs if an early exit was not achieved. This involves a search through all
+remaining possible moves for this position, with an earlier exit if a beta
+cutoff is found.
 
 A list of pseudo-legal moves is generated. These are moves which appear to be
 legal without considering check. It is easier to test for check once the move
