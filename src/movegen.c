@@ -1,5 +1,5 @@
 /*
- *   Move list generation, sorting, and perft
+ *   Functions to generate lists of moves for searching, and perft
  */
 
 #include "movegen.h"
@@ -12,7 +12,7 @@
 
 /* Comparison and insertion for insertion sort.  Insert `insert` at the first
  * position in the list where `insert->score` > the score of the next item.  If
- * this results in insertion at the head, `head` is updated. */
+ * this results in insertion at the head, update the value of `head`. */
 static inline void sort_compare_insert(struct move_list **head /* in/out */,
                                        struct move_list *insert) {
   struct move_list *current;
@@ -29,8 +29,9 @@ static inline void sort_compare_insert(struct move_list **head /* in/out */,
   }
 }
 
-/* In-place insertion sort.  Iterate over all list items, calling
- * `sort_compare_insert` to sort them. */
+/* In-place insertion sort.  Iterate over all list items beginning at initial
+ * value of `head`, calling `sort_compare_insert` to sort them.  Update `head`
+ * with the head of the sorted list. */
 static inline void sort_moves(struct move_list **head /* in/out */) {
   struct move_list *sorted = 0;
   struct move_list *current = *head;
@@ -71,10 +72,10 @@ static int sort_evaluate(const struct position *position,
   return score;
 }
 
-/* Add movelist entries for a given from and to position.  For promoting moves,
- * add entries for all possible promotion pieces, otherwise add a single entry.
- * Add a move-ordering heuristic score from `sort_evaluate` to enable sorting.
- */
+/* Add movelist entries for a given `from` and `to` position.  For promoting
+ * moves, add entries for all possible promotion pieces, otherwise add a single
+ * entry. Add a move-ordering heuristic score from `sort_evaluate` to enable
+ * sorting. */
 static inline void add_movelist_entries(const struct position *position,
                                         enum square from, enum square to,
                                         struct move_list *move_buf,

@@ -150,7 +150,8 @@ enum {
   ERR_NOT_MY_PIECE, /* The piece at the "from" square belongs to the opponent */
   ERR_CANT_MOVE_THERE, /* The piece at the "from" square can't legally move to
                           the "to" square */
-  ERR_PROMOTION        /* Illegal promotion to a pawn */
+  ERR_PROMOTION,       /* Illegal promotion to a pawn */
+  N_MOVE_ERR
 };
 
 extern bitboard_t *square2bit;

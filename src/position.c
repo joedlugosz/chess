@@ -17,8 +17,7 @@ void init_moves(void);
 
 /* clang-format off */
 
-/* Mapping from A-square to B-square
-   Calculated at init using a formula */
+/* Mapping from A-square to B-square. Calculated by `init_board`. */
 enum square square_a2b[N_SQUARES];
 
 /* Mapping from A-square to C-square */
@@ -32,36 +31,32 @@ const enum square square_a2c[N_SQUARES] = {
   27, 34, 41, 47, 52, 56, 59, 61,
   35, 42, 48, 53, 57, 60, 62, 63
 };
+
+/* Mapping from A-square to D-square. Calculated by `init_board`. */
 enum square square_a2d[N_SQUARES];
 
-/* Castling */
+/* Rook starting squares */
 const enum square rook_start_square[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
-const enum square king_start_square[N_PLAYERS] = { 4, 60 };
-const bitboard_t castle_moves[N_PLAYERS][2] = { { 0x01ull, 0x80ull }, { 0x01ull << 56, 0x80ull << 56 } };
 
+/* Bitmasks to manipulate `position->castling_rights` */
 const castle_rights_t castling_rights[N_PLAYERS][N_BOARDSIDE] = {
   { WHITE_QUEENSIDE, WHITE_KINGSIDE, WHITE_BOTHSIDES },
   { BLACK_QUEENSIDE, BLACK_KINGSIDE, BLACK_BOTHSIDES }
 };
 
-const char start_indexes[N_SQUARES] = {
-   0,   1,   2,   3,   4,   5,   6,   7,
-   8,   9,  10,  11,  12,  13,  14,  15,
-  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-  16,  17,  18,  19,  20,  21,  22,  23, 
-  24,  25,  26,  27,  28,  29,  30,  31
-};
-const char king_index[N_PLAYERS] = {
-  4, 28
-};
+/* The type of a piece (ignoring player) */
 const enum piece piece_type[N_PIECE_T * N_PLAYERS] = {
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING,
   PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING  
 };
 
+/* The player of a piece by type */
+const enum player piece_player[N_PIECE_T * N_PLAYERS] = {
+  WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
+  BLACK, BLACK, BLACK, BLACK, BLACK, BLACK
+};
+
+/* Array of pieces for each square in the starting position */
 const enum piece start_pieces[N_SQUARES] = { 
   ROOK,  KNIGHT, BISHOP, QUEEN, KING,  BISHOP, KNIGHT, ROOK,
   PAWN,  PAWN,   PAWN,   PAWN,  PAWN,  PAWN,   PAWN,   PAWN,
@@ -71,11 +66,6 @@ const enum piece start_pieces[N_SQUARES] = {
   EMPTY, EMPTY,  EMPTY,  EMPTY, EMPTY, EMPTY,  EMPTY,  EMPTY,
   PAWN+N_PIECE_T,  PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,  PAWN+N_PIECE_T,  PAWN+N_PIECE_T,   PAWN+N_PIECE_T,   PAWN+N_PIECE_T,
   ROOK+N_PIECE_T,  KNIGHT+N_PIECE_T, BISHOP+N_PIECE_T, QUEEN+N_PIECE_T, KING+N_PIECE_T,  BISHOP+N_PIECE_T, KNIGHT+N_PIECE_T, ROOK+N_PIECE_T 
-};
-
-const enum player piece_player[N_PIECE_T * N_PLAYERS] = {
-  WHITE, WHITE, WHITE, WHITE, WHITE, WHITE,
-  BLACK, BLACK, BLACK, BLACK, BLACK, BLACK
 };
 
 /* clang-format on */
@@ -89,6 +79,8 @@ bitboard_t *square2bit;
  *  Functions
  */
 
+/* Alter `position` to add a piece specified by `piece` and `index` at `square`.
+ * There is no move validation. */
 static inline void add_piece(struct position *position, enum square square,
                              enum piece piece, int index) {
   ASSERT(piece != EMPTY);
@@ -117,6 +109,7 @@ static inline void add_piece(struct position *position, enum square square,
   position->hash ^= placement_key[piece][square];
 }
 
+/* Alter `position` to remove a piece at `square`. */
 static inline void remove_piece(struct position *position, enum square square) {
   ASSERT(position->piece_at[square] != EMPTY);
   int8_t piece = position->piece_at[square];
@@ -143,6 +136,8 @@ static inline void remove_piece(struct position *position, enum square square) {
   position->hash ^= placement_key[piece][square];
 }
 
+/* Clear the castling rights in `position` for the rook at `square` owned by
+ * `player`, if it still has them. */
 static inline void clear_rook_castling_rights(struct position *position,
                                               enum square square,
                                               enum player player) {
@@ -156,6 +151,7 @@ static inline void clear_rook_castling_rights(struct position *position,
   }
 }
 
+/* Clear the castling rights in `position` for the king owned by `player`. */
 static inline void clear_king_castling_rights(struct position *position,
                                               enum player player) {
   for (enum boardside side = QUEENSIDE; side <= KINGSIDE; side++) {
@@ -166,14 +162,13 @@ static inline void clear_king_castling_rights(struct position *position,
   }
 }
 
+/* Make the rook's move which is a counterpart to the king's castling move. */
 static inline void do_rook_castling_move(struct position *position,
-                                         enum square king_square,
-                                         enum square from_offset,
-                                         enum square to_offset) {
-  uint8_t rook_piece = position->piece_at[king_square + from_offset];
-  int8_t rook_index = position->index_at[king_square + from_offset];
-  remove_piece(position, king_square + from_offset);
-  add_piece(position, king_square + to_offset, rook_piece, rook_index);
+                                         enum square from, enum square to) {
+  uint8_t rook_piece = position->piece_at[from];
+  int8_t rook_index = position->index_at[from];
+  remove_piece(position, from);
+  add_piece(position, to, rook_piece, rook_index);
 }
 
 /* Alter the position to make a move, without validity checking. Update `move`
@@ -187,7 +182,10 @@ void make_move(struct position *position, struct move *move) {
 
   position->halfmove++;
 
-  /* Taking */
+  /*
+   * Capturing
+   */
+
   int8_t victim_piece = position->piece_at[move->to];
   if (victim_piece != EMPTY) {
     ASSERT(piece_type[victim_piece] != KING);
@@ -195,29 +193,35 @@ void make_move(struct position *position, struct move *move) {
     ASSERT(victim_player != position->turn);
     remove_piece(position, move->to);
     move->result |= CAPTURED;
-    /* If a rook has been captured, treat it as moved to prevent castling */
     if (piece_type[victim_piece] == ROOK) {
       clear_rook_castling_rights(position, move->to, victim_player);
     }
     position->halfmove = 0;
   }
 
-  /* Moving */
+  /*
+   * Moving
+   */
+
   uint8_t moving_piece = position->piece_at[move->from];
   ASSERT(piece_player[moving_piece] == position->turn);
   int8_t moving_index = position->index_at[move->from];
   remove_piece(position, move->from);
   add_piece(position, move->to, moving_piece, moving_index);
 
-  /* Castling, pawn promotion and other special stuff */
+  /*
+   * Castling, pawn promotion and other special stuff.
+   */
+
   switch (piece_type[moving_piece]) {
     case KING:
-      /* If this is a castling move (2 spaces each direction) */
+      /* When a king makes a castling move, make the counterpart rook move.
+       * Clear castling rights for king and rook moves. */
       if (move->from == move->to + 2) {
-        do_rook_castling_move(position, move->to, -2, +1);
+        do_rook_castling_move(position, move->to - 2, move->to + 1);
         move->result |= CASTLED;
       } else if (move->from == move->to - 2) {
-        do_rook_castling_move(position, move->to, +1, -1);
+        do_rook_castling_move(position, move->to + 1, move->to - 1);
         move->result |= CASTLED;
       }
       clear_king_castling_rights(position, piece_player[moving_piece]);
@@ -226,6 +230,7 @@ void make_move(struct position *position, struct move *move) {
       clear_rook_castling_rights(position, move->from, position->turn);
       break;
     case PAWN:
+      /* Handle pawn promotion moves*/
       if (is_promotion_move(position, move->from, move->to)) {
         ASSERT(move->promotion > PAWN);
         remove_piece(position, move->to);
@@ -233,7 +238,9 @@ void make_move(struct position *position, struct move *move) {
                   moving_index);
         move->result |= PROMOTED;
       }
-      /* If pawn has been taken en-passant */
+
+      /* If pawn has been taken en-passant, calculate its current location and
+       * remove it. */
       if (square2bit[move->to] == position->en_passant) {
         enum square target_square = move->to;
         if (position->turn == WHITE)
@@ -251,9 +258,10 @@ void make_move(struct position *position, struct move *move) {
     default:
       break;
   }
-  /* Clear previous en passant position */
+
+  /* Clear the previous en passant position.  If pawn has jumped, set the new en
+   * passant square. */
   position->en_passant = 0;
-  /* If pawn has jumped, set en passant square */
   if (piece_type[moving_piece] == PAWN) {
     if (move->from - move->to == 16) {
       position->en_passant = square2bit[move->from - 8];
@@ -263,10 +271,10 @@ void make_move(struct position *position, struct move *move) {
     }
   }
 
-  /* Calculate moves for all pieces */
+  /* Pre-calculate moves for all pieces */
   calculate_moves(position);
 
-  /* Check testing */
+  /* Test for check on both sides */
   for (enum player player = 0; player < N_PLAYERS; player++) {
     int king_square = bit2square(position->a[KING + player * N_PIECE_T]);
     if (get_attacks(position, king_square, opponent[player])) {
@@ -280,11 +288,15 @@ void make_move(struct position *position, struct move *move) {
   if (position->turn == BLACK) position->fullmove++;
 }
 
+/* Alter `position` to change the player turn.  Called by functions in
+ * `search.c` and `ui.c` after making a move. */
 void change_player(struct position *position) {
   position->turn = opponent[position->turn];
   position->hash ^= turn_key;
 }
 
+/* Check the legality of `move` within `position.  Return zero for a legal move,
+ * or an error code.  Called by functions in `search.c` and `ui.c`. */
 int check_legality(const struct position *position, const struct move *move) {
   if (no_piece_at_square(position, move->from)) return ERR_NO_PIECE;
   if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
@@ -300,8 +312,8 @@ int check_legality(const struct position *position, const struct move *move) {
   return 0;
 }
 
-/* Uses infomration in pieces to generate the board position.
- * This is used by reset_board and load_fen */
+/* Setup `position` using the supplied information.  This is used by
+ * `reset_board` and `load_fen` */
 void setup_board(struct position *position, const enum piece *pieces,
                  enum player turn, castle_rights_t castling_rights,
                  bitboard_t en_passant, int halfmove, int fullmove) {
@@ -331,12 +343,12 @@ void setup_board(struct position *position, const enum piece *pieces,
   calculate_moves(position);
 }
 
-/* Resets the board to the starting position */
+/* Reset `position` to the starting position */
 void reset_board(struct position *position) {
   setup_board(position, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0, 0, 1);
 }
 
-/* Initialises the module */
+/* Initialise the module */
 void init_board(void) {
   square2bit = _square2bit + 1;
   square2bit[NO_SQUARE] = 0;

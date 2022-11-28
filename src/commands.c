@@ -45,7 +45,7 @@ static void ui_result(struct engine *e) { get_input(); }
 /* New game */
 static void ui_new(struct engine *e) {
   e->game_n++;
-  e->move_n = 1;
+  // e->move_n = 1;
   e->resign_delayed = 0;
   e->waiting = 1;
   e->game.turn = WHITE;
@@ -291,16 +291,15 @@ static void ui_help(struct engine *e) {
   printf("\n");
 }
 
-int accept_command(struct engine *e, const char *in) {
+/* Accept a valid command phrase.  Search through commands and call the command
+ * function if found.  Return 0 if accepted. */
+int accept_command(struct engine *engine, const char *input) {
   int i;
-  /* Search commands and call function if found */
   for (i = 0; i < N_UI_CMDS; i++) {
-    if (strcmp(in, cmds[i].cmd) == 0) {
-      (*cmds[i].fn)(e);
-      /* Success */
+    if (strcmp(input, cmds[i].cmd) == 0) {
+      (*cmds[i].fn)(engine);
       return 0;
     }
   }
-  /* Command not found */
   return 1;
 }

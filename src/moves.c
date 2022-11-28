@@ -120,7 +120,7 @@ bitboard_t pawn_advances[N_PLAYERS][N_SQUARES],
 
 /* Return a bitboard containing the valid pawn move destinations for a given
  * position, taking into account captures and blockages by other pieces.  For
- * simplicity, include moves where rooks can take their own side's pieces (these
+ * simplicity, include moves where pawns can take their own side's pieces (these
  * are filtered out elsewhere). */
 static bitboard_t get_pawn_moves(struct position *position, enum square square,
                                  enum player player) {
@@ -178,8 +178,8 @@ static bitboard_t get_rook_moves(struct position *position,
   int b_square = square_a2b[a_square];
   int b_shift = b_square & ~7ul;
   int b_file = b_square & 7ul;
-  rank_t b_occ = (rank_t)((position->total_b >> b_shift) & 0xfful);
-  rank_t b_moves = permitted_slide_moves[b_file][b_occ];
+  rank_t b_occupancy = (rank_t)((position->total_b >> b_shift) & 0xfful);
+  rank_t b_moves = permitted_slide_moves[b_file][b_occupancy];
   bitboard_t b_mask = occ_b2a[b_moves];
   bitboard_t v_mask = b_mask << a_file;
 
