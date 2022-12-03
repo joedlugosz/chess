@@ -1,4 +1,8 @@
-# The project
+# CMake recipe for the whole project
+# 
+# Compilers: gcc, clang, MSVC
+# Configurations: Release, Debug, Gprof (gcc only)
+#
 
 cmake_minimum_required (VERSION 3.7)
 
@@ -9,7 +13,6 @@ endif ()
 project (chess)
 
 # The default build type for this project is Release
-# Gprof - generate information for gprof
 if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE "Release" CACHE STRING
     "Choose the type of build, options are: Debug Release

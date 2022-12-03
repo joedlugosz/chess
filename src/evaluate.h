@@ -1,13 +1,15 @@
 /*
- *  Static evaluation
+ *  Static position evaluation
  */
 
 #ifndef EVAL_H
 #define EVAL_H
 
+struct position;
+
+/* Position evaluation score */
 typedef int score_t;
 
-struct state_s_;
-score_t evaluate(struct state_s_ *);
+score_t evaluate(const struct position *position);
 
 #endif /* EVAL_H */

@@ -1,3 +1,9 @@
+/* 
+ * Search benchmarking app
+ * Builds executable bench_search
+ * 
+ * Plays AI-AI games at increasing depths and prints moves and statistics.
+ */
 
 #include "search.h"
 
@@ -5,26 +11,31 @@
 #include <stdio.h>
 
 #include "fen.h"
-#include "state.h"
+#include "hash.c"
+#include "history.h"
+#include "io.h"
+#include "position.h"
 
 int max_depth = 8;
 int ply = 50;
 
 void bench_search(int depth) {
-  state_s state;
-  reset_board(&state);
+  struct position position;
+  struct history history;
+  memset(&history, 0, sizeof(history));
+  reset_board(&position);
 
   clock_t total = 0;
   long long n_searched = 0;
   for (int i = 0; i < ply; i++) {
-    search_result_s res;
+    struct search_result res;
 
-    search(depth, &state, &res);
+    search(depth, &history, &position, &res, 1);
     total += res.time;
     n_searched += res.n_leaf;
 
     char fen[100];
-    get_fen(&state, fen, sizeof(fen));
+    get_fen(&position, fen, sizeof(fen));
     char move[10];
     format_move(move, &res.move, 0);
     printf("move %2d %4d %-70s %8s\n", depth, i, fen, move);
@@ -33,8 +44,9 @@ void bench_search(int depth) {
 
     if (res.move.from == A1 && res.move.to == A1) break;
 
-    make_move(&state, &res.move);
-    change_player(&state);
+    make_move(&position, &res.move);
+    history_push(&history, position.hash, &res.move);
+    change_player(&position);
   }
   printf("avg  %4d %4d %16lld %6.2lf\n", depth, ply, n_searched / ply,
          (double)total / ((double)ply * 1000000.0));
@@ -50,6 +62,8 @@ int main(int argc, const char *argv[]) {
 
   setbuf(stdout, 0);
   init_board();
+  hash_init();
+  tt_init();
 
   for (int i = 1; i <= max_depth; i++) {
     bench_search(i);

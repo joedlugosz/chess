@@ -1,13 +1,14 @@
 /*
- *  UI commands
+ *  Commands for XBoard interface and UI
  */
 
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-struct engine_s_;
-typedef void (*ui_fn)(struct engine_s_ *);
+struct engine;
 
-int accept_command(struct engine_s_ *, const char *);
+typedef void (*ui_fn)(struct engine *);
+
+int accept_command(struct engine *, const char *in);
 
 #endif /* COMMANDS_H */

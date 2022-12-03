@@ -1,5 +1,5 @@
 /*
- *  Program entry point and user interface.
+ *  UI and XBoard Interface
  */
 
 #include <ctype.h>
@@ -16,50 +16,60 @@
 #include "os.h"
 #include "search.h"
 
+/* Buffer sizes for move and position*/
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
 /*
- *  Clocks
+ *  Game clocks
  */
-static inline void reset_time(engine_s *engine) {
+
+/* Reset the elapsed time and set the starting of the next interval. */
+static inline void reset_time(struct engine *engine) {
   engine->start_time = clock();
   engine->elapsed_time = 0;
 }
-static inline void mark_time(engine_s *engine) {
+
+/* Mark the elapsed time since the last call to `reset_time`. */
+static inline void mark_time(struct engine *engine) {
   engine->elapsed_time = clock() - engine->start_time;
-}
-static inline clock_t get_time(engine_s *engine) { return engine->elapsed_time; }
-
-static inline int ai_turn(engine_s *engine) {
-  if (engine->game.turn != engine->mode)
-    return 0;
-  else
-    return 1;
-}
-
-static inline int is_in_normal_play(engine_s *engine) {
-  if (engine->mode >= ENGINE_FORCE_MODE)
-    return 0;
-  else
-    return 1;
 }
 
 /*
- *  Output
+ *  Truth checking
  */
-static inline void print_statistics(engine_s *engine, search_result_s *result) {
+
+/* Return true if it is the AI's turn to move.*/
+static inline int is_ai_turn(struct engine *engine) {
+  return (engine->game.turn == engine->mode);
+}
+
+/* Return true if in normal game play, e.g. not force mode */
+static inline int is_in_normal_play(struct engine *engine) {
+  return (engine->mode < ENGINE_FORCE_MODE);
+}
+
+/*
+ *  Printing output
+ */
+
+/* Print statistics about a completed turn.  For human moves, print the score
+ * and time.  For AI moves, also print search statistics. */
+static inline void print_statistics(struct engine *engine,
+                                    struct search_result *result) {
   if (!engine->xboard_mode) {
-    double time = (double)(get_time(engine)) / (double)CLOCKS_PER_SEC;
+    double time = (double)(engine->elapsed_time) / (double)CLOCKS_PER_SEC;
     printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
-    if (ai_turn(engine) && result) {
-      printf(" : %d nodes : b = %0.3lf : %0.2lf knps", result->n_leaf, result->branching_factor,
-             (double)result->n_leaf / (time * 1000.0));
+    if (is_ai_turn(engine) && result) {
+      printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions",
+             result->n_leaf, result->branching_factor,
+             (double)result->n_leaf / (time * 1000.0), result->collisions);
     }
     printf("\n\n");
   }
 }
 
-static inline void print_game_state(engine_s *engine) {
+/* Print the state of the game including board and check. */
+static inline void print_game_state(struct engine *engine) {
   if (!engine->xboard_mode) {
     print_board(&engine->game, 0, 0);
     if (in_check(&engine->game)) {
@@ -68,7 +78,9 @@ static inline void print_game_state(engine_s *engine) {
   }
 }
 
-static inline void print_prompt(engine_s *engine) {
+/* Print a prompt for user input showing the moving side or force mode,
+   or suffixed with "(AI)" to indicate AI output. */
+static inline void print_prompt(struct engine *engine) {
   if (!engine->xboard_mode) {
     if (engine->mode != ENGINE_FORCE_MODE) {
       printf("%s %s> ", player_text[engine->game.turn],
@@ -79,30 +91,47 @@ static inline void print_prompt(engine_s *engine) {
   }
 }
 
-static inline void print_ai_resign(engine_s *engine) {
+/* Print a resignation message. */
+static inline void print_ai_resign(struct engine *engine) {
   if (engine->xboard_mode) {
     printf("resign\n");
   } else {
-    printf("%s resigns.", player_text[engine->game.turn]);
+    printf("\n%s resigns.\n\n", player_text[engine->game.turn]);
   }
 }
 
-static inline void print_ai_move(engine_s *engine, search_result_s *result) {
+/* Print the AI's move. */
+static inline void print_ai_move(struct engine *engine,
+                                 struct search_result *result) {
   ASSERT(is_in_normal_play(engine));
 
   char buf[MOVE_BUF_SIZE];
-  format_move(buf, &result->move, engine->xboard_mode);
-
   if (engine->xboard_mode) {
+    format_move(buf, &result->move, 1);
     printf("move %s\n", buf);
   } else {
     print_statistics(engine, result);
     print_prompt(engine);
+    format_move_san(buf, &result->move);
     printf("%s\n", buf);
   }
 }
 
-static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e to) {
+/* Print a checkmate score message */
+static inline void print_checkmate_message(const struct engine *engine) {
+  printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK],
+         engine->game.check[WHITE]);
+}
+
+/* Print a stalemate score message */
+static inline void print_stalemate_message() {
+  printf("\nStalemate - 1/2-1/2\n\n");
+}
+
+/* Print a formatted error message about a move, of the form
+ * ("....%s....%s...", from, to) */
+static void print_move_error_msg(struct engine *engine, const char *fmt,
+                                 enum square from, enum square to) {
   if (!engine->xboard_mode) {
     if (from >= 0) {
       char from_buf[POS_BUF_SIZE];
@@ -123,126 +152,123 @@ static void print_msg(engine_s *engine, const char *fmt, square_e from, square_e
 /*
  *  Move Checking
  */
-int ui_no_piece_at_square(engine_s *engine, square_e square) {
+
+/* Check that a piece exists at `square`.  Print an error message if necessary.
+ * Return 0 if OK.  Used to validate user input in `commands.c` */
+int ui_no_piece_at_square(struct engine *engine, enum square square) {
   if ((square2bit[square] & engine->game.total_a) == 0) {
-    print_msg(engine, "There is no piece at %s.\n", square, -1);
+    print_move_error_msg(engine, "There is no piece at %s.\n", square, -1);
     return 1;
   }
   return 0;
 }
 
-int move_is_illegal(engine_s *engine, move_s *move) {
+/* Check move legality and print error message if necessary.  Return 0 if OK. */
+int ui_check_legality(struct engine *engine, struct move *move) {
   int result = check_legality(&engine->game, move);
-
   switch (result) {
     case ERR_NO_PIECE:
-      print_msg(engine, "There is no piece at %s.\n", move->from, -1);
+      print_move_error_msg(engine, "There is no piece at %s.\n", move->from,
+                           -1);
       break;
     case ERR_SRC_EQUAL_DEST:
-      print_msg(engine, "The origin %s is the same as the destination.\n", move->from, -1);
+      print_move_error_msg(engine,
+                           "The origin %s is the same as the destination.\n",
+                           move->from, -1);
       break;
     case ERR_NOT_MY_PIECE:
-      print_msg(engine, "The piece at %s is not your piece.\n", move->from, -1);
+      print_move_error_msg(engine, "The piece at %s is not your piece.\n",
+                           move->from, -1);
       break;
     case ERR_CANT_MOVE_THERE:
-      print_msg(engine, "The piece at %s cannot move to %s.\n", move->from, move->to);
+      print_move_error_msg(engine, "The piece at %s cannot move to %s.\n",
+                           move->from, move->to);
       break;
     default:
       break;
   }
+
   return result;
 }
 
-void init_engine(engine_s *engine) {
-  memset(engine, 0, sizeof *engine);
-  reset_board(&engine->game);
-  engine->xboard_mode = 0;
-  engine->resign_delayed = 0;
-  engine->game_n = 1;
-  engine->waiting = 1;
-  engine->mode = ENGINE_PLAYING_AS_BLACK;
-  engine->depth = 8;
-}
+/*
+ *  AI actions
+ */
 
-void finished_move(engine_s *engine) {
-  /* It is now the other players turn */
-  change_player(&engine->game);
-  /* move_n holds number of complete moves, incremented when it is
-     white's move */
-  if (engine->game.turn == WHITE) {
-    engine->move_n++;
-  }
-}
+/* Make the AI move and set the UI up for the next user move. */
+static inline void do_ai_turn(struct engine *engine) {
+  /* Search for AI move */
+  struct search_result result;
+  search(engine->depth, &engine->history, &engine->game, &result, 1);
 
-#ifdef DEBUG
-static inline void log_ai_move(move_s *move, int captured, int check) {}
-#endif
-
-static inline void do_ai_move(engine_s *engine) {
-  //  start_move_log(engine);
-
-  search_result_s result;
-  search(engine->depth, &engine->game, &result);
-
-  int resign = 0;
-
-  if (engine->resign_delayed) {
-    resign = 1;
-  } else if (result.move.from == NO_SQUARE) {
+  /* If no AI move was found, print checkmate or stalemate messages and end the
+   * game. */
+  if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
-      /* Checkmate */
-      resign = 1;
+      mark_time(engine);
+      print_checkmate_message(engine);
+      print_ai_resign(engine);
     } else {
-      /* Stalemate - delay resign to see if draw is given */
-      engine->resign_delayed = 1;
-      return;
+      print_stalemate_message();
     }
-  }
-
-  if (resign) {
-    mark_time(engine);
-    print_ai_resign(engine);
     engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
+  /* Make the AI move */
   make_move(&engine->game, &result.move);
+  history_push(&engine->history, engine->game.hash, &result.move);
   mark_time(engine);
   print_ai_move(engine, &result);
-  finished_move(engine);
+  change_player(&engine->game);
   print_game_state(engine);
   reset_time(engine);
+
+  /* Search at depth 1 to see if human has any moves.  If not, print
+     checkmate or stalemate messages for human and end the game. */
+  search(1, &engine->history, &engine->game, &result, 0);
+  if (result.move.from == result.move.to) {
+    if (engine->game.check[engine->game.turn]) {
+      print_checkmate_message(engine);
+    } else {
+      print_stalemate_message();
+    }
+    engine->mode = ENGINE_FORCE_MODE;
+  }
 }
 
-/* Accept a valid user move.
-   Return:  0 - Valid move
-            1 - Well formed but not valid
-            2 - Not recognised */
-static inline int accept_move(engine_s *engine, const char *input) {
-  move_s move;
+/*
+ *  User actions
+ */
 
-  if (parse_move(input, &move)) {
-    return 2;
-  }
-  if (move_is_illegal(engine, &move)) {
-    return 1;
-  }
+/* Accept a valid user move.  Make the move and print statistics and the new
+ * position.  Return 0 if accepted. */
+static inline int accept_move(struct engine *engine, const char *input) {
+  struct move move;
+
+  if (parse_move(input, &move)) return 1;
+  if (ui_check_legality(engine, &move)) return 1;
+
   mark_time(engine);
-  /* If waiting after a new game, first user move begins the game as white */
-  /* Don't count elapsed time while waiting for first move */
+  /* If waiting after a new game when the user is white, the first user move
+   * begins the game.  Reset the elapsed time so that it is not counted while
+   * waiting for the move. */
   if (engine->waiting) {
     engine->waiting = 0;
     reset_time(engine);
   }
   make_move(&engine->game, &move);
+  history_push(&engine->history, engine->game.hash, &move);
+
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
   }
-  finished_move(engine);
+  change_player(&engine->game);
   print_game_state(engine);
   return 0;
 }
 
+/* Accept a message phrase beginning with `{`. Return 0 if accepted.  */
 static inline int accept_message(const char *input) {
   if (input[0] == '{') {
     return 0;
@@ -250,7 +276,8 @@ static inline int accept_message(const char *input) {
   return 1;
 }
 
-static inline void get_user_input(engine_s *engine) {
+/* Get and process the next phrase of user input */
+static inline void process_user_input(struct engine *engine) {
   print_prompt(engine);
   const char *input;
   input = get_input();
@@ -258,27 +285,43 @@ static inline void get_user_input(engine_s *engine) {
   if (!accept_message(input)) return;
   if (!accept_command(engine, input)) return;
   if (!accept_move(engine, input)) return;
-  print_msg(engine, "Unrecognised command\nEnter 'help' for a list of commands.\n", -1, -1);
+  print_move_error_msg(
+      engine, "Unrecognised command\nEnter 'help' for a list of commands.\n",
+      -1, -1);
 }
 
 /*
- *  UI Main Loop
+ *  Setup and run
  */
-void run_engine(engine_s *engine) {
+
+/* UI Main Loop */
+void run_engine(struct engine *engine) {
   if (!engine->xboard_mode) print_program_info();
   print_game_state(engine);
 
   while (engine->mode != ENGINE_QUIT) {
-    if (ai_turn(engine)) {
-      do_ai_move(engine);
-    } else {
-      get_user_input(engine);
-    }
+    if (is_ai_turn(engine))
+      do_ai_turn(engine);
+    else
+      process_user_input(engine);
   }
 }
 
 /* Permanently enter XBoard mode and disable Ctrl-C */
-void enter_xboard_mode(engine_s *e) {
-  e->xboard_mode = 1;
+void enter_xboard_mode(struct engine *engine) {
+  engine->xboard_mode = 1;
   ignore_sigint();
+}
+
+/* Initialise the module.  Called at startup. */
+void init_engine(struct engine *engine) {
+  memset(engine, 0, sizeof *engine);
+  reset_board(&engine->game);
+  history_clear(&engine->history);
+  engine->xboard_mode = 0;
+  engine->resign_delayed = 0;
+  engine->game_n = 1;
+  engine->waiting = 1;
+  engine->mode = ENGINE_PLAYING_AS_BLACK;
+  engine->depth = 8;
 }

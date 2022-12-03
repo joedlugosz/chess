@@ -1,17 +1,40 @@
-# Script to generate build info
-
-# Arguments (required)
+# CMake script to generate the contents of buildinfo.c
+# 
+# The destination directory for buildinfo.c must be specified.
+# The working directory must contain the git repo.
+#
+# Invocation and arguments (all are required)
 # 0     1  2               3  4
-# cmake -P buildinfo.cmake -- <BINARY DIR>
-set (bin_dir ${CMAKE_ARGV4})
+# cmake -P buildinfo.cmake -- <DESTINATION DIR>
 
+set (dest_dir ${CMAKE_ARGV4})
+
+# If git tools can be found, set $git_version and $source_date from repo information.
 find_package(Git QUIET)
 if (Git_FOUND)
-  # Identify version from last tag and commit
   execute_process(
-    COMMAND "${GIT_EXECUTABLE}" describe --dirty
+    COMMAND "${GIT_EXECUTABLE}" describe --tags --abbrev=0
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    OUTPUT_VARIABLE git_version
+    OUTPUT_VARIABLE git_version_tag
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE git_branch_name
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE git_commit_short
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  set (git_version "${git_version_tag}-${git_branch_name}-${git_commit_short}")
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" show -s --format="%cd" --date=format:"%b %d %Y"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE source_date
     ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 else ()
@@ -39,5 +62,5 @@ else ()
   )
 endif ()
 
-# Generate build info source
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/buildinfo.c.in" "${bin_dir}/buildinfo.c" @ONLY)
+# Generate buildinfo.c source
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/buildinfo.c.in" "${dest_dir}/buildinfo.c" @ONLY)

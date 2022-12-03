@@ -1,5 +1,8 @@
 /*
- *  Static evaluation
+ *  Static position evaluation
+ *
+ *  Uses Shannon's method and scores, x10. Scoring is from the point of view of
+ *  the current player, positive when leading.
  */
 
 #include "evaluate.h"
@@ -9,12 +12,13 @@
 
 #include "debug.h"
 #include "options.h"
-#include "state.h"
+#include "position.h"
 
+/* Factor to negate the score for black */
 const score_t player_factor[N_PLAYERS] = {1, -1};
 
 /*
- *  Options
+ *  User options
  */
 
 /* Shannon's weights * 10 */
@@ -28,8 +32,8 @@ int blocked = 50;
 /* Small random value 0-9 */
 int randomness = 0;
 
-/* All the options can be changed */
-const option_s _eval_opts[] = {
+/* Evaluation user options. */
+const struct option _eval_opts[] = {
     /* clang-format off */
   { "Pawn value",            INT_OPT,  .value.integer = &piece_weights[PAWN],    0, 0, 0 },
   { "Rook value",            INT_OPT,  .value.integer = &piece_weights[ROOK],    0, 0, 0 },
@@ -43,14 +47,16 @@ const option_s _eval_opts[] = {
   { "Randomness",            SPIN_OPT, .value.integer = &randomness,          0, 2000, 0 },
     /* clang-format on */
 };
-const options_s eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]), _eval_opts};
+const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
+                                  _eval_opts};
 
 /*
  *  Functions
  */
 
-/* Evaluate one player's pieces */
-static inline score_t evaluate_player(state_s *state, player_e player) {
+/* Evaluate one player's pieces, producing a positive score */
+static inline score_t evaluate_player(const struct position *position,
+                                      enum player player) {
   int score = 0;
   int pt_first;
   bitboard_t pieces;
@@ -59,16 +65,16 @@ static inline score_t evaluate_player(state_s *state, player_e player) {
 
   /* Materials */
   for (int i = 0; i < N_PIECE_T; i++) {
-    score += piece_weights[i] * pop_count(state->a[i + pt_first]);
+    score += piece_weights[i] * pop_count(position->a[i + pt_first]);
   }
   /* Mobility - for each piece count the number of moves */
-  pieces = state->player_a[player];
+  pieces = position->player_a[player];
   while (pieces) {
-    square_e pos = bit2square(take_next_bit_from(&pieces));
-    score += mobility * pop_count(get_moves(state, pos));
+    enum square square = bit2square(take_next_bit_from(&pieces));
+    score += mobility * pop_count(get_moves(position, square));
   }
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  pieces = state->b[PAWN + pt_first];
+  pieces = position->b[PAWN + pt_first];
   while (pieces) {
     if (pop_count(pieces & 0xffull) > 1) {
       score -= doubled;
@@ -76,10 +82,10 @@ static inline score_t evaluate_player(state_s *state, player_e player) {
     pieces >>= 8;
   }
   /* Blocked pawns - look for pawns with no moves */
-  pieces = state->a[PAWN + pt_first];
+  pieces = position->a[PAWN + pt_first];
   while (pieces) {
-    square_e pos = bit2square(take_next_bit_from(&pieces));
-    if (pop_count(get_moves(state, pos) == 0ull)) {
+    enum square square = bit2square(take_next_bit_from(&pieces));
+    if (pop_count(get_moves(position, square) == 0ull)) {
       score -= blocked;
     }
   }
@@ -90,17 +96,18 @@ static inline score_t evaluate_player(state_s *state, player_e player) {
   return score;
 }
 
-/* Evalate the position */
-score_t evaluate(state_s *state) {
-  return (evaluate_player(state, WHITE) - evaluate_player(state, BLACK)) *
-         player_factor[state->turn];
+/* Evaluate a position, producing a score which is positive if the current
+   player is leading */
+score_t evaluate(const struct position *position) {
+  return (evaluate_player(position, WHITE) - evaluate_player(position, BLACK)) *
+         player_factor[position->turn];
 }
 
 /* Tests */
 int test_eval(void) {
-  state_s state;
-  reset_board(&state);
+  struct position position;
+  reset_board(&position);
   /* Starting positions should sum to zero */
-  ASSERT(evaluate(&state) == 0);
+  ASSERT(evaluate(&position) == 0);
   return 0;
 }

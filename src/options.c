@@ -1,5 +1,5 @@
 /*
- *    Options and features interface to XBoard
+ * Options and features interface to XBoard
  */
 
 #include "options.h"
@@ -15,31 +15,33 @@
 #include "io.h"
 #include "search.h"
 
-/* Options */
+/*
+ * Options
+ */
 
-/* Arrays of options are declared in other modules */
-extern const options_s eval_opts;
+/*
+ * Arrays of options are declared in other modules
+ */
+extern const struct options eval_opts;
 
-// const options_s *const module_opts[] = {&search_opts, &eval_opts, &engine_options, &log_opts};
-const options_s *const module_opts[] = {&eval_opts};
+/* Array of options from each module */
+const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
-/* Names passed to XBoard describing option types - see definition of option_type_e */
+/* Names which are passed to XBoard describing option types - see definition of
+ * `enum option_type` */
 const char option_controls[N_OPTION_T][10] = {"check",  "spin",   "string",
                                               "string", "button", "combo"};
 
-/* List available options in response to a `protover` request from XBoard */
+/* List the available options in response to a `protover` request from XBoard */
 void list_options(void) {
-  /* For each program module */
+  /* For each program module and each option within the module, describe the
+   * option to XBoard. */
   for (int i = 0; i < N_MODULES; i++) {
-    const options_s *const mod = module_opts[i];
-    /* For each option within the module */
+    const struct options *const mod = module_opts[i];
     for (int j = 0; j < mod->n_opts; j++) {
-      const option_s *opt = &mod->opts[j];
-
-      /* Describe option to XBoard */
+      const struct option *opt = &mod->opts[j];
       printf("feature option=\"%s -%s", opt->name, option_controls[opt->type]);
-
       switch (opt->type) {
         case SPIN_OPT:
           /* e.g. `feature option="foo -spin 50 1 100"\n` */
@@ -61,9 +63,9 @@ void list_options(void) {
         case COMBO_OPT: {
           /* e.g. `feature option="foo -combo *opt1///opt2///opt3"\n` */
           for (int k = 0; k < opt->combo_vals->n_vals; k++) {
-            const combo_val_s *val = &opt->combo_vals->vals[k];
-            printf(" %s%s%s", (k == 0) ? "" : "/// ", ((*opt->value.integer) == k) ? "*" : "",
-                   val->name);
+            const struct combo_val *val = &opt->combo_vals->vals[k];
+            printf(" %s%s%s", (k == 0) ? "" : "/// ",
+                   ((*opt->value.integer) == k) ? "*" : "", val->name);
           }
         }
         default:
@@ -74,117 +76,109 @@ void list_options(void) {
   }
 }
 
-void read_option_text(char *buf) {
-  char in = 0;
-  /* Skip any whitespace at the start */
-  while (isspace(in = fgetc(stdin)))
-    ;
-  /* Read option text into buf up to newline */
-  char *ptr = buf;
-  while (in != '\n') {
-    *ptr++ = in;
-    in = fgetc(stdin);
-  }
-  /* Trim any whitespace at the end */
-  *ptr-- = 0;
-  while (isspace(*ptr)) {
-    *ptr-- = 0;
+/* Get arguments for an option, delimited by \n */
+static inline const char *get_option_args(const struct option *opt) {
+  switch (opt->type) {
+    case CMD_OPT:
+    default:
+      /* No arguments */
+      return "";
+    case SPIN_OPT:
+    case BOOL_OPT:
+    case INT_OPT:
+    case TEXT_OPT:
+    case COMBO_OPT:
+      return get_delim('\n');
   }
 }
 
-int set_option(engine_s *e, const char *name) {
+/* Interpret the arguments in `val_txt` for an `option` request from XBoard. */
+static inline int interpret_option_args(const struct option *opt,
+                                        struct engine *engine,
+                                        const char *val_txt,
+                                        int *val /* in/out */) {
+  val = 0;
+  switch (opt->type) {
+    default:
+      break;
+    case SPIN_OPT:
+    case BOOL_OPT:
+    case INT_OPT:
+      if (sscanf(val_txt, "%d", val) != 1) return 1;
+      break;
+    case TEXT_OPT:
+      strcpy(opt->value.text, val_txt);
+      break;
+    case CMD_OPT:
+      (opt->value.function)(engine);
+      break;
+  }
+  return 0;
+}
+
+/* Validate the arguments and store in opt->value.  For COMBO_OPT, resolve the
+ * name in `val_txt` to an index value. */
+static inline int validate_option_args(const struct option *opt,
+                                       const char *val_txt, int val) {
+  switch (opt->type) {
+    default:
+      break;
+    case TEXT_OPT:
+      /* Text is not validated */
+      break;
+    case SPIN_OPT:
+      if (val > opt->max || val < opt->min) {
+        return 1;
+      } else {
+        *opt->value.integer = val;
+        break;
+      }
+    case BOOL_OPT:
+      if (val > 1 || val < 0) {
+        return 1;
+      } else {
+        *opt->value.integer = val;
+      }
+      break;
+    case INT_OPT:
+      *opt->value.integer = val;
+      break;
+    case COMBO_OPT: {
+      int found_val = 0;
+      for (int k = 0; k < opt->combo_vals->n_vals; k++) {
+        if (strcmp(opt->combo_vals->vals[k].name, val_txt) == 0) {
+          *opt->value.integer = k;
+          found_val = 1;
+          break;
+        }
+      }
+      if (!found_val) return 1;
+      break;
+    }
+  }
+  return 0;
+}
+
+/* Set an option in response to an `option` request from XBoard */
+int set_option(struct engine *engine, const char *name) {
+  /*
+   * Go through all options for all modules to look for one that matches `name`.
+   * If a match is found, read the arguments as a string terminated by newline.
+   * Interpret the arguments as string, int, function call, etc. then validate
+   * as necessary.  Handle validation errors by ignoring the option request and
+   * proceeding to the next one.
+   */
   int found = 0;
-  int i, j;
-  int val;
   int err = 0;
-  const char *val_txt = "";
-  /* Go through all options for all modules to look for one that matches name */
-  for (i = 0; i < N_MODULES && !err; i++) {
-    const options_s *const mod = module_opts[i];
-    for (j = 0; j < mod->n_opts && !err; j++) {
-      const option_s *opt = &mod->opts[j];
-      /* If a match is found... */
+  for (int i = 0; i < N_MODULES && !err; i++) {
+    const struct options *const mod = module_opts[i];
+    for (int j = 0; j < mod->n_opts && !err; j++) {
+      const struct option *opt = &mod->opts[j];
       if (strcmp(name, opt->name) == 0) {
-        /* Read arguments */
-        switch (opt->type) {
-          default:
-            break;
-          case CMD_OPT:
-            /* No arguments */
-            break;
-          case SPIN_OPT:
-          case BOOL_OPT:
-          case INT_OPT:
-          case TEXT_OPT:
-          case COMBO_OPT:
-            /* Arguments are passed as a string terminated by newline */
-            val_txt = get_delim('\n');
-            break;
-        }
-
-        /* Interpretation */
-        switch (opt->type) {
-          default:
-            break;
-          case SPIN_OPT:
-          case BOOL_OPT:
-          case INT_OPT:
-            /* Integer  */
-            if (sscanf(val_txt, "%d", &val) != 1) {
-              err = 1;
-            }
-            break;
-          case TEXT_OPT:
-            /* Read text into opt->value */
-            strcpy(opt->value.text, val_txt);
-            printf("%s", opt->value.text);
-            break;
-          case CMD_OPT:
-            /* Call the function pointed to by opt->value */
-            (opt->value.function)(e);
-            break;
-        }
-
-        if (err) continue;
-
-        /* Validation */
-        switch (opt->type) {
-          default:
-            break;
-          case TEXT_OPT:
-            /* Text is not validated */
-            break;
-          case SPIN_OPT:
-            if (val > opt->max || val < opt->min) {
-              return 1;
-            } else {
-              *opt->value.integer = val;
-              break;
-            }
-          case BOOL_OPT:
-            if (val > 1 || val < 0) {
-              return 1;
-            } else {
-              *opt->value.integer = val;
-            }
-            break;
-          case INT_OPT:
-            *opt->value.integer = val;
-            break;
-          case COMBO_OPT: {
-            /* Look up option value by name */
-            int found_val = 0;
-            for (int k = 0; k < opt->combo_vals->n_vals; k++) {
-              if (strcmp(opt->combo_vals->vals[k].name, val_txt) == 0) {
-                *opt->value.integer = k;
-                found_val = 1;
-                break;
-              }
-            }
-            if (!found_val) return 1;
-            break;
-          }
-        }
+        const char *val_txt = get_option_args(opt);
+        int val = 0;
+        if (interpret_option_args(opt, engine, val_txt, &val)) continue;
+        if (validate_option_args(opt, val_txt, val)) continue;
         found = 1;
       }
     }
@@ -193,22 +187,40 @@ int set_option(engine_s *e, const char *name) {
   return 0;
 }
 
-/* Features */
+/*
+ * Features interface to XBoard
+ *
+ * In response to a `protover` request, the engine describes its available
+ * features and characteristics to XBoard, if they are different from expected
+ * defaults.  Then XBoard has the option to accept or reject them.  Features are
+ * reported as either text or integer, e.g.:
+ *
+ * feature foo=1\n
+ * feature variants="normal"\n
+ */
 
-typedef enum feature_type_e_ { INT_FEAT = 0, TEXT_FEAT } feature_type_e;
+/* Type of XBoard feature*/
+enum feature_type { INT_FEAT = 0, TEXT_FEAT };
 
-typedef struct feature_s_ {
-  char name[NAME_LENGTH];
-  feature_type_e type;
-  int int_val;
-  const char *text_val;
-} feature_s;
+/* Struct describing an XBoard feature */
+struct feature {
+  char name[NAME_LENGTH]; /* Name of the feature */
+  enum feature_type type; /* Type of value */
+  int int_val;            /* Integer value */
+  const char *text_val;   /* Text value */
+};
 
-const feature_s features[] = {
-    {"myname", TEXT_FEAT, 0, app_name}, {"setboard", INT_FEAT, 0, ""},
-    {"name", INT_FEAT, 0, ""},          {"ping", INT_FEAT, 0, ""},
-    {"done", INT_FEAT, 0, ""},          {"variants", TEXT_FEAT, 0, "normal"},
-    {"done", INT_FEAT, 1, ""}};
+/* Set of features this app currently supports */
+const struct feature features[] = {
+    {"done", INT_FEAT, 0, ""}, /* Don't timeout waiting for further features */
+    {"myname", TEXT_FEAT, 0, app_name}, /* The name of the engine */
+    {"setboard", INT_FEAT, 0, ""}, /* setboard command is not implemented */
+    {"name", INT_FEAT, 0, ""}, /* We don't care about opponent engine's name*/
+    {"ping", INT_FEAT, 0, ""}, /* `ping` is not implemented */
+    {"variants", TEXT_FEAT, 0,
+     "normal"}, /* The only available variant is normal FIDE chess. */
+    {"done", INT_FEAT, 1, ""}, /* End of features */
+};
 
 enum { N_FEATURES = sizeof(features) / sizeof(features[0]) };
 
@@ -233,7 +245,7 @@ void list_features(void) {
   }
 }
 
-/* XBoard has notified that a named feature has been accepted */
+/* Called when XBoard has notified that a named feature has been accepted */
 void feature_accepted(const char *name) {
   for (int i = 0; i < N_FEATURES; i++) {
     if (strcmp(name, features[i].name) == 0) {

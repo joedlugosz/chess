@@ -1,41 +1,44 @@
 /*
- *  Program information
+ *  Program build info banner
  */
 
 #include <stdio.h>
 
 #include "buildinfo/buildinfo.h"
 
-/* Program info data */
 enum { COL_WIDTH = 50 };
 
-typedef struct info_line_s_ {
+/* A line of program information */
+struct info_line {
   char key[COL_WIDTH];
   const char *value;
-} info_line_s;
+};
 
 /* clang-format off */
-const info_line_s lines[] = {
-  { "",         0                           },
-  { "Joe's Chess Engine", 0                 },
-  { "",         0                           },
-  { "Version",  git_version                 },
-  { "Config",   build_config                },
-  { "Built",    build_date                  },
-  { "",         0                           },
-  { "Compiler", compiler_name               },
-  { "Options",  compiler_options            },
-  { "Target",   target_name                 },
-  { "OS",       os_name                     },
-  { "",         0                           },
-  { "Type 'help' for a list of commands", 0 },
-  { "",         0                           }
+
+/* The lines to display */
+const struct info_line lines[] = {
+  { "",              0                           },
+  { "Joe's Chess Engine", 0                      },
+  { "",              0                           },
+  { "Version",       git_version                 },
+  { "Source date",   source_date                 },
+  { "",              0                           },
+  { "Configuration", build_config                },
+  { "Compiler",      compiler_name               },
+  { "Options",       compiler_options            },
+  { "Target",        target_name                 },
+  { "OS",            os_name                     },
+  { "Build date",    build_date                  },
+  { "",              0                           },
+  { "Type 'help' for a list of commands", 0      },
+  { "",              0                           }
 };
 /* clang-format on */
 
-/* Prints a program info banner */
+/* Print a program info banner */
 void print_program_info() {
-  char buf[COL_WIDTH * sizeof(lines)];
+  char buf[1000];
   printf("\n");
   for (int i = 0; i < sizeof(lines) / sizeof(*lines); i++) {
     if (lines[i].key[0]) {

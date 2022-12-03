@@ -1,11 +1,16 @@
+/*
+ *  Structure for the position of the engine for XBoard or interactive mode
+ */
+
 #ifndef ENGINE_H
 #define ENGINE_H
 
 #include <time.h>
 
-#include "state.h"
+#include "history.h"
+#include "position.h"
 
-typedef struct engine_s_ {
+struct engine {
   enum {
     ENGINE_PLAYING_AS_WHITE = WHITE,
     ENGINE_PLAYING_AS_BLACK = BLACK,
@@ -21,13 +26,13 @@ typedef struct engine_s_ {
   clock_t elapsed_time;
 
   unsigned long otim;
-  int move_n;
+  //  int move_n;
   int game_n;
 
-  state_s game;
+  struct position game;
+  struct history history;
 
   int depth;
-
-} engine_s;
+};
 
 #endif /* ENGINE_H */

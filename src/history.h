@@ -1,15 +1,23 @@
 /*
- *   Move history
+ *  Position history stack and repetition checking
  */
 
 #ifndef HISTORY_H
 #define HISTORY_H
 
-#include "state.h"
+#include "position.h"
+#include "search.h"
 
-struct search_job_s_;
+/* Position history stack */
+struct history {
+  int index;
+  int is_breaking_move[REPEAT_HISTORY_SIZE];
+  hash_t hash[REPEAT_HISTORY_SIZE];
+};
 
-void write_search_history(struct search_job_s_ *, int, move_s *);
-int is_repeated_move(struct search_job_s_ *, int, move_s *);
+void history_push(struct history *history, hash_t hash, struct move *move);
+hash_t history_pop(struct history *history);
+void history_clear(struct history *history);
+int is_repeated_position(const struct history *history, hash_t hash, int moves);
 
 #endif /* HISTORY_H */

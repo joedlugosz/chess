@@ -9,37 +9,43 @@
 
 #include "debug.h"
 #include "evaluate.h"
-#include "state.h"
+#include "position.h"
 
 /* linked list */
-typedef struct movelist_s_ {
-  move_s move;
+struct move_list {
+  struct move move;
   score_t score;
-  struct movelist_s_ *next;
-} movelist_s;
+  struct move_list *next;
+};
 
-typedef struct search_result_s_ {
+struct search_result {
   score_t score;
   int n_leaf;
   double branching_factor;
-  move_s move;
+  double collisions;
+  struct move move;
   clock_t time;
-} search_result_s;
+};
 
 enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
 
-typedef struct search_job_s_ {
+struct history;
+struct search_job {
   /* Parameters */
   int depth; /* Search depth before quiescence */
   int halt;  /* Halt search */
-  /* State */
+  int show_thoughts;
+  /* position */
   clock_t start_time;
-  move_s search_history[SEARCH_DEPTH_MAX];
+  struct move search_history[SEARCH_DEPTH_MAX];
+  struct history *history;
+  struct move killer_moves[SEARCH_DEPTH_MAX];
   int n_ai_moves;
   /* Results */
-  search_result_s result;
-} search_job_s;
+  struct search_result result;
+};
 
-void search(int, state_s *, search_result_s *);
+void search(int depth, struct history *history, struct position *position,
+            struct search_result *result, int show_thoughts);
 
 #endif  // SEARCH_H

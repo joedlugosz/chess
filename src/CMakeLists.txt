@@ -5,11 +5,14 @@ add_subdirectory (buildinfo)
 
 # Most of the app
 set (
-  SOURCES 
+  SOURCES
+    cmdline.c
     commands.c
     debug.c
+    epd.c
     evaluate.c
     fen.c
+    hash.c
     history.c
     io.c
     info.c
@@ -17,7 +20,7 @@ set (
     moves.c
     options.c
     search.c
-    state.c
+    position.c
     ui.c
 )
 
