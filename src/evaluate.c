@@ -14,6 +14,13 @@
 #include "options.h"
 #include "position.h"
 
+/* Front spans - used for passed pawn evaluation.  The set of squares in front
+ * of a pawn that must not be blocked by, or under attack from, an opponent's
+ * pawn, in order for the pawn to be counted as passed.  This is all the squares
+ * forward from the pawn and in the file either side.  Calculated by
+ * `evaluate_init`. */
+bitboard_t front_spans[N_PLAYERS][N_SQUARES];
+
 /* Factor to negate the score for black */
 const score_t player_factor[N_PLAYERS] = {1, -1};
 
@@ -25,12 +32,10 @@ const score_t player_factor[N_PLAYERS] = {1, -1};
 int piece_weights[N_PIECE_T] = {100, 500, 300, 300, 900, 2000};
 
 /* Other factors in Shannon's method * 10 */
-int mobility = 10;
-int doubled = 50;
-int blocked = 50;
-int passed_advance = 50;
-
-bitboard_t front_spans[N_PLAYERS][N_SQUARES];
+int mobility_bonus = 10;
+int doubled_pawn_penalty = 50;
+int blocked_pawn_penalty = 50;
+int passed_pawn_advance_bonus = 50;
 
 /* Small random value 0-9 */
 int randomness = 0;
@@ -47,9 +52,9 @@ const struct option _eval_opts[] = {
   { "Knight value",          INT_OPT,  .value.integer = &piece_weights[KNIGHT],  0, 0, 0 },
   { "Queen value",           INT_OPT,  .value.integer = &piece_weights[QUEEN],   0, 0, 0 },
   { "King value",            INT_OPT,  .value.integer = &piece_weights[KING],    0, 0, 0 },
-  { "Mobility bonus",        INT_OPT,  .value.integer = &mobility,               0, 0, 0 },
-  { "Blocked pawn penalty",  INT_OPT,  .value.integer = &blocked,                0, 0, 0 },
-  { "Doubled pawn penalty",  INT_OPT,  .value.integer = &doubled,                0, 0, 0 },
+  { "Mobility bonus",        INT_OPT,  .value.integer = &mobility_bonus,         0, 0, 0 },
+  { "Blocked pawn penalty",  INT_OPT,  .value.integer = &blocked_pawn_penalty,   0, 0, 0 },
+  { "Doubled pawn penalty",  INT_OPT,  .value.integer = &doubled_pawn_penalty,   0, 0, 0 },
   { "Randomness",            SPIN_OPT, .value.integer = &randomness,          0, 2000, 0 },
   { "Endgame material",      INT_OPT,  .value.integer = &endgame_material,       0, 0, 0 },
     /* clang-format on */
@@ -66,39 +71,45 @@ static inline score_t evaluate_player(const struct position *position,
                                       enum player player) {
   int score = 0;
 
-  enum piece player_first = N_PIECE_T * player;
-  enum piece opponent_first = N_PIECE_T * !player;
+  enum piece player_first_piece = N_PIECE_T * player;
+  enum piece opponent_first_piece = N_PIECE_T * !player;
 
-  /* Materials */
+  /* Materials - score the number of each piece type according to
+   * `piece_weights` */
   for (int i = 0; i < N_PIECE_T; i++) {
-    score += piece_weights[i] * pop_count(position->a[i + player_first]);
+    score += piece_weights[i] * pop_count(position->a[i + player_first_piece]);
   }
 
-  /* Mobility - for each piece count the number of moves */
+  /* Mobility - a bonus for each possible move. */
   bitboard_t pieces = position->player_a[player];
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
-    score += mobility * pop_count(get_moves(position, square));
+    score += mobility_bonus * pop_count(get_moves(position, square));
   }
 
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  pieces = position->b[PAWN + player_first];
+  pieces = position->b[PAWN + player_first_piece];
   while (pieces) {
-    if (pop_count(pieces & 0xffull) > 1) score -= doubled;
+    if (pop_count(pieces & 0xffull) > 1) score -= doubled_pawn_penalty;
     pieces >>= 8;
   }
 
   /* Blocked and passed pawns */
-  pieces = position->a[PAWN + player_first];
+  pieces = position->a[PAWN + player_first_piece];
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
 
-    if (pop_count(get_moves(position, square) == 0ull)) score -= blocked;
+    /* Penalise blocked pawns which have no moves. */
+    if (pop_count(get_moves(position, square)) == 0ull)
+      score -= blocked_pawn_penalty;
 
-    if (!(front_spans[player][square] & position->a[PAWN + opponent_first])) {
+    /* If the pawn is a passed pawn, reward its advancement across the board to
+     * encourage promotion even when promotion is beyond the search horizon. */
+    if (!(front_spans[player][square] &
+          position->a[PAWN + opponent_first_piece])) {
       int file = square / 8;
       int advancement = player ? (6 - file) : (file - 1);
-      score += advancement * passed_advance;
+      score += advancement * passed_pawn_advance_bonus;
     }
   }
 
@@ -121,8 +132,15 @@ score_t evaluate(const struct position *position) {
          player_factor[position->turn];
 }
 
+/* Initialise the module. */
 void evaluate_init() {
-  for (int square = B1; square <= H7; square++) {
+  /*
+   * Calculate `front_spans`.  A mask of all squares in the pawn's file, and all
+   * squares in the files on either side is shifted so that it co-incides with
+   * the pawn's front span.  For extreme files, a mask is created including only
+   * the one relevant file.
+   */
+  for (int square = A1; square <= H7; square++) {
     int rank = square & 7;
     int file = square & ~7;
     bitboard_t fs;
