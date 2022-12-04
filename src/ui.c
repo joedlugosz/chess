@@ -13,11 +13,24 @@
 #include "engine.h"
 #include "info.h"
 #include "io.h"
+#include "options.h"
 #include "os.h"
 #include "search.h"
 
 /* Buffer sizes for move and position*/
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
+
+int search_depth = 7;
+
+const struct option _ui_opts[] = {
+    /* clang-format off */
+  { "Search depth",            INT_OPT,  .value.integer = &search_depth,    0, 0, 0 },
+    /* clang-format on */
+};
+
+extern const struct options ui_opts;
+const struct options ui_opts = {sizeof(_ui_opts) / sizeof(_ui_opts[0]),
+                                _ui_opts};
 
 /*
  *  Game clocks
@@ -199,7 +212,7 @@ int ui_check_legality(struct engine *engine, struct move *move) {
 static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
-  search(engine->depth, &engine->history, &engine->game, &result, 1);
+  search(search_depth, &engine->history, &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
@@ -323,5 +336,4 @@ void init_engine(struct engine *engine) {
   engine->game_n = 1;
   engine->waiting = 1;
   engine->mode = ENGINE_PLAYING_AS_BLACK;
-  engine->depth = 8;
 }
