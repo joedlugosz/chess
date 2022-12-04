@@ -16,20 +16,24 @@ struct clock {
   double last[2];
 };
 
-static inline void clock_start_game(struct clock *clock, enum player turn) {
+static inline void clock_start_game(struct clock *clock, enum player turn,
+                                    double time_control) {
   clock->turn = turn;
-  clock->game_duration = clock->time_control;
+  clock->time_control = time_control;
+  clock->game_duration = time_control;
+  clock->remaining[WHITE] = time_control;
+  clock->remaining[BLACK] = time_control;
   double time = time_now();
   clock->game_start = time;
   clock->period_start = time;
 }
 
 static inline void clock_start_turn(struct clock *clock, enum player turn) {
-  clock->turn = turn;
   double time = time_now();
   clock->last[clock->turn] = time - clock->period_start;
   clock->remaining[clock->turn] -= clock->last[clock->turn];
   clock->period_start = time;
+  clock->turn = turn;
 }
 
 static inline void clock_reset_period(struct clock *clock) {

@@ -22,10 +22,12 @@
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
 int search_depth = 7;
+int time_control = 5 * 60;
 
 const struct option _ui_opts[] = {
     /* clang-format off */
   { "Search depth",            INT_OPT,  .value.integer = &search_depth,    0, 0, 0 },
+  { "Time control period",     INT_OPT,  .value.integer = &time_control,    0, 0, 0 },
     /* clang-format on */
 };
 
@@ -58,7 +60,14 @@ static inline void print_statistics(struct engine *engine,
   if (!engine->xboard_mode) {
     //    double time = clock_get_period_marked_time(&engine->clock);
     double time = engine->clock.last[engine->game.turn];
-    printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
+    int white_s = (int)(engine->clock.remaining[WHITE]);
+    int white_m = white_s / 60;
+    white_s %= 60;
+    int black_s = (int)(engine->clock.remaining[BLACK]);
+    int black_m = black_s / 60;
+    black_s %= 60;
+    printf("\n%d : %0.2lf sec : %d:%02d/%d:%02d", evaluate(&engine->game) / 10,
+           time, white_m, white_s, black_m, black_s);
     if (is_ai_turn(engine) && result) {
       printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions",
              result->n_leaf, result->branching_factor,
@@ -256,7 +265,7 @@ static inline int accept_move(struct engine *engine, const char *input) {
    * waiting for the move. */
   if (engine->waiting) {
     engine->waiting = 0;
-    clock_start_game(&engine->clock, WHITE);
+    clock_start_game(&engine->clock, WHITE, time_control);
     clock_reset_period(&engine->clock);
   }
 
