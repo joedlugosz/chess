@@ -21,8 +21,6 @@ int ply = 50;
 
 void bench_search(int depth) {
   struct position position;
-  struct history history;
-  memset(&history, 0, sizeof(history));
   reset_board(&position);
 
   struct history history;

@@ -48,7 +48,7 @@ static inline int search_null(struct search_job *job, struct pv *pv,
   if (in_check(from_position)) return 0;
 
   struct position position;
-  copy_state(&position, from_position);
+  copy_position(&position, from_position);
 
   /* The move would be made here */
 
@@ -118,7 +118,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     /* If a reduced search produces a score which will cause an update,
        re-search at full depth in case it turns out to be not so good */
     if (extend_reduce < 0 && score > *alpha) {
-      score = -search_ply(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+      score =
+          -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
     }
 
     history_pop(job->history);
