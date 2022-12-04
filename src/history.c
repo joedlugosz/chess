@@ -45,5 +45,5 @@ int is_repeated_position(const struct history *history, hash_t hash,
     if (history->hash[index] == hash) count++;
     if (history->is_breaking_move[index] == hash) break;
   }
-  return (count >= repetitions);
+  return (count >= (repetitions - 1));
 }
