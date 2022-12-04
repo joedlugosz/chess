@@ -1,14 +1,14 @@
-/* 
+/*
  * Search benchmarking app
  * Builds executable bench_search
- * 
+ *
  * Plays AI-AI games at increasing depths and prints moves and statistics.
  */
 
 #include "search.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "fen.h"
 #include "hash.c"
@@ -30,7 +30,7 @@ void bench_search(int depth) {
   for (int i = 0; i < ply; i++) {
     struct search_result res;
 
-    search(depth, &history, &position, &res, 1);
+    search(depth, 0.0, &history, &position, &res, 1);
     total += res.time;
     n_searched += res.n_leaf;
 
@@ -39,8 +39,9 @@ void bench_search(int depth) {
     char move[10];
     format_move(move, &res.move, 0);
     printf("move %2d %4d %-70s %8s\n", depth, i, fen, move);
-    printf("stat %2d %4d %-70s %8s %10d %4.2lf %16lld %6.2lf\n", depth, i, fen, move, res.n_leaf,
-           (double)res.time / 1000000.0, n_searched, (double)total / 1000000.0);
+    printf("stat %2d %4d %-70s %8s %10d %4.2lf %16lld %6.2lf\n", depth, i, fen,
+           move, res.n_leaf, (double)res.time / 1000000.0, n_searched,
+           (double)total / 1000000.0);
 
     if (res.move.from == A1 && res.move.to == A1) break;
 

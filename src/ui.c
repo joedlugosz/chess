@@ -22,12 +22,14 @@
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
 int search_depth = 7;
-int time_control = 5 * 60;
+int time_control = 6;
+int time_control_moves = 10;
 
 const struct option _ui_opts[] = {
     /* clang-format off */
-  { "Search depth",            INT_OPT,  .value.integer = &search_depth,    0, 0, 0 },
-  { "Time control period",     INT_OPT,  .value.integer = &time_control,    0, 0, 0 },
+  { "Search depth",            INT_OPT,  .value.integer = &search_depth,       0, 0, 0 },
+  { "Time control period",     INT_OPT,  .value.integer = &time_control,       0, 0, 0 },
+  { "Time control moves",      INT_OPT,  .value.integer = &time_control_moves, 0, 0, 0 },
     /* clang-format on */
 };
 
@@ -208,7 +210,9 @@ int ui_check_legality(struct engine *engine, struct move *move) {
 static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
-  search(search_depth, &engine->history, &engine->game, &result, 1);
+  double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
+  printf("{budget %f}\n", time_budget);
+  search(0, time_budget, &engine->history, &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
@@ -236,7 +240,7 @@ static inline void do_ai_turn(struct engine *engine) {
 
   /* Search at depth 1 to see if human has any moves.  If not, print
      checkmate or stalemate messages for human and end the game. */
-  search(1, &engine->history, &engine->game, &result, 0);
+  search(1, 0.0, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       print_checkmate_message(engine);
@@ -265,7 +269,7 @@ static inline int accept_move(struct engine *engine, const char *input) {
    * waiting for the move. */
   if (engine->waiting) {
     engine->waiting = 0;
-    clock_start_game(&engine->clock, WHITE, time_control);
+    clock_start_game(&engine->clock, WHITE, time_control, time_control_moves);
     clock_reset_period(&engine->clock);
   }
 
@@ -337,4 +341,5 @@ void init_engine(struct engine *engine) {
   engine->game_n = 1;
   engine->waiting = 1;
   engine->mode = ENGINE_PLAYING_AS_BLACK;
+  clock_start_game(&engine->clock, WHITE, time_control, time_control_moves);
 }

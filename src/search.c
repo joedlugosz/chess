@@ -12,6 +12,7 @@
 #include "io.h"
 #include "movegen.h"
 #include "options.h"
+#include "os.h"
 #include "pv.h"
 
 #define OPT_KILLER 1
@@ -21,7 +22,9 @@ enum {
   TT_MIN_DEPTH = 4,
   INFINITY_SCORE = 10000,
   CHECKMATE_SCORE = -INFINITY_SCORE,
-  DRAW_SCORE = 0
+  DRAW_SCORE = 0,
+  MIN_ITERATION_DEPTH = 6,
+  MAX_ITERATION_DEPTH = 20,
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -238,25 +241,40 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 }
 
 /* Perform a search */
-void search(int depth, struct history *history, struct position *position,
-            struct search_result *res, int show_thoughts) {
+void search(int target_depth, double time_budget, struct history *history,
+            struct position *position, struct search_result *res,
+            int show_thoughts) {
   /* Prepare for search */
   struct search_job job;
   memset(&job, 0, sizeof(job));
-  job.depth = depth;
-  job.start_time = clock();
   job.history = history;
   job.show_thoughts = show_thoughts;
   tt_zero();
 
-  /* Enter recursive search with the current position as the root */
-  struct pv pv;
-  search_position(&job, &pv, position, job.depth, -INFINITY_SCORE,
-                  INFINITY_SCORE);
+  double remaining_time_budget = time_budget;
 
-  /* Copy results and calculate stats */
-  memcpy(res, &job.result, sizeof(*res));
-  res->branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
-  res->time = clock() - job.start_time;
-  res->collisions = tt_collisions();
+  int min = (target_depth < 1) ? MIN_ITERATION_DEPTH : target_depth;
+  int max = (target_depth < 1) ? MAX_ITERATION_DEPTH : target_depth + 1;
+  for (int depth = min; depth < max; depth++) {
+    job.start_time = clock();
+    job.depth = depth;
+    double start_time = time_now();
+
+    /* Enter recursive search with the current position as the root */
+    struct pv pv;
+    search_position(&job, &pv, position, job.depth, -INFINITY_SCORE,
+                    INFINITY_SCORE);
+
+    /* Copy results and calculate stats */
+    memcpy(res, &job.result, sizeof(*res));
+    double branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
+    res->branching_factor = branching_factor;
+    res->time = clock() - job.start_time;
+    res->collisions = tt_collisions();
+
+    double time = time_now() - start_time;
+    remaining_time_budget -= time;
+    double predicted_next_iteration_time = time * branching_factor;
+    if (predicted_next_iteration_time > remaining_time_budget) break;
+  }
 }
