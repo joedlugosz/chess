@@ -53,6 +53,7 @@
  *    posix.c
  *    win32.c
  */
+double time_now(void);
 void setup_signal_handlers(void);
 void ignore_sigint(void);
 int is_terminal(FILE *f);
