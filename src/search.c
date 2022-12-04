@@ -164,18 +164,13 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(position->hash);
 
   /* If the position has already been searched at the same or greater depth, use
-     the result from the tt. At root level, this is the move that will be made,
-     so accept only an exact result, and record the move */
+     the result from the tt.  Do not use this at the root, because the move that
+     will be made needs to be searched. */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
       if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
       if (tte->type == TT_BETA && tte->score > beta) return beta;
       if (tte->type == TT_EXACT) return tte->score;
-    } else {
-      if (tte->type == TT_EXACT) {
-        update_result(job, position, depth, &tte->best_move, tte->score);
-        return tte->score;
-      }
     }
   }
 
