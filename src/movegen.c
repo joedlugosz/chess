@@ -102,6 +102,25 @@ static inline void add_movelist_entries(const struct position *position,
   } while (--promotion > PAWN);
 }
 
+int generate_test_movelist(const struct position *position,
+                           struct move_list **move_buf) {
+  struct move_list *prev = 0;
+  int count = 0;
+  bitboard_t pieces = get_my_pieces(position);
+  if (position->turn == WHITE) {
+    if (pieces & square2bit[B1])
+      add_movelist_entries(position, B1, C3, *move_buf, &prev, &count);
+    else if (pieces & square2bit[C3])
+      add_movelist_entries(position, C3, B1, *move_buf, &prev, &count);
+  } else {
+    if (pieces & square2bit[B8])
+      add_movelist_entries(position, B8, C6, *move_buf, &prev, &count);
+    else if (pieces & square2bit[C6])
+      add_movelist_entries(position, C6, B8, *move_buf, &prev, &count);
+  }
+  return count;
+}
+
 /* Generate a sorted linked list of moves at the buffer beginning at `move_buf`,
  * for a normal search from `position`, including all possible moves.  Update
  * `move_buf` to the head of the sorted list. */
