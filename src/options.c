@@ -97,7 +97,7 @@ static inline int interpret_option_args(const struct option *opt,
                                         struct engine *engine,
                                         const char *val_txt,
                                         int *val /* in/out */) {
-  val = 0;
+  *val = 0;
   switch (opt->type) {
     default:
       break;
