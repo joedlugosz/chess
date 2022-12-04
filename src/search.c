@@ -17,8 +17,14 @@
 #include "os.h"
 #include "pv.h"
 
+/*
+ * Build options
+ */
+
 #define OPT_KILLER 1
 #define OPT_HASH 1
+#define OPT_LMR 0
+#define OPT_NULL 0
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -104,7 +110,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     int extend_reduce;
     if (from_position->piece_at[move->from] == PAWN)
       extend_reduce = 0; /* TODO: better criteria for extension */
-    else if (is_late_move && !in_check(from_position) && !in_check(&position) &&
+    else if (OPT_LMR && is_late_move && !in_check(from_position) &&
+             !in_check(&position) &&
              from_position->piece_at[move->to] == EMPTY &&
              move->promotion == PAWN)
       extend_reduce = -LATE_R;
@@ -205,7 +212,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   pv.length = 0;
 
   /* Null move pruning */
-  if (do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
+  if (OPT_NULL && do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
       search_null(job, &pv, position, depth, alpha, beta))
     return beta;
 
