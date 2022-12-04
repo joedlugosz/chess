@@ -11,7 +11,8 @@ void test_prng(void) {
   prng_seed(0);
 
   hash_t val = prng_rand();
-  TEST_ASSERT(prng_rand() != val, "Consecutive values from the same seed are different");
+  TEST_ASSERT(prng_rand() != val,
+              "Consecutive values from the same seed are different");
 
   prng_seed(0);
   TEST_ASSERT(prng_rand() == val, "Seed produces the same initial value");
@@ -39,6 +40,44 @@ void test_prng(void) {
   }
   TEST_ASSERT(!collision, buf);
 }
+
+void test_hash(void) {
+  hash_init();
+  init_board();
+
+  struct position position;
+  hash_t start_hash;
+
+  {
+    struct move test_moves[] = {
+        {B1, C3, 0, 0}, {C3, B1, 0, 0},
+        /* Should have the same hash as the starting position. */
+    };
+    reset_board(&position);
+    start_hash = position.hash;
+    for (int i = 0; i < sizeof(test_moves) / sizeof(test_moves[0]); i++) {
+      make_move(&position, &test_moves[i]);
+    }
+    TEST_ASSERT(position.hash == start_hash,
+                "Move/unmove without turn change re-creates original hash.");
+  }
+
+  {
+    struct move test_moves[] = {
+        {B1, C3, 0, 0}, {C8, B6, 0, 0}, {C3, B1, 0, 0}, {B6, C8, 0, 0}
+        /* Should have the same hash as the starting position. */
+    };
+    reset_board(&position);
+    start_hash = position.hash;
+    for (int i = 0; i < sizeof(test_moves) / sizeof(test_moves[0]); i++) {
+      make_move(&position, &test_moves[i]);
+      change_player(&position);
+    }
+    TEST_ASSERT(position.hash == start_hash,
+                "Move/unmove with turn change re-creates original hash.");
+  }
+}
+
 /*
 void test_hash_position(struct position *position) {
   char buf[1000];
@@ -56,7 +95,9 @@ void test_hash_position(struct position *position) {
 }
 */
 int main(void) {
-  test_init(1, "hash");
+  test_init(1, "prng");
   test_prng();
+  test_init(1, "hash");
+  test_hash();
   return 0;
 }
