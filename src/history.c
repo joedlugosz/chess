@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "io.h"
 #include "search.h"
 
 /* Push position hash onto the top of the history stack */
@@ -32,10 +33,11 @@ void history_clear(struct history *history) {
 /* Check for whether a position has been encountered before, to satisfy three-
    or fivefold repetition rules. Search back every 2nd position from most recent
    to bottom of stack, keeping a count of the number of times a hash is found on
-   the stack that matches the supplied hash. If a breaking move is encoutered
-   which makes it impossible for the position to be repeated, there is no need
-   to continue searching. Return true if there is are more repetitions than
-   allowed.  */
+   the stack that matches the supplied hash.  `repetitions` specifies the total
+   number of repetitions including the current position, so the search is for
+   the remaining n-1 occurrences.  If a breaking move is encoutered which makes
+   it impossible for the position to be repeated, there is no need to continue
+   searching. Return true if there is are more repetitions than allowed.  */
 int is_repeated_position(const struct history *history, hash_t hash,
                          int repetitions) {
   int index = history->index;
