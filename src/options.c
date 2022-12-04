@@ -23,9 +23,10 @@
  * Arrays of options are declared in other modules
  */
 extern const struct options eval_opts;
+extern const struct options ui_opts;
 
 /* Array of options from each module */
-const struct options *const module_opts[] = {&eval_opts};
+const struct options *const module_opts[] = {&ui_opts, &eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
 /* Names which are passed to XBoard describing option types - see definition of
