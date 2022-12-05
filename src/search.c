@@ -35,8 +35,8 @@ enum {
   CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
-  R_NULL = 2,
-  LATE_R = 1,
+  R_NULL = 2, /* Depth reduction for null move search */
+  R_LATE = 1, /* Depth reduction for late move reduction */
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -60,10 +60,10 @@ static inline int search_null(struct search_job *job, struct pv *pv,
 
   change_player(&position);
 
-  /* Recurse into search_position.  can_null = 0 so the next ply can't also test
-     a null move. */
+  /* Recurse into search_position.  `do_nullmove` = 0 so the next ply can't also
+     test a null move. */
   score_t score =
-      -search_position(job, pv, &position, depth - 3, -beta, -beta + 1, 0);
+      -search_position(job, pv, &position, depth - R_NULL, -beta, -beta + 1, 0);
 
   /* Beta cutoff */
   return (score >= beta);
@@ -114,7 +114,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
              !in_check(&position) &&
              from_position->piece_at[move->to] == EMPTY &&
              move->promotion == PAWN)
-      extend_reduce = -LATE_R;
+      extend_reduce = -R_LATE;
     else
       extend_reduce = 0;
 
