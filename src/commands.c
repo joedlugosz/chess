@@ -78,18 +78,20 @@ static int ui_parse_time(const char *txt, int *time) {
 /* Search time */
 static void ui_st(struct engine *e) {
   ui_parse_time(get_input(), &time_control);
+  search_depth = 0;
 }
 
-/* Set time control mode - not implemented */
+/* Set time control mode */
 static void ui_level(struct engine *e) {
   int mps;
   if (sscanf(get_input(), "%d", &mps) != 1) return;
   int tc;
   if (ui_parse_time(get_input(), &tc) != 0) return;
-  /* Time increment is ignored */
-  get_input();
+  int tincr;
+  if (sscanf(get_input(), "%d", &tincr) != 1) return;
   time_control_moves = mps;
   time_control = tc;
+  time_increment = tincr;
 }
 
 /* XBoard sets protocol version */
