@@ -24,6 +24,7 @@ enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 int search_depth = 0;
 int time_control = 5 * 60;
 int time_control_moves = 40;
+int time_increment = 1 * 60;
 
 const struct option _ui_opts[] = {
     /* clang-format off */

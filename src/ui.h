@@ -17,5 +17,5 @@ int ui_move_is_illegal(const struct engine *engine, struct move *move);
 extern int search_depth;
 extern int time_control;
 extern int time_control_moves;
-
+extern int time_increment;
 #endif /* UI_H */
