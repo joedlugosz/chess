@@ -18,12 +18,12 @@
 #include "os.h"
 #include "search.h"
 
-/* Buffer sizes for move and position*/
+/* Buffer sizes for move and position */
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
-int search_depth = 7;
-int time_control = 6;
-int time_control_moves = 10;
+int search_depth = 0;
+int time_control = 5 * 60;
+int time_control_moves = 40;
 
 const struct option _ui_opts[] = {
     /* clang-format off */
@@ -212,7 +212,8 @@ static inline void do_ai_turn(struct engine *engine) {
   struct search_result result;
   double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
   printf("{budget %f}\n", time_budget);
-  search(0, time_budget, &engine->history, &engine->game, &result, 1);
+  search(search_depth, time_budget, &engine->history, &engine->game, &result,
+         1);
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
