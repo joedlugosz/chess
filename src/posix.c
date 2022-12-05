@@ -10,12 +10,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "debug.h"
 #include "os.h"
 
 void init_os(void) {}
+
+double time_now() {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return now.tv_sec + now.tv_nsec * 1e-9;
+}
 
 /* SIGSEGV handler */
 static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {

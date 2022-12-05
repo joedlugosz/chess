@@ -242,16 +242,16 @@ int epd_run(const char *epd_line, int depth) {
   struct search_result first_result;
   struct search_result result;
   if (direct_mate == 0) {
-    search(depth, &history, &position, &result, show_board);
+    search(depth, 0.0, &history, &position, &result, show_board);
     memcpy(&first_result, &result, sizeof(first_result));
   } else {
     while (full_move <= direct_mate) {
-      search(depth, &history, &position, &result, show_board);
+      search(depth, 0.0, &history, &position, &result, show_board);
       if (full_move == 0) memcpy(&first_result, &result, sizeof(first_result));
       if (result.move.result & MATE) break;
       make_move(&position, &result.move);
       change_player(&position);
-      search(depth, &history, &position, &result, show_thought);
+      search(depth, 0.0, &history, &position, &result, show_thought);
       if (result.move.result & MATE) break;
       make_move(&position, &result.move);
       change_player(&position);

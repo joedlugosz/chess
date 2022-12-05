@@ -7,7 +7,7 @@
 
 #ifndef NDEBUG
 #  define ASSERTS
-#  define LOGGING
+//#  define LOGGING
 #endif /* _DEBUG */
 
 #ifdef ASSERTS

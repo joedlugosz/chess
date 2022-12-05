@@ -32,10 +32,6 @@ static void ui_force(struct engine *e) { e->mode = ENGINE_FORCE_MODE; }
  * turn */
 static void ui_go(struct engine *e) { e->mode = e->game.turn; }
 
-/* Not used by CECP v2 */
-static void ui_black(struct engine *e) {}
-static void ui_white(struct engine *e) {}
-
 /* Tell this AI that it is playing another AI - not implemented */
 static void ui_computer(struct engine *e) {}
 
@@ -50,24 +46,52 @@ static void ui_new(struct engine *e) {
   e->waiting = 1;
   e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
+  clock_start_game(&e->clock, WHITE, time_control, time_control_moves);
+  search_depth = 0;
   reset_board(&e->game);
   history_clear(&e->history);
 }
 
 /* -- Engine control */
 
-/* Search depth - not implemented */
+/* Search depth */
 static void ui_sd(struct engine *e) {
-  int depth;
-  sscanf(get_input(), "%d", &depth);
-  /* TODO: depth */
+  sscanf(get_input(), "%d", &search_depth);
 }
 
-/* Set time control mode - not implemented */
+static int ui_parse_time(const char *txt, int *time) {
+  char time_txt[20];
+  strncpy(time_txt, txt, sizeof(time_txt) - 1);
+  int minutes = 0;
+  int seconds = 0;
+  char *ptr = strstr(time_txt, ":");
+  if (ptr) {
+    *ptr = ' ';
+    if (sscanf(time_txt, "%d %d", &minutes, &seconds) != 2) return 1;
+  } else {
+    if (sscanf(time_txt, "%d", &minutes) != 1) return 1;
+  }
+  *time = minutes * 60.0 + seconds;
+  return 0;
+}
+
+/* Search time */
+static void ui_st(struct engine *e) {
+  ui_parse_time(get_input(), &time_control);
+  search_depth = 0;
+}
+
+/* Set time control mode */
 static void ui_level(struct engine *e) {
-  get_input();
-  get_input();
-  get_input();
+  int mps;
+  if (sscanf(get_input(), "%d", &mps) != 1) return;
+  int tc;
+  if (ui_parse_time(get_input(), &tc) != 0) return;
+  int tincr;
+  if (sscanf(get_input(), "%d", &tincr) != 1) return;
+  time_control_moves = mps;
+  time_control = tc;
+  time_increment = tincr;
 }
 
 /* XBoard sets protocol version */
@@ -214,7 +238,7 @@ const struct command cmds[] = {
     /* clang-format off */
   { CT_DISPLAY, "attacks",  ui_attacks,    "POS  - Display all pieces that can attack POS" },
   { CT_XBOARD,  "accepted", ui_accepted,   "     - ???" },
-  { CT_GAMECTL, "black",    ui_black,      "     - AI to play as black" },
+  { CT_UNIMP,   "black",    ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_XBOARD,  "computer", ui_computer,   "     - ???" },
   { CT_DISPLAY, "eval",     ui_eval,       "     - Evaluate game" },
   { CT_GAMECTL, "fen",      ui_fen,        "FEN  - Set the position using a FEN string" },
@@ -223,7 +247,7 @@ const struct command cmds[] = {
   { CT_GAMECTL, "go",       ui_go,         "     - AI to make first move if playing as white" },
   { CT_GAMECTL, "help",     ui_help,       "     - Display a list of all commands" },
   { CT_DISPLAY, "info",     ui_info,       "     - Display build information"},
-  { CT_XBOARD,  "level",    ui_level,      "     - ???"},
+  { CT_GAMECTL, "level",    ui_level,      "MPS BASE INC - Set time control settings"},
   { CT_DISPLAY, "moves",    ui_moves,      "POS  - Display all squares that the piece at POS can move to" },
   { CT_GAMECTL, "new",      ui_new,        "     - New game" },
   { CT_XBOARD,  "option",   ui_option,     "     - Set engine option" },
@@ -231,17 +255,17 @@ const struct command cmds[] = {
   { CT_GAMECTL, "perft",    ui_perft,      "     - Move generator performance test" },
   { CT_GAMECTL, "perftd",   ui_perftd,     "     - Move generator performance test, divided by move" },
   { CT_DISPLAY, "print",    ui_print,      "     - Display the board" },
-  { CT_XBOARD,  "protover", ui_protover,   "PROT - ??? Selects an XBoard protocol of at least PROT" },
+  { CT_XBOARD,  "protover", ui_protover,   "PROT - Selects an XBoard protocol of at least PROT and displays options" },
   { CT_GAMECTL, "quit",     ui_quit,       "     - Quit the program" },
   { CT_GAMECTL, "q",        ui_quit,       "     - Quit the program more quickly" },
-  { CT_UNIMP,   "st",       ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
+  { CT_GAMECTL, "st",       ui_st,         "     - Set the time control period" },
   { CT_GAMECTL, "sd",       ui_sd,         "D    - Set the search depth" },
   { CT_UNIMP,   "time",     ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "random",   ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "result",   ui_result,     "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "undo",     ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "variant",  ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
-  { CT_GAMECTL, "white",    ui_white,      "     - AI to play as white (enter 'go' to start)" },
+  { CT_UNIMP,   "white",    ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "xboard",   ui_xboard,     "     - Enter XBoard mode" }
     /* clang-format on */
 };
