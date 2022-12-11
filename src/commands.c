@@ -94,6 +94,14 @@ static void ui_level(struct engine *e) {
   time_increment = tincr;
 }
 
+/* XBoard sets player time remaining */
+static void ui_time(struct engine *e) {
+  int ms_time;
+  if (sscanf(get_input(), "%d", &ms_time) != 1) return;
+  double time = (double)ms_time / 1e3;
+  clock_set_remaining(&e->clock, time);
+}
+
 /* XBoard sets protocol version */
 static void ui_protover(struct engine *e) {
   int ver;
@@ -260,7 +268,7 @@ const struct command cmds[] = {
   { CT_GAMECTL, "q",        ui_quit,       "     - Quit the program more quickly" },
   { CT_GAMECTL, "st",       ui_st,         "     - Set the time control period" },
   { CT_GAMECTL, "sd",       ui_sd,         "D    - Set the search depth" },
-  { CT_UNIMP,   "time",     ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
+  { CT_UNIMP,   "time",     ui_time,       "MS   - Advise the current player's remaining time" },
   { CT_UNIMP,   "random",   ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "result",   ui_result,     "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "undo",     ui_noop,       "     - This function is accepted but currently has no effect" },
