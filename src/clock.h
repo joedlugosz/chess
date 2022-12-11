@@ -1,6 +1,8 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
+#include <math.h>
+
 #include "os.h"
 #include "position.h"
 
@@ -37,8 +39,21 @@ static inline void clock_start_turn(struct clock *clock, enum player turn) {
   clock->last[clock->turn] = time - clock->period_start;
   clock->remaining[clock->turn] -= clock->last[clock->turn];
   clock->period_start = time;
-  if (clock->turns[clock->turn] > 0) clock->turns[clock->turn]--;
+  if (clock->turns[clock->turn] > 0)
+    clock->turns[clock->turn]--;
+  else
+    clock->turns[clock->turn] = clock->moves_per_session;
   clock->turn = turn;
+}
+
+/* Set the player's remaining time.
+ * If the remaining time increases significantly, start a new time control
+ * period. */
+static inline void clock_set_remaining(struct clock *clock, double remaining) {
+  if (remaining > clock->remaining[clock->turn] + 1.0) {
+    clock->turns[clock->turn] = clock->moves_per_session;
+  }
+  clock->remaining[clock->turn] = remaining;
 }
 
 static inline void clock_reset_period(struct clock *clock) {
@@ -47,10 +62,14 @@ static inline void clock_reset_period(struct clock *clock) {
 
 static inline double clock_get_time_budget(struct clock *clock,
                                            enum player turn) {
-  if (clock->remaining[turn] > 0)
-    return clock->remaining[turn] / (double)clock->turns[turn];
-  else
-    return clock->time_control / (double)clock->moves_per_session;
+  printf("tc %lf mps %d rtm %lf rtn %d\n", clock->time_control,
+         clock->moves_per_session, clock->remaining[turn], clock->turns[turn]);
+  double target_average_time =
+      clock->time_control / (double)clock->moves_per_session;
+  double time_budget = clock->remaining[turn] / (double)clock->turns[turn];
+  time_budget = fmax(time_budget, target_average_time / 3.0);
+  time_budget = fmin(time_budget, target_average_time * 3.0);
+  return time_budget;
 }
 
 #endif  // CLOCK_H
