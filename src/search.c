@@ -281,11 +281,11 @@ void search(int target_depth, double time_budget, struct history *history,
     res->time = clock() - job.start_time;
     res->collisions = tt_collisions();
 
-    xboard_thought(&job, &pv, depth, score, clock() - job.start_time,
-                   job.result.n_leaf);
-
     double time = time_now() - start_time;
     remaining_time_budget -= time;
+
+    if (depth > 4)
+      xboard_thought(&job, &pv, depth, score, time, job.result.n_leaf);
 
     /* Estimate whether there is enough time for another iteration */
     double predicted_next_iteration_time = time * branching_factor;
