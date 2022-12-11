@@ -251,9 +251,8 @@ void print_board(struct position *position, bitboard_t mask1,
 
 /* Print thoughts in a format compatible with XBoard */
 void xboard_thought(struct search_job *job, struct pv *pv, int depth,
-                    score_t score, clock_t time, int nodes) {
-  printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100),
-         nodes);
+                    score_t score, double time, int nodes) {
+  printf("  %2d %7d %7d %7d ", depth, score, (int)(time * 100.0), nodes);
   print_pv(stdout, pv);
   printf("\n");
 }
