@@ -62,11 +62,11 @@ static inline void print_statistics(struct engine *engine,
                                     struct search_result *result) {
   if (!engine->xboard_mode) {
     //    double time = clock_get_period_marked_time(&engine->clock);
-    double time = engine->clock.last[engine->game.turn];
-    int white_s = (int)(engine->clock.remaining[WHITE]);
+    double time = engine->clock.last_move_time[engine->game.turn];
+    int white_s = (int)(engine->clock.time_remaining[WHITE]);
     int white_m = white_s / 60;
     white_s %= 60;
-    int black_s = (int)(engine->clock.remaining[BLACK]);
+    int black_s = (int)(engine->clock.time_remaining[BLACK]);
     int black_m = black_s / 60;
     black_s %= 60;
     printf("\n%d : %0.2lf sec : %d:%02d/%d:%02d", evaluate(&engine->game) / 10,
@@ -212,7 +212,6 @@ static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
   double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
-  printf("{budget %f}\n", time_budget);
   search(search_depth, time_budget, &engine->history, &engine->game, &result,
          1);
 
@@ -220,7 +219,7 @@ static inline void do_ai_turn(struct engine *engine) {
    * game. */
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
-      clock_start_turn(&engine->clock, !engine->game.turn);
+      clock_end_turn(&engine->clock, engine->game.turn);
       print_checkmate_message(engine);
       print_ai_resign(engine);
     } else {
@@ -234,7 +233,7 @@ static inline void do_ai_turn(struct engine *engine) {
   make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
   // clock_mark_period(&engine->clock);
-  clock_start_turn(&engine->clock, !engine->game.turn);
+  clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
   change_player(&engine->game);
   print_game_state(engine);
@@ -275,7 +274,7 @@ static inline int accept_move(struct engine *engine, const char *input) {
     clock_reset_period(&engine->clock);
   }
 
-  clock_start_turn(&engine->clock, !engine->game.turn);
+  clock_end_turn(&engine->clock, engine->game.turn);
 
   make_move(&engine->game, &move);
   history_push(&engine->history, engine->game.hash, &move);
