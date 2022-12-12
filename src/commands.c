@@ -96,10 +96,11 @@ static void ui_level(struct engine *e) {
 
 /* XBoard sets player time remaining */
 static void ui_time(struct engine *e) {
-  int ms_time;
-  if (sscanf(get_input(), "%d", &ms_time) != 1) return;
-  double time = (double)ms_time / 1e3;
-  clock_set_remaining(&e->clock, time);
+  int ds_time;
+  if (sscanf(get_input(), "%d", &ds_time) != 1) return;
+  double time = (double)ds_time / 100;
+  clock_set_remaining(&e->clock, time,
+                      (e->mode == ENGINE_PLAYING_AS_WHITE) ? WHITE : BLACK);
 }
 
 /* XBoard sets protocol version */
@@ -155,7 +156,7 @@ static void ui_fen(struct engine *e) {
   get_input_to_buf(fullmove, sizeof(fullmove));
   if (load_fen(&e->game, placement, active, castling, enpassant, halfmove,
                fullmove)) {
-    printf("sFEN string not recognised\n");
+    printf("FEN string not recognised\n");
   }
 }
 
