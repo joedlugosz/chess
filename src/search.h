@@ -24,7 +24,7 @@ struct search_result {
   double branching_factor;
   double collisions;
   struct move move;
-  clock_t time;
+  double time;
 };
 
 enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
@@ -36,7 +36,7 @@ struct search_job {
   int halt;  /* Halt search */
   int show_thoughts;
   /* position */
-  clock_t start_time;
+  double start_time;
   struct move search_history[SEARCH_DEPTH_MAX];
   struct history *history;
   struct move killer_moves[SEARCH_DEPTH_MAX];

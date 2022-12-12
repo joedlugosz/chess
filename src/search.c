@@ -79,6 +79,9 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 
     /* Update the PV and show it if it updates at root level */
     pv_add(parent_pv, pv, move);
+    if (job->show_thoughts && depth == job->depth)
+      xboard_thought(job, parent_pv, depth, score, time_now() - job->start_time,
+                     job->result.n_leaf);
   }
 
   DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta);
@@ -243,6 +246,7 @@ void search(int target_depth, double time_budget, struct history *history,
   /* Prepare for search */
   struct search_job job;
   memset(&job, 0, sizeof(job));
+  job.start_time = time_now();
   job.history = history;
   job.show_thoughts = show_thoughts;
   tt_zero();
@@ -265,32 +269,28 @@ void search(int target_depth, double time_budget, struct history *history,
   }
 
   for (int depth = min; depth < max; depth++) {
-    job.start_time = clock();
+    double iteration_start_time = time_now();
     job.depth = depth;
-    double start_time = time_now();
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
-    score_t score = search_position(&job, &pv, position, job.depth,
-                                    -INFINITY_SCORE, INFINITY_SCORE);
+    search_position(&job, &pv, position, job.depth, -INFINITY_SCORE,
+                    INFINITY_SCORE);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
     double branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
+    double iteration_time = time_now() - iteration_start_time;
+    remaining_time_budget -= iteration_time;
+
     res->branching_factor = branching_factor;
-    res->time = clock() - job.start_time;
+    res->time = time_now() - job.start_time;
     res->collisions = tt_collisions();
 
-    double time = time_now() - start_time;
-    remaining_time_budget -= time;
-
-    if (depth > 4)
-      xboard_thought(&job, &pv, depth, score, time, job.result.n_leaf);
-
     /* Estimate whether there is enough time for another iteration */
-    double predicted_next_iteration_time = time * branching_factor;
+    double predicted_next_iteration_time = iteration_time * branching_factor;
     if (target_depth == 0 &&
-        predicted_next_iteration_time > remaining_time_budget * 1.2)
+        predicted_next_iteration_time > remaining_time_budget * 2.0)
       break;
   }
 }
