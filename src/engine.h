@@ -23,6 +23,7 @@ struct engine {
   int xboard_mode;
   int waiting;
   int resign_delayed;
+  int is_seeking_draw;
 
   unsigned long otim;
   //  int move_n;
