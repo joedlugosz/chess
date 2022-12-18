@@ -85,7 +85,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                      job->result.n_leaf);
   }
 
-  DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta);
+  DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta, position.hash);
 
   /* Beta cutoff */
   if (score >= beta) {
