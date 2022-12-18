@@ -7,6 +7,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "evaluate.h"
 #include "hash.h"
 #include "history.h"
 #include "io.h"
@@ -21,7 +22,7 @@
 enum {
   TT_MIN_DEPTH = 4,
   INFINITY_SCORE = 10000,
-  INVALID_SCORE = INFINITY_SCORE + 1,
+  INVALID_SCORE = 10100,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
   CONTEMPT_SCORE = -500,
