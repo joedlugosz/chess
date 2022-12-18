@@ -5,6 +5,7 @@
 #include "position.h"
 
 #include "debug.h"
+#include "evaluate.h"
 #include "fen.h"
 #include "hash.h"
 #include "moves.h"
@@ -286,6 +287,12 @@ void make_move(struct position *position, struct move *move) {
 
   position->ply++;
   if (position->turn == BLACK) position->fullmove++;
+
+  if (position->phase == OPENING &&
+      (victim_piece != EMPTY ||
+       opening_pieces_left(position, position->turn) < 1)) {
+    position->phase = MIDDLEGAME;
+  }
 }
 
 /* Alter `position` to change the player turn.  Called by functions in
@@ -346,6 +353,7 @@ void setup_board(struct position *position, const enum piece *pieces,
 /* Reset `position` to the starting position */
 void reset_board(struct position *position) {
   setup_board(position, start_pieces, WHITE, ALL_CASTLE_RIGHTS, 0, 0, 1);
+  position->phase = OPENING;
 }
 
 /* Initialise the module */

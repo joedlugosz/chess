@@ -92,34 +92,44 @@ enum {
   N_PLANES = N_PIECE_T * N_PLAYERS,
 };
 
-/* Position, game state, and pre-calculated moves */
+enum phase {
+  OPENING,
+  MIDDLEGAME,
+  ENDGAME,
+};
+
+/* Position, game state, and pre-calculated moves
+ * 928 bytes */
 struct position {
   /* The stacks */
-  bitboard_t a[N_PLANES];         /* -  Horizontal    */
-  bitboard_t b[N_PLANES];         /* |  Vertical      */
-  bitboard_t c[N_PLANES];         /* /  Diagonal      */
-  bitboard_t d[N_PLANES];         /* \  Diagonal      */
-  bitboard_t player_a[N_PLAYERS]; /* Set of each players pieces */
-  bitboard_t player_b[N_PLAYERS]; /* Set of each players pieces */
-  bitboard_t player_c[N_PLAYERS]; /* Set of each players pieces */
-  bitboard_t player_d[N_PLAYERS]; /* Set of each players pieces */
-  bitboard_t total_a;             /* Set of all pieces */
-  bitboard_t total_b;             /* Set of all pieces */
-  bitboard_t total_c;             /* Set of all pieces */
-  bitboard_t total_d;             /* Set of all pieces */
-  bitboard_t moves[N_PIECES];     /* Set of squares each piece can move to */
-  bitboard_t claim[N_PLAYERS]; /* Set of all squares each player can move to */
-  enum square piece_square[N_PIECES]; /* Square location of each piece */
-  int8_t piece_at[N_SQUARES];         /* Type of piece at each square */
-  int8_t index_at[N_SQUARES];         /* Piece index at each board position */
-  int halfmove;
-  int fullmove;
-  status_t turn : 1;         /* Player to move next */
-  status_t check[N_PLAYERS]; /* Whether each player is in check */
-  castle_rights_t castling_rights;
-  bitboard_t en_passant; /* En-passant squares */
-  hash_t hash;
-  int ply;
+  bitboard_t a[N_PLANES];         /* 8*12 -  Horizontal    */
+  bitboard_t b[N_PLANES];         /* 8*12 |  Vertical      */
+  bitboard_t c[N_PLANES];         /* 8*12 /  Diagonal      */
+  bitboard_t d[N_PLANES];         /* 8*12 \  Diagonal      */
+  bitboard_t player_a[N_PLAYERS]; /* 8*2  Set of each players pieces */
+  bitboard_t player_b[N_PLAYERS]; /* 8*2  Set of each players pieces */
+  bitboard_t player_c[N_PLAYERS]; /* 8*2  Set of each players pieces */
+  bitboard_t player_d[N_PLAYERS]; /* 8*2  Set of each players pieces */
+  bitboard_t total_a;             /* 8    Set of all pieces */
+  bitboard_t total_b;             /* 8    Set of all pieces */
+  bitboard_t total_c;             /* 8    Set of all pieces */
+  bitboard_t total_d;             /* 8    Set of all pieces */
+  bitboard_t moves[N_PIECES]; /* 8*32 Set of squares each piece can move to */
+  bitboard_t
+      claim[N_PLAYERS]; /* 8*2 Set of all squares each player can move to */
+  enum square
+      piece_square[N_PIECES];      /* 4(?)*32 Square location of each piece */
+  int8_t piece_at[N_SQUARES];      /* 1*64 Type of piece at each square */
+  int8_t index_at[N_SQUARES];      /* 1*64 Piece index at each board position */
+  int halfmove;                    /* 4 */
+  int fullmove;                    /* 4 */
+  status_t turn : 1;               /* 1 Player to move next */
+  status_t check[N_PLAYERS];       /* 1*2 Whether each player is in check */
+  castle_rights_t castling_rights; /* 1 */
+  bitboard_t en_passant;           /* 8 En-passant squares */
+  hash_t hash;                     /* 8 */
+  int ply;                         /* 4 */
+  enum phase phase;
 };
 
 /* Bit set for indicating result conditions */
