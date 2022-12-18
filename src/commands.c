@@ -36,7 +36,24 @@ static void ui_go(struct engine *e) { e->mode = e->game.turn; }
 static void ui_computer(struct engine *e) {}
 
 /* XBoard notifies a result */
-static void ui_result(struct engine *e) { get_input(); }
+static void ui_result(struct engine *e) {
+  const char *result = get_input();
+  if (strcmp(result, "1/2-1/2") == 0) {
+  } else if (strcmp(result, "0-1") == 0) {
+  } else if (strcmp(result, "1-0") == 0) {
+  } else {
+    return;
+  }
+  e->mode = ENGINE_FORCE_MODE;
+}
+
+static void ui_offer_draw(struct engine *e) {
+  if (!e->is_seeking_draw) return;
+  const char *draw = get_input();
+  if (strcmp(draw, "draw") == 0) {
+    if (e->xboard_mode) printf("offer draw\n");
+  }
+}
 
 /* New game */
 static void ui_new(struct engine *e) {
@@ -277,6 +294,7 @@ const struct command cmds[] = {
   { CT_GAMECTL, "level",    ui_level,      "MPS BASE INC - Set time control settings"},
   { CT_DISPLAY, "moves",    ui_moves,      "POS  - Display all squares that the piece at POS can move to" },
   { CT_GAMECTL, "new",      ui_new,        "     - New game" },
+  { CT_XBOARD,  "offer",    ui_offer_draw, "     - Offer a draw by agreement, or accept an offer" },
   { CT_XBOARD,  "option",   ui_option,     "     - Set engine option" },
   { CT_UNIMP,   "otim",     ui_noop_1arg,  "TIME - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "perft",    ui_perft,      "     - Move generator performance test" },
