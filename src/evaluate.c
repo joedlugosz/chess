@@ -25,6 +25,7 @@ bitboard_t front_spans[N_PLAYERS][N_SQUARES];
 const score_t player_factor[N_PLAYERS] = {1, -1};
 
 #define OPT_EVAL_PASSED 1
+#define OPT_OPENING_GUIDE 1
 
 /*
  *  User options
@@ -119,6 +120,13 @@ static inline score_t evaluate_player(const struct position *position,
   if (randomness) {
     score += rand() % randomness;
   }
+
+  /* Penalise moving queen before other pieces */
+  if (OPT_OPENING_GUIDE && position->phase == OPENING) {
+    score -= opening_pieces_left(position, player) * 400;
+    if (has_queen_moved(position, player)) score -= 800;
+  }
+
   return score;
 }
 
