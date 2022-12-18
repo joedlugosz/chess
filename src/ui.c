@@ -227,14 +227,12 @@ static inline void do_ai_turn(struct engine *engine) {
   }
 
   /* Make the AI move */
-  make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
-  // clock_mark_period(&engine->clock);
+  make_move(&engine->game, &result.move);
   clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
   change_player(&engine->game);
   print_game_state(engine);
-  // clock_reset_period(&engine->clock);
 
   /* Search at depth 1 to see if human has any moves.  If not, print
      checkmate or stalemate messages for human and end the game. */
@@ -273,8 +271,8 @@ static inline int accept_move(struct engine *engine, const char *input) {
 
   clock_end_turn(&engine->clock, engine->game.turn);
 
-  make_move(&engine->game, &move);
   history_push(&engine->history, engine->game.hash, &move);
+  make_move(&engine->game, &move);
 
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
