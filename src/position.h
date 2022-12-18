@@ -92,6 +92,12 @@ enum {
   N_PLANES = N_PIECE_T * N_PLAYERS,
 };
 
+enum phase {
+  OPENING,
+  MIDDLEGAME,
+  ENDGAME,
+};
+
 /* Position, game state, and pre-calculated moves
  * 928 bytes */
 struct position {
@@ -123,6 +129,7 @@ struct position {
   bitboard_t en_passant;           /* 8 En-passant squares */
   hash_t hash;                     /* 8 */
   int ply;                         /* 4 */
+  enum phase phase;
 };
 
 /* Bit set for indicating result conditions */
