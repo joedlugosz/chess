@@ -43,8 +43,13 @@ int passed_pawn_advance_bonus = 50;
 /* Small random value 0-9 */
 int randomness = 0;
 
-/* The sum of black and white's material */
+/* The threshold for the sum of black and white's material to indicate the
+ * endgame phase */
 int endgame_material = 6000;
+
+/* Penalties for opening up with Queen early */
+int unmoved_penalty = 400;
+int queen_penalty = 800;
 
 /* Evaluation user options. */
 const struct option _eval_opts[] = {
@@ -59,7 +64,11 @@ const struct option _eval_opts[] = {
   { "Blocked pawn penalty",  INT_OPT,  .value.integer = &blocked_pawn_penalty,   0, 0, 0 },
   { "Doubled pawn penalty",  INT_OPT,  .value.integer = &doubled_pawn_penalty,   0, 0, 0 },
   { "Randomness",            SPIN_OPT, .value.integer = &randomness,          0, 2000, 0 },
-  { "Endgame material",      INT_OPT,  .value.integer = &endgame_material,       0, 0, 0 },
+#if (OPT_OPENING_GUIDE == 1)
+  { "Opening unmoved piece penalty", INT_OPT, .value.integer = &unmoved_penalty, 0, 0, 0 },
+  { "Opening queen move penalty",    INT_OPT, .value.integer = &queen_penalty,   0, 0, 0 },
+#endif
+  { "Endgame material threshold",    INT_OPT, .value.integer = &endgame_material, 0, 0, 0 },
     /* clang-format on */
 };
 const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
@@ -123,8 +132,8 @@ static inline score_t evaluate_player(const struct position *position,
 
   /* Penalise moving queen before other pieces */
   if (OPT_OPENING_GUIDE && position->phase == OPENING) {
-    score -= opening_pieces_left(position, player) * 400;
-    if (has_queen_moved(position, player)) score -= 800;
+    score -= opening_pieces_left(position, player) * unmoved_penalty;
+    if (has_queen_moved(position, player)) score -= queen_penalty;
   }
 
   return score;
