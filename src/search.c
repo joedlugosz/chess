@@ -24,6 +24,7 @@ enum {
   INVALID_SCORE = INFINITY_SCORE + 1,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
+  CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
 };
@@ -111,6 +112,13 @@ static inline void update_result(struct search_job *job,
   }
 }
 
+/* Draw score is calclated on a basic contempt assumption, having no real
+ * contempt factor for the opponent.  Early and midgame places a penalty of
+ * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
+static score_t get_draw_score(const struct position *position) {
+  return (is_endgame(position)) ? DRAW_SCORE : CONTEMPT_SCORE;
+}
+
 /* Search a single position and all possible moves - call search_move for each
    move */
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
@@ -124,10 +132,14 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
+
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
   if (position->halfmove > 50 ||
       is_repeated_position(job->history, position->hash, 3)) {
-    return DRAW_SCORE;
+    if (depth == job->depth)
+      job->result.type = SEARCH_RESULT_DRAW_BY_REPETITION;
+    return get_draw_score(position);
   }
 
   /* First phase - try to exit early */
@@ -225,7 +237,15 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       alpha = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
     } else {
-      alpha = DRAW_SCORE;
+      alpha = get_draw_score(position);
+    }
+    if (depth == job->depth) {
+      if (in_check(position)) {
+        job->result.type = SEARCH_RESULT_CHECKMATE;
+      } else {
+        printf("stalemate\n");
+        job->result.type = SEARCH_RESULT_STALEMATE;
+      }
     }
   }
 
