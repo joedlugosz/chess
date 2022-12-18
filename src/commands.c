@@ -46,8 +46,9 @@ static void ui_new(struct engine *e) {
   e->waiting = 1;
   e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
-  clock_start_game(&e->clock, WHITE, time_control, time_control_moves);
-  search_depth = 0;
+  reset_time_control(e);
+  e->search_depth = 0;
+  clock_start_game(&e->clock);
   reset_board(&e->game);
   history_clear(&e->history);
 }
@@ -75,10 +76,12 @@ static int ui_parse_time(const char *txt, int *time) {
   return 0;
 }
 
-/* Search time */
+/* Search time - at most n seconds */
 static void ui_st(struct engine *e) {
-  ui_parse_time(get_input(), &time_control);
-  search_depth = 0;
+  int time = 0;
+  if (sscanf(get_input(), "%d", &time) != 1) return;
+  e->clock.increment_seconds = (double)time;
+  e->clock.mode = TIME_CTRL_FIXED;
 }
 
 /* Set time control mode */
@@ -89,9 +92,10 @@ static void ui_level(struct engine *e) {
   if (ui_parse_time(get_input(), &tc) != 0) return;
   int tincr;
   if (sscanf(get_input(), "%d", &tincr) != 1) return;
-  time_control_moves = mps;
-  time_control = tc;
-  time_increment = tincr;
+  e->clock.moves_per_session = mps;
+  e->clock.time_control = (double)tc;
+  e->clock.increment_seconds = (double)tincr;
+  e->clock.mode = (mps == 0) ? TIME_CTRL_INCREMENTAL : TIME_CTRL_CLASSICAL;
 }
 
 /* XBoard sets player time remaining */

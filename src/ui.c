@@ -21,22 +21,18 @@
 /* Buffer sizes for move and position */
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
-int search_depth = 0;
-int time_control = 5 * 60;
-int time_control_moves = 40;
-int time_increment = 1 * 60;
-
-const struct option _ui_opts[] = {
-    /* clang-format off */
-  { "Search depth",            INT_OPT,  .value.integer = &search_depth,       0, 0, 0 },
-  { "Time control period",     INT_OPT,  .value.integer = &time_control,       0, 0, 0 },
-  { "Time control moves",      INT_OPT,  .value.integer = &time_control_moves, 0, 0, 0 },
-    /* clang-format on */
+enum {
+  TIME_CTRL_PERIOD_DEFAULT = 5 * 60,
+  TIME_CTRL_MPS_DEFAULT = 40,
+  TIME_CTRL_INCREMENT_DEFAULT = 1 * 60,
 };
 
-extern const struct options ui_opts;
-const struct options ui_opts = {sizeof(_ui_opts) / sizeof(_ui_opts[0]),
-                                _ui_opts};
+void reset_time_control(struct engine *e) {
+  e->clock.time_control = TIME_CTRL_PERIOD_DEFAULT;
+  e->clock.moves_per_session = TIME_CTRL_MPS_DEFAULT;
+  e->clock.increment_seconds = TIME_CTRL_INCREMENT_DEFAULT;
+  e->clock.mode = TIME_CTRL_CLASSICAL;
+}
 
 /*
  *  Truth checking
@@ -212,8 +208,9 @@ static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
   double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
-  search(search_depth, time_budget, &engine->history, &engine->game, &result,
-         1);
+  double time_margin = clock_get_time_margin(&engine->clock);
+  search(engine->search_depth, time_budget, time_margin, &engine->history,
+         &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
@@ -241,7 +238,7 @@ static inline void do_ai_turn(struct engine *engine) {
 
   /* Search at depth 1 to see if human has any moves.  If not, print
      checkmate or stalemate messages for human and end the game. */
-  search(1, 0.0, &engine->history, &engine->game, &result, 0);
+  search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       print_checkmate_message(engine);
@@ -270,7 +267,7 @@ static inline int accept_move(struct engine *engine, const char *input) {
    * waiting for the move. */
   if (engine->waiting) {
     engine->waiting = 0;
-    clock_start_game(&engine->clock, WHITE, time_control, time_control_moves);
+    clock_start_game(&engine->clock);
     clock_reset_period(&engine->clock);
   }
 
@@ -342,5 +339,6 @@ void init_engine(struct engine *engine) {
   engine->game_n = 1;
   engine->waiting = 1;
   engine->mode = ENGINE_PLAYING_AS_BLACK;
-  clock_start_game(&engine->clock, WHITE, time_control, time_control_moves);
+  reset_time_control(engine);
+  clock_start_game(&engine->clock);
 }

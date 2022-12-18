@@ -236,13 +236,14 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     tt_update(position->hash, type, depth, alpha, best_move);
   }
 
+  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
   return alpha;
 }
 
 /* Perform a search */
-void search(int target_depth, double time_budget, struct history *history,
-            struct position *position, struct search_result *res,
-            int show_thoughts) {
+void search(int target_depth, double time_budget, double time_margin,
+            struct history *history, struct position *position,
+            struct search_result *res, int show_thoughts) {
   /* Prepare for search */
   struct search_job job;
   memset(&job, 0, sizeof(job));
@@ -289,8 +290,8 @@ void search(int target_depth, double time_budget, struct history *history,
 
     /* Estimate whether there is enough time for another iteration */
     double predicted_next_iteration_time = iteration_time * branching_factor;
-    if (target_depth == 0 &&
-        predicted_next_iteration_time > remaining_time_budget * 2.0)
+    if (target_depth == 0 && predicted_next_iteration_time >
+                                 remaining_time_budget * (1.0 + time_margin))
       break;
   }
 }

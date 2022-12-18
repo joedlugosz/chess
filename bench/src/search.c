@@ -30,7 +30,7 @@ void bench_search(int depth) {
   for (int i = 0; i < ply; i++) {
     struct search_result res;
 
-    search(depth, 0.0, &history, &position, &res, 1);
+    search(depth, 0.0, 0.0, &history, &position, &res, 1);
     total += res.time;
     n_searched += res.n_leaf;
 

@@ -45,8 +45,8 @@ struct search_job {
   struct search_result result;
 };
 
-void search(int target_depth, double time_budget, struct history *history,
-            struct position *position, struct search_result *result,
-            int show_thoughts);
+void search(int target_depth, double time_budget, double time_margin,
+            struct history *history, struct position *position,
+            struct search_result *result, int show_thoughts);
 
 #endif  // SEARCH_H
