@@ -21,6 +21,7 @@
 enum {
   TT_MIN_DEPTH = 4,
   INFINITY_SCORE = 10000,
+  INVALID_SCORE = INFINITY_SCORE + 1,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
   MIN_ITERATION_DEPTH = 5,
@@ -133,7 +134,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* If there are any moves, best_move and best_score will be updated by the end
      of the function */
-  score_t best_score = -INFINITY_SCORE;
+  score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
 
   /* Struct holding the princpal variation of children for this node */
@@ -275,8 +276,8 @@ void search(int target_depth, double time_budget, double time_margin,
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
-    search_position(&job, &pv, position, job.depth, -INFINITY_SCORE,
-                    INFINITY_SCORE);
+    search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
+                    INVALID_SCORE);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
