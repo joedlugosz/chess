@@ -31,6 +31,7 @@ struct engine {
   struct position game;
   struct history history;
   struct clock clock;
+  int search_depth;
 };
 
 #endif /* ENGINE_H */
