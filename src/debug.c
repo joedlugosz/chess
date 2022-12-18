@@ -83,8 +83,8 @@ void assert_fail(const char *src_file, const char *func, const int line,
 
 /* Print alpha, beta, search history to logfile or stdout */
 void debug_thought(const struct search_job *job, const struct pv *pv, int depth,
-                   score_t score, score_t alpha, score_t beta) {
-  fprintf(logfile, "%2d %10d ", depth, job->result.n_leaf);
+                   score_t score, score_t alpha, score_t beta, hash_t hash) {
+  fprintf(logfile, "%2d %10d %d", depth, job->result.n_leaf, score);
   if (alpha > -100000)
     fprintf(logfile, "%7d ", alpha);
   else
@@ -93,6 +93,7 @@ void debug_thought(const struct search_job *job, const struct pv *pv, int depth,
     fprintf(logfile, "%7d ", beta);
   else
     fprintf(logfile, "     +B ");
+  fprintf(logfile, "  %016llx ", hash);
   print_pv(logfile, pv);
   fprintf(logfile, "\n");
 }
