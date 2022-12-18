@@ -26,7 +26,7 @@ extern const struct options eval_opts;
 extern const struct options ui_opts;
 
 /* Array of options from each module */
-const struct options *const module_opts[] = {&ui_opts, &eval_opts};
+const struct options *const module_opts[] = {&eval_opts};
 enum { N_MODULES = sizeof(module_opts) / sizeof(module_opts[0]) };
 
 /* Names which are passed to XBoard describing option types - see definition of
@@ -215,7 +215,7 @@ struct feature {
 const struct feature features[] = {
     {"done", INT_FEAT, 0, ""}, /* Don't timeout waiting for further features */
     {"myname", TEXT_FEAT, 0, app_name}, /* The name of the engine */
-    {"setboard", INT_FEAT, 0, ""}, /* setboard command is not implemented */
+    {"setboard", INT_FEAT, 1, ""},      /* setboard command is implemented */
     {"name", INT_FEAT, 0, ""}, /* We don't care about opponent engine's name*/
     {"ping", INT_FEAT, 0, ""}, /* `ping` is not implemented */
     {"variants", TEXT_FEAT, 0,
