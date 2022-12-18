@@ -12,6 +12,7 @@
 #include "commands.h"
 #include "debug.h"
 #include "engine.h"
+#include "evaluate.h"
 #include "info.h"
 #include "io.h"
 #include "options.h"
@@ -127,13 +128,17 @@ static inline void print_ai_move(struct engine *engine,
 
 /* Print a checkmate score message */
 static inline void print_checkmate_message(const struct engine *engine) {
-  printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK],
-         engine->game.check[WHITE]);
+  printf("\n%d-%d {%s mates}\n\n", engine->game.check[BLACK],
+         engine->game.check[WHITE],
+         engine->game.check[BLACK] ? "White" : "Black");
 }
 
 /* Print a stalemate score message */
 static inline void print_stalemate_message() {
-  printf("\nStalemate - 1/2-1/2\n\n");
+  printf("\n1/2-1/2 {Stalemate}\n\n");
+}
+static inline void print_repetition_message() {
+  printf("\n1/2-1/2 {Draw by repetition}\n\n");
 }
 
 /* Print a formatted error message about a move, of the form
@@ -214,30 +219,36 @@ static inline void do_ai_turn(struct engine *engine) {
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
-  if (result.move.from == result.move.to) {
-    if (engine->game.check[engine->game.turn]) {
-      clock_end_turn(&engine->clock, engine->game.turn);
-      print_checkmate_message(engine);
-      print_ai_resign(engine);
-    } else {
-      print_stalemate_message();
+  if (result.type != SEARCH_RESULT_PLAY) {
+    switch (result.type) {
+      case SEARCH_RESULT_CHECKMATE:
+        print_checkmate_message(engine);
+        print_ai_resign(engine);
+        break;
+      case SEARCH_RESULT_DRAW_BY_REPETITION:
+        print_repetition_message();
+        break;
+      case SEARCH_RESULT_STALEMATE:
+        print_stalemate_message();
+        break;
+      default:
+        break;
     }
+    clock_end_turn(&engine->clock, engine->game.turn);
     engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
   /* Make the AI move */
-  make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
-  // clock_mark_period(&engine->clock);
+  make_move(&engine->game, &result.move);
   clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
   change_player(&engine->game);
   print_game_state(engine);
-  // clock_reset_period(&engine->clock);
 
-  /* Search at depth 1 to see if human has any moves.  If not, print
-     checkmate or stalemate messages for human and end the game. */
+  /* Search at depth 1 to see if opponent has any moves.  If not, print
+     checkmate or stalemate messages for oppenent and end the game. */
   search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
@@ -273,8 +284,8 @@ static inline int accept_move(struct engine *engine, const char *input) {
 
   clock_end_turn(&engine->clock, engine->game.turn);
 
-  make_move(&engine->game, &move);
   history_push(&engine->history, engine->game.hash, &move);
+  make_move(&engine->game, &move);
 
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);

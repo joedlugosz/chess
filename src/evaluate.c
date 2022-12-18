@@ -32,6 +32,9 @@ int blocked = 50;
 /* Small random value 0-9 */
 int randomness = 0;
 
+/* The sum of black and white's material */
+int endgame_material = 6000;
+
 /* Evaluation user options. */
 const struct option _eval_opts[] = {
     /* clang-format off */
@@ -45,6 +48,7 @@ const struct option _eval_opts[] = {
   { "Blocked pawn penalty",  INT_OPT,  .value.integer = &blocked,                0, 0, 0 },
   { "Doubled pawn penalty",  INT_OPT,  .value.integer = &doubled,                0, 0, 0 },
   { "Randomness",            SPIN_OPT, .value.integer = &randomness,          0, 2000, 0 },
+  { "Endgame material",      INT_OPT,  .value.integer = &endgame_material,       0, 0, 0 },
     /* clang-format on */
 };
 const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
@@ -94,6 +98,11 @@ static inline score_t evaluate_player(const struct position *position,
     score += rand() % randomness;
   }
   return score;
+}
+
+int is_endgame(const struct position *position) {
+  return (evaluate_player(position, WHITE) + evaluate_player(position, BLACK)) >
+         endgame_material;
 }
 
 /* Evaluate a position, producing a score which is positive if the current

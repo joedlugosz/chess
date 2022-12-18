@@ -24,6 +24,12 @@ struct search_result {
   double branching_factor;
   double collisions;
   struct move move;
+  enum {
+    SEARCH_RESULT_PLAY,
+    SEARCH_RESULT_CHECKMATE,
+    SEARCH_RESULT_STALEMATE,
+    SEARCH_RESULT_DRAW_BY_REPETITION,
+  } type;
   double time;
 };
 

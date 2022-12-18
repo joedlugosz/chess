@@ -7,6 +7,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "evaluate.h"
 #include "hash.h"
 #include "history.h"
 #include "io.h"
@@ -21,9 +22,10 @@
 enum {
   TT_MIN_DEPTH = 4,
   INFINITY_SCORE = 10000,
-  INVALID_SCORE = INFINITY_SCORE + 1,
+  INVALID_SCORE = 10100,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
+  CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
 };
@@ -111,6 +113,13 @@ static inline void update_result(struct search_job *job,
   }
 }
 
+/* Draw score is calclated on a basic contempt assumption, having no real
+ * contempt factor for the opponent.  Early and midgame places a penalty of
+ * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
+static score_t get_draw_score(const struct position *position) {
+  return (is_endgame(position)) ? DRAW_SCORE : CONTEMPT_SCORE;
+}
+
 /* Search a single position and all possible moves - call search_move for each
    move */
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
@@ -124,10 +133,14 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
 
+  if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
+
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
   if (position->halfmove > 50 ||
       is_repeated_position(job->history, position->hash, 3)) {
-    return DRAW_SCORE;
+    if (depth == job->depth)
+      job->result.type = SEARCH_RESULT_DRAW_BY_REPETITION;
+    return get_draw_score(position);
   }
 
   /* First phase - try to exit early */
@@ -179,9 +192,10 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* If there is a valid best move from the transposition table, try to get a
      beta cutoff or alpha update. */
+  int n_legal_moves = 0;
   if (tte && !check_legality(position, &tte->best_move) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &tte->best_move, &best_move, &type, 0)) {
+                  beta, &tte->best_move, &best_move, &type, &n_legal_moves)) {
     update_result(job, position, depth, &tte->best_move, best_score);
     return beta;
   }
@@ -202,7 +216,6 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
-  int n_legal_moves = 0;
   if (n_pseudo_legal_moves > 0) {
     while (list_entry) {
       if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
@@ -225,7 +238,15 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       alpha = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
     } else {
-      alpha = DRAW_SCORE;
+      alpha = get_draw_score(position);
+    }
+    if (depth == job->depth) {
+      if (in_check(position)) {
+        job->result.type = SEARCH_RESULT_CHECKMATE;
+      } else {
+        printf("stalemate\n");
+        job->result.type = SEARCH_RESULT_STALEMATE;
+      }
     }
   }
 
