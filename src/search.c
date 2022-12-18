@@ -284,9 +284,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
-  int reduce = 0;
   int is_late_move = 0;
->>>>>>> ADD: late reduction re-search
   while (list_entry) {
     if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
       if (depth > 3 && n_legal_moves > 1) is_late_move = 1;
@@ -299,38 +297,37 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     }
     list_entry = list_entry->next;
   }
-}
 
-/* Checkmate or stalemate. For checkmate, reduce the score by the distance
-   from root to mate. */
-if (n_legal_moves == 0) {
-  type = TT_EXACT;
-  if (in_check(position)) {
-    alpha = CHECKMATE_SCORE + (job->depth - depth);
-    best_move = &mate_move;
-  } else {
-    alpha = get_draw_score(position);
-  }
-  if (depth == job->depth) {
+  /* Checkmate or stalemate. For checkmate, reduce the score by the distance
+     from root to mate. */
+  if (n_legal_moves == 0) {
+    type = TT_EXACT;
     if (in_check(position)) {
-      job->result.type = SEARCH_RESULT_CHECKMATE;
+      alpha = CHECKMATE_SCORE + (job->depth - depth);
+      best_move = &mate_move;
     } else {
-      printf("stalemate\n");
-      job->result.type = SEARCH_RESULT_STALEMATE;
+      alpha = get_draw_score(position);
+    }
+    if (depth == job->depth) {
+      if (in_check(position)) {
+        job->result.type = SEARCH_RESULT_CHECKMATE;
+      } else {
+        printf("stalemate\n");
+        job->result.type = SEARCH_RESULT_STALEMATE;
+      }
     }
   }
-}
 
-/* Update the result if at root */
-update_result(job, position, depth, best_move, alpha);
+  /* Update the result if at root */
+  update_result(job, position, depth, best_move, alpha);
 
-/* Update the transposition table at higher levels */
-if (depth > TT_MIN_DEPTH) {
-  tt_update(position->hash, type, depth, alpha, best_move);
-}
+  /* Update the transposition table at higher levels */
+  if (depth > TT_MIN_DEPTH) {
+    tt_update(position->hash, type, depth, alpha, best_move);
+  }
 
-ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
-return alpha;
+  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
+  return alpha;
 }
 
 /* Perform a search */

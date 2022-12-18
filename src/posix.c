@@ -183,10 +183,9 @@ void print_backtrace(FILE *f) {
   }
 
   /* Print backtrace */
-  fprintf(logfile, "\n{ Call stack: }\n");
+  fprintf(f, "\n{ Call stack: }\n");
   for (int i = 3; i < n_bt; i++) {
-    fprintf(logfile, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function,
-            bt[i].line);
+    fprintf(f, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function, bt[i].line);
     if (strcmp(bt[i].function, "main") == 0) break;
   }
 }
