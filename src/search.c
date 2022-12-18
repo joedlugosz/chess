@@ -192,9 +192,10 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* If there is a valid best move from the transposition table, try to get a
      beta cutoff or alpha update. */
+  int n_legal_moves = 0;
   if (tte && !check_legality(position, &tte->best_move) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &tte->best_move, &best_move, &type, 0)) {
+                  beta, &tte->best_move, &best_move, &type, &n_legal_moves)) {
     update_result(job, position, depth, &tte->best_move, best_score);
     return beta;
   }
@@ -215,7 +216,6 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
-  int n_legal_moves = 0;
   if (n_pseudo_legal_moves > 0) {
     while (list_entry) {
       if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
