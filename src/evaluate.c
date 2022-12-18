@@ -24,6 +24,8 @@ bitboard_t front_spans[N_PLAYERS][N_SQUARES];
 /* Factor to negate the score for black */
 const score_t player_factor[N_PLAYERS] = {1, -1};
 
+#define OPT_EVAL_PASSED 1
+
 /*
  *  User options
  */
@@ -105,8 +107,8 @@ static inline score_t evaluate_player(const struct position *position,
 
     /* If the pawn is a passed pawn, reward its advancement across the board to
      * encourage promotion even when promotion is beyond the search horizon. */
-    if (!(front_spans[player][square] &
-          position->a[PAWN + opponent_first_piece])) {
+    if (OPT_EVAL_PASSED && !(front_spans[player][square] &
+                             position->a[PAWN + opponent_first_piece])) {
       int file = square / 8;
       int advancement = player ? (6 - file) : (file - 1);
       score += advancement * passed_pawn_advance_bonus;
