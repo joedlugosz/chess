@@ -57,7 +57,7 @@ static void ui_new(struct engine *e) {
 
 /* Search depth */
 static void ui_sd(struct engine *e) {
-  sscanf(get_input(), "%d", &search_depth);
+  sscanf(get_input(), "%d", &e->search_depth);
 }
 
 static int ui_parse_time(const char *txt, int *time) {
@@ -189,6 +189,19 @@ static void ui_attacks(struct engine *e) {
               get_attacks(&(e->game), target, opponent[e->game.turn]));
 }
 
+static void ui_allmoves(struct engine *e) {
+  struct move_list move_buf[N_MOVES];
+  struct move_list *list_head = move_buf;
+  generate_search_movelist(&e->game, &list_head);
+  for (struct move_list *list_entry = list_head; list_entry != 0;
+       list_entry = list_entry->next) {
+    char buf[10];
+    format_move_san(buf, &list_entry->move);
+    printf("%s ", buf);
+  }
+  printf("\n");
+}
+
 /* Print board showing squares a piece can move to */
 static void ui_moves(struct engine *e) {
   enum square from;
@@ -249,6 +262,7 @@ static void ui_help(struct engine *e);
 /* Table of commands */
 const struct command cmds[] = {
     /* clang-format off */
+  { CT_DISPLAY, "allmoves", ui_allmoves,   "     - Print a list of all possible moves" },
   { CT_DISPLAY, "attacks",  ui_attacks,    "POS  - Display all pieces that can attack POS" },
   { CT_XBOARD,  "accepted", ui_accepted,   "     - ???" },
   { CT_UNIMP,   "black",    ui_noop,       "     - This function is accepted but currently has no effect" },
@@ -271,6 +285,7 @@ const struct command cmds[] = {
   { CT_XBOARD,  "protover", ui_protover,   "PROT - Selects an XBoard protocol of at least PROT and displays options" },
   { CT_GAMECTL, "quit",     ui_quit,       "     - Quit the program" },
   { CT_GAMECTL, "q",        ui_quit,       "     - Quit the program more quickly" },
+  { CT_GAMECTL, "setboard", ui_fen,        "FEN  - Set the position using a FEN string" },
   { CT_GAMECTL, "st",       ui_st,         "     - Set the time control period" },
   { CT_GAMECTL, "sd",       ui_sd,         "D    - Set the search depth" },
   { CT_UNIMP,   "time",     ui_time,       "MS   - Advise the current player's remaining time" },
@@ -312,9 +327,8 @@ static void ui_help(struct engine *e) {
     }
   }
   printf(
-      "\n   The following commands are accepted for compatibility with XBoard, "
-      "but have no "
-      "effect:");
+      "\n   The following commands are accepted for compatibility with "
+      "XBoard,\nbut have no effect:");
   int j = 0;
   for (int i = 0; i < N_UI_CMDS; i++) {
     if (cmds[i].type == CT_UNIMP) {
@@ -328,8 +342,8 @@ static void ui_help(struct engine *e) {
   printf("\n");
 }
 
-/* Accept a valid command phrase.  Search through commands and call the command
- * function if found.  Return 0 if accepted. */
+/* Accept a valid command phrase.  Search through commands and call the
+ * command function if found.  Return 0 if accepted. */
 int accept_command(struct engine *engine, const char *input) {
   int i;
   for (i = 0; i < N_UI_CMDS; i++) {
