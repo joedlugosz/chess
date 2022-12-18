@@ -30,6 +30,6 @@ int format_square(char *out, enum square);
 int format_move(char *out, struct move *move, int bare);
 int format_move_san(char *out, struct move *move);
 void xboard_thought(struct search_job *job, struct pv *pv, int depth,
-                    score_t score, clock_t time, int nodes);
+                    score_t score, double time, int nodes);
 
 #endif /* IO_H */

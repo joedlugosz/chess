@@ -21,6 +21,7 @@
 enum {
   TT_MIN_DEPTH = 4,
   INFINITY_SCORE = 10000,
+  INVALID_SCORE = INFINITY_SCORE + 1,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
   MIN_ITERATION_DEPTH = 5,
@@ -79,6 +80,9 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 
     /* Update the PV and show it if it updates at root level */
     pv_add(parent_pv, pv, move);
+    if (job->show_thoughts && depth == job->depth)
+      xboard_thought(job, parent_pv, depth, score, time_now() - job->start_time,
+                     job->result.n_leaf);
   }
 
   DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta);
@@ -130,7 +134,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* If there are any moves, best_move and best_score will be updated by the end
      of the function */
-  score_t best_score = -INFINITY_SCORE;
+  score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
 
   /* Struct holding the princpal variation of children for this node */
@@ -233,16 +237,18 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     tt_update(position->hash, type, depth, alpha, best_move);
   }
 
+  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
   return alpha;
 }
 
 /* Perform a search */
-void search(int target_depth, double time_budget, struct history *history,
-            struct position *position, struct search_result *res,
-            int show_thoughts) {
+void search(int target_depth, double time_budget, double time_margin,
+            struct history *history, struct position *position,
+            struct search_result *res, int show_thoughts) {
   /* Prepare for search */
   struct search_job job;
   memset(&job, 0, sizeof(job));
+  job.start_time = time_now();
   job.history = history;
   job.show_thoughts = show_thoughts;
   tt_zero();
@@ -265,32 +271,28 @@ void search(int target_depth, double time_budget, struct history *history,
   }
 
   for (int depth = min; depth < max; depth++) {
-    job.start_time = clock();
+    double iteration_start_time = time_now();
     job.depth = depth;
-    double start_time = time_now();
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
-    score_t score = search_position(&job, &pv, position, job.depth,
-                                    -INFINITY_SCORE, INFINITY_SCORE);
+    search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
+                    INVALID_SCORE);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
     double branching_factor = pow((double)res->n_leaf, 1.0 / (double)depth);
+    double iteration_time = time_now() - iteration_start_time;
+    remaining_time_budget -= iteration_time;
+
     res->branching_factor = branching_factor;
-    res->time = clock() - job.start_time;
+    res->time = time_now() - job.start_time;
     res->collisions = tt_collisions();
 
-    xboard_thought(&job, &pv, depth, score, clock() - job.start_time,
-                   job.result.n_leaf);
-
-    double time = time_now() - start_time;
-    remaining_time_budget -= time;
-
     /* Estimate whether there is enough time for another iteration */
-    double predicted_next_iteration_time = time * branching_factor;
-    if (target_depth == 0 &&
-        predicted_next_iteration_time > remaining_time_budget * 1.2)
+    double predicted_next_iteration_time = iteration_time * branching_factor;
+    if (target_depth == 0 && predicted_next_iteration_time >
+                                 remaining_time_budget * (1.0 + time_margin))
       break;
   }
 }
