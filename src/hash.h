@@ -40,7 +40,8 @@ enum tt_entry_type {
 struct tt_entry {
   hash_t hash;
   enum tt_entry_type type;
-  int depth;
+  char depth;
+  char age;
   score_t score;
   struct move best_move;
 };
@@ -50,6 +51,7 @@ void tt_zero(void);
 double tt_collisions(void);
 void tt_init(void);
 void tt_clear(void);
+void tt_new_age(void);
 struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
                            score_t score, const struct move *best_move);
 struct tt_entry *tt_probe(hash_t hash);

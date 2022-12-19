@@ -63,6 +63,7 @@ void hash_init(void) {
  *  Transposition table
  */
 
+int age;
 int updates;
 int update_collisions;
 
@@ -77,7 +78,11 @@ void tt_init(void) {
            TT_SIZE * sizeof(struct tt_entry));
     exit(1);
   }
+  age = 0;
 }
+
+/* Set a new age - the TT will only probe entries from the current age. */
+void tt_new_age(void) { age++; }
 
 /* Free transposition table memory. Call at program exit. */
 void tt_exit(void) {
@@ -113,8 +118,9 @@ struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
     if (ret->hash != 0 && ret->hash != hash) update_collisions++;
     ret->hash = hash;
     ret->type = type;
-    ret->depth = depth;
+    ret->depth = (char)depth;
     ret->score = score;
+    ret->age = (char)age;
     if (best_move) memcpy(&ret->best_move, best_move, sizeof(ret->best_move));
     updates++;
   }
@@ -125,8 +131,7 @@ struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
    supplied hash, or return zero if none is found. */
 struct tt_entry *tt_probe(hash_t hash) {
   struct tt_entry *ret = tt_get(hash);
-  if (ret->hash != hash) {
-    return 0;
-  }
+  if (ret->hash != hash) return 0;
+  if (ret->age < age) return 0;
   return ret;
 }
