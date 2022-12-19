@@ -7,8 +7,10 @@
 
 #ifndef NDEBUG
 #  define ASSERTS
+#  define LOGGING
 #endif /* _DEBUG */
-// #  define LOGGING
+
+void debug_init();
 
 #ifdef ASSERTS
 
@@ -24,17 +26,16 @@ void assert_fail(const char *file, const char *func, const int line,
 #endif
 
 #ifdef LOGGING
-#  include "evaluate.h"
 #  define DEBUG_THOUGHT(j, p, m, d, s, a, b, h) \
     debug_thought(j, p, m, d, s, a, b, h)
 
 struct search_job;
 struct pv;
-struct move,
+struct move;
 
-    void debug_thought(const struct search_job *job, const struct pv *pv,
-                       struct move *move, int depth, score_t score,
-                       score_t alpha, score_t beta, unsigned long long hash);
+void debug_thought(const struct search_job *job, const struct pv *pv,
+                   struct move *move, int depth, int score, int alpha, int beta,
+                   unsigned long long hash);
 
 void debug_print(const char *fmt, ...);
 #else
