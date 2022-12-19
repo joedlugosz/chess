@@ -316,4 +316,5 @@ void search(int target_depth, double time_budget, double time_margin,
                                  remaining_time_budget * (1.0 + time_margin))
       break;
   }
+  tt_new_age();
 }
