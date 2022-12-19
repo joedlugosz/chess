@@ -23,8 +23,9 @@
 
 #define OPT_KILLER 1
 #define OPT_HASH 1
-#define OPT_LMR 0
-#define OPT_NULL 0
+#define OPT_LMR 1
+#define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
+#define OPT_NULL 1
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -108,8 +109,9 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
        Reduce the search depth for late moves unless they are tactical. Extend
        the depth for pawn moves to try to find a promotion. */
     int extend_reduce;
-    if (from_position->piece_at[move->from] == PAWN)
-      extend_reduce = 0; /* TODO: better criteria for extension */
+    if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
+        depth < job->depth - 1)
+      extend_reduce = 1;
     else if (OPT_LMR && is_late_move && !in_check(from_position) &&
              !in_check(&position) &&
              from_position->piece_at[move->to] == EMPTY &&
