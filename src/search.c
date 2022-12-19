@@ -164,8 +164,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 }
 
 /* Update the result if at the top level */
-static inline void update_result(struct search_job *job,
-                                 struct position *position, int depth,
+static inline void update_result(struct search_job *job, int depth,
                                  struct move *move, score_t score) {
   if (depth == job->depth) {
     job->result.score = score;
@@ -238,7 +237,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       !check_legality(position, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
                   beta, &job->killer_moves[depth], &best_move, &type, 0, 0)) {
-    update_result(job, position, depth, &job->killer_moves[depth], best_score);
+    update_result(job, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
 
@@ -264,7 +263,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
                   beta, &tte->best_move, &best_move, &type, &n_legal_moves,
                   0)) {
-    update_result(job, position, depth, &tte->best_move, best_score);
+    update_result(job, depth, &tte->best_move, best_score);
     return beta;
   }
 
@@ -291,7 +290,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       if (search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
                       beta, &list_entry->move, &best_move, &type,
                       &n_legal_moves, is_late_move)) {
-        update_result(job, position, depth, &list_entry->move, beta);
+        update_result(job, depth, &list_entry->move, beta);
         return beta;
       }
     }
@@ -312,14 +311,13 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       if (in_check(position)) {
         job->result.type = SEARCH_RESULT_CHECKMATE;
       } else {
-        printf("stalemate\n");
         job->result.type = SEARCH_RESULT_STALEMATE;
       }
     }
   }
 
   /* Update the result if at root */
-  update_result(job, position, depth, best_move, alpha);
+  update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
