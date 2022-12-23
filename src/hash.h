@@ -41,7 +41,7 @@ struct tt_entry {
   hash_t hash;
   enum tt_entry_type type;
   char depth;
-  char age;
+  int age;
   score_t score;
   struct move best_move;
 };
