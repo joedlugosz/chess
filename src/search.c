@@ -253,7 +253,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
      will be made needs to be searched. */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
-      if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
+      if (tte->type == TT_ALPHA && tte->score > alpha) return tte->score;
       if (tte->type == TT_BETA && tte->score > beta) return beta;
       if (tte->type == TT_EXACT) return tte->score;
     }
@@ -319,6 +319,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     }
   }
 
+  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
+
   /* Update the result if at root */
   update_result(job, depth, best_move, alpha);
 
@@ -327,7 +329,6 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
   }
 
-  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
   return alpha;
 }
 
