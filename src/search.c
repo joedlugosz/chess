@@ -95,46 +95,38 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
-  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
-  if (position.halfmove > 50 ||
-      is_repeated_position(job->history, position.hash, 3)) {
-    score = DRAW_SCORE;
-  } else {
-    /* Move history is hashed against the position being moved from */
-    history_push(job->history, from_position->hash, move);
-    change_player(&position);
+  /* Move history is hashed against the position being moved from */
+  history_push(job->history, from_position->hash, move);
+  change_player(&position);
 
-    /* Record whether this move puts the opponent in check */
-    if (in_check(&position)) move->result |= CHECK;
+  /* Record whether this move puts the opponent in check */
+  if (in_check(&position)) move->result |= CHECK;
 
-    /* Late move reduction and extensions
-       Reduce the search depth for late moves unless they are tactical. Extend
-       the depth for pawn moves to try to find a promotion. */
-    int extend_reduce;
-    if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
-        depth < job->depth - 1)
-      extend_reduce = 1;
-    else if (OPT_LMR && is_late_move && !in_check(from_position) &&
-             !in_check(&position) &&
-             from_position->piece_at[move->to] == EMPTY &&
-             move->promotion == PAWN)
-      extend_reduce = -R_LATE;
-    else
-      extend_reduce = 0;
+  /* Late move reduction and extensions
+     Reduce the search depth for late moves unless they are tactical. Extend
+     the depth for pawn moves to try to find a promotion. */
+  int extend_reduce;
+  if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
+      depth < job->depth - 1)
+    extend_reduce = 1;
+  else if (OPT_LMR && is_late_move && !in_check(from_position) &&
+           !in_check(&position) && from_position->piece_at[move->to] == EMPTY &&
+           move->promotion == PAWN)
+    extend_reduce = -R_LATE;
+  else
+    extend_reduce = 0;
 
-    /* Recurse into search_position */
-    score = -search_position(job, pv, &position, depth + extend_reduce - 1,
-                             -beta, -*alpha, 1);
+  /* Recurse into search_position */
+  score = -search_position(job, pv, &position, depth + extend_reduce - 1, -beta,
+                           -*alpha, 1);
 
-    /* If a reduced search produces a score which will cause an update,
-       re-search at full depth in case it turns out to be not so good */
-    if (extend_reduce < 0 && score > *alpha) {
-      score =
-          -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
-    }
-
-    history_pop(job->history);
+  /* If a reduced search produces a score which will cause an update,
+     re-search at full depth in case it turns out to be not so good */
+  if (extend_reduce < 0 && score > *alpha) {
+    score = -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
   }
+
+  history_pop(job->history);
 
   if (score > *best_score) {
     *best_score = score;
