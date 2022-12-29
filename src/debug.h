@@ -5,10 +5,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#ifndef NDEBUG
-#  define ASSERTS
-#  define LOGGING
-#endif /* _DEBUG */
+#define ASSERTS
+// #define LOGGING
 
 void debug_init();
 
