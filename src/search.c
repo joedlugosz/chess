@@ -245,7 +245,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Probe the transposition table at higher levels */
   struct tt_entry *tte = 0;
-  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(position->hash);
+  if (OPT_HASH && depth > TT_MIN_DEPTH)
+    tte = tt_probe(position->hash, position->total_a);
 
   /* If the position has already been searched at the same or greater depth, use
      the result from the tt.  Do not use this at the root, because the move that
@@ -323,7 +324,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
-    tt_update(position->hash, type, depth, alpha, best_move);
+    tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
   }
 
   ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);

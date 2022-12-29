@@ -117,7 +117,8 @@ static inline struct tt_entry *tt_get(hash_t hash) {
    at a greater depth than the existing entry. If the new entry has a hashes a
    different position, a collision is recorded but the update is still made. */
 struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
-                           score_t score, const struct move *best_move) {
+                           score_t score, const struct move *best_move,
+                           bitboard_t occupancy) {
   for (hash_t i = 0; i < N_TRIES; i++) {
     struct tt_entry *ret = tt_get(hash + i);
 
@@ -129,14 +130,17 @@ struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
      * does not match the hash.  Try the next entry. */
     if (ret->hash != 0 && ret->hash != hash && ret->age == age) continue;
 
-    updates++;
+    /* A hash key collision */
+    if (ret->hash != 0 && ret->occupancy != occupancy) continue;
 
     /* Update */
+    updates++;
     ret->hash = hash;
     ret->type = type;
     ret->depth = (char)depth;
     ret->score = score;
     ret->age = age;
+    ret->occupancy = occupancy;
     if (best_move) memcpy(&ret->best_move, best_move, sizeof(ret->best_move));
     return ret;
   }
@@ -148,10 +152,13 @@ struct tt_entry *tt_update(hash_t hash, enum tt_entry_type type, int depth,
 
 /* Probe the transposition table to get an entry which exactly matches the
    supplied hash, or return zero if none is found. */
-struct tt_entry *tt_probe(hash_t hash) {
+struct tt_entry *tt_probe(hash_t hash, bitboard_t occupancy) {
   for (hash_t i = 0; i < N_TRIES; i++) {
     struct tt_entry *ret = tt_get(hash + i);
-    if (ret->hash != 0 && ret->hash == hash && ret->age == age) return ret;
+    if (ret->hash != 0 && ret->hash == hash && ret->age == age &&
+        ret->occupancy == occupancy) {
+      return ret;
+    }
   }
   return 0;
 }
