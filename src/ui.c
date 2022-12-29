@@ -216,7 +216,7 @@ static inline void do_ai_turn(struct engine *engine) {
   double time_margin = clock_get_time_margin(&engine->clock);
   search(engine->search_depth, time_budget, time_margin, &engine->history,
          &engine->game, &result, 1);
-  engine->elapsed_time = result.time;
+  // engine->elapsed_time = result.time;
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
