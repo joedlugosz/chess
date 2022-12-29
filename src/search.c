@@ -22,7 +22,7 @@
  * Build options
  */
 
-#define OPT_CONTEMPT 0
+#define OPT_CONTEMPT 1
 #define OPT_KILLER 1
 #define OPT_HASH 1
 /* OPT_LMR + OPT_NULL = +20 elo over 10 games */
@@ -194,10 +194,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
-  if (position->halfmove > 50 ||
+  if (position->halfmove > 51 ||
       is_repeated_position(job->history, position->hash, 3)) {
     if (depth == job->depth)
       job->result.type = SEARCH_RESULT_DRAW_BY_REPETITION;
+    parent_pv->length = 0;
     return get_draw_score(position);
   }
 
