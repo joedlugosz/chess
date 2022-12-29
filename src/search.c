@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "evaluate.h"
@@ -21,11 +22,13 @@
  * Build options
  */
 
+#define OPT_CONTEMPT 1
 #define OPT_KILLER 1
 #define OPT_HASH 1
-#define OPT_LMR 1
+/* OPT_LMR + OPT_NULL = +20 elo over 10 games */
+#define OPT_LMR 0
 #define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
-#define OPT_NULL 1
+#define OPT_NULL 0
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -93,46 +96,38 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
-  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
-  if (position.halfmove > 50 ||
-      is_repeated_position(job->history, position.hash, 3)) {
-    score = DRAW_SCORE;
-  } else {
-    /* Move history is hashed against the position being moved from */
-    history_push(job->history, from_position->hash, move);
-    change_player(&position);
+  /* Move history is hashed against the position being moved from */
+  history_push(job->history, from_position->hash, move);
+  change_player(&position);
 
-    /* Record whether this move puts the opponent in check */
-    if (in_check(&position)) move->result |= CHECK;
+  /* Record whether this move puts the opponent in check */
+  if (in_check(&position)) move->result |= CHECK;
 
-    /* Late move reduction and extensions
-       Reduce the search depth for late moves unless they are tactical. Extend
-       the depth for pawn moves to try to find a promotion. */
-    int extend_reduce;
-    if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
-        depth < job->depth - 1)
-      extend_reduce = 1;
-    else if (OPT_LMR && is_late_move && !in_check(from_position) &&
-             !in_check(&position) &&
-             from_position->piece_at[move->to] == EMPTY &&
-             move->promotion == PAWN)
-      extend_reduce = -R_LATE;
-    else
-      extend_reduce = 0;
+  /* Late move reduction and extensions
+     Reduce the search depth for late moves unless they are tactical. Extend
+     the depth for pawn moves to try to find a promotion. */
+  int extend_reduce;
+  if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
+      depth < job->depth - 1)
+    extend_reduce = 1;
+  else if (OPT_LMR && is_late_move && !in_check(from_position) &&
+           !in_check(&position) && from_position->piece_at[move->to] == EMPTY &&
+           move->promotion == PAWN)
+    extend_reduce = -R_LATE;
+  else
+    extend_reduce = 0;
 
-    /* Recurse into search_position */
-    score = -search_position(job, pv, &position, depth + extend_reduce - 1,
-                             -beta, -*alpha, 1);
+  /* Recurse into search_position */
+  score = -search_position(job, pv, &position, depth + extend_reduce - 1, -beta,
+                           -*alpha, 1);
 
-    /* If a reduced search produces a score which will cause an update,
-       re-search at full depth in case it turns out to be not so good */
-    if (extend_reduce < 0 && score > *alpha) {
-      score =
-          -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
-    }
-
-    history_pop(job->history);
+  /* If a reduced search produces a score which will cause an update,
+     re-search at full depth in case it turns out to be not so good */
+  if (extend_reduce < 0 && score > *alpha) {
+    score = -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
   }
+
+  history_pop(job->history);
 
   if (score > *best_score) {
     *best_score = score;
@@ -180,7 +175,7 @@ static inline void update_result(struct search_job *job, int depth,
  * contempt factor for the opponent.  Early and midgame places a penalty of
  * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
 static score_t get_draw_score(const struct position *position) {
-  return (is_endgame(position)) ? DRAW_SCORE : CONTEMPT_SCORE;
+  return (OPT_CONTEMPT && !is_endgame(position)) ? CONTEMPT_SCORE : DRAW_SCORE;
 }
 
 /* Search a single position and all possible moves - call search_move for each
@@ -199,10 +194,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
-  if (position->halfmove > 50 ||
+  if (position->halfmove > 51 ||
       is_repeated_position(job->history, position->hash, 3)) {
     if (depth == job->depth)
       job->result.type = SEARCH_RESULT_DRAW_BY_REPETITION;
+    parent_pv->length = 0;
     return get_draw_score(position);
   }
 
@@ -245,14 +241,15 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Probe the transposition table at higher levels */
   struct tt_entry *tte = 0;
-  if (OPT_HASH && depth > TT_MIN_DEPTH) tte = tt_probe(position->hash);
+  if (OPT_HASH && depth > TT_MIN_DEPTH)
+    tte = tt_probe(position->hash, position->total_a);
 
   /* If the position has already been searched at the same or greater depth, use
      the result from the tt.  Do not use this at the root, because the move that
      will be made needs to be searched. */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
-      if (tte->type == TT_ALPHA && tte->score > alpha) return alpha;
+      if (tte->type == TT_ALPHA && tte->score > alpha) return tte->score;
       if (tte->type == TT_BETA && tte->score > beta) return beta;
       if (tte->type == TT_EXACT) return tte->score;
     }
@@ -285,18 +282,20 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
-  int is_late_move = 0;
-  while (list_entry) {
-    if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-      if (depth > 3 && n_legal_moves > 1) is_late_move = 1;
-      if (search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                      beta, &list_entry->move, &best_move, &type,
-                      &n_legal_moves, is_late_move)) {
-        update_result(job, depth, &list_entry->move, beta);
-        return beta;
+  if (n_pseudo_legal_moves > 0) {
+    int is_late_move = 0;
+    while (list_entry) {
+      if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
+        if (depth > 3 && n_legal_moves > 1) is_late_move = 1;
+        if (search_move(job, parent_pv, &pv, position, depth, &best_score,
+                        &alpha, beta, &list_entry->move, &best_move, &type,
+                        &n_legal_moves, is_late_move)) {
+          update_result(job, depth, &list_entry->move, beta);
+          return beta;
+        }
       }
+      list_entry = list_entry->next;
     }
-    list_entry = list_entry->next;
   }
 
   /* Checkmate or stalemate. For checkmate, reduce the score by the distance
@@ -318,15 +317,16 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     }
   }
 
+  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
+
   /* Update the result if at root */
   update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
-    tt_update(position->hash, type, depth, alpha, best_move);
+    tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
   }
 
-  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
   return alpha;
 }
 
@@ -365,8 +365,8 @@ void search(int target_depth, double time_budget, double time_margin,
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
-    search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
-                    INVALID_SCORE, 1);
+    score_t score = search_position(&job, &pv, position, job.depth,
+                                    -INVALID_SCORE, INVALID_SCORE, 1);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
@@ -377,6 +377,9 @@ void search(int target_depth, double time_budget, double time_margin,
     res->branching_factor = branching_factor;
     res->time = time_now() - job.start_time;
     res->collisions = tt_collisions();
+
+    /* Break if a checkmate to either side has been found within depth */
+    if (abs(score) + depth >= -CHECKMATE_SCORE) break;
 
     /* Estimate whether there is enough time for another iteration */
     double predicted_next_iteration_time = iteration_time * branching_factor;
