@@ -5,6 +5,7 @@
 #include "search.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <time.h>
 
 #include "evaluate.h"
@@ -16,8 +17,15 @@
 #include "os.h"
 #include "pv.h"
 
+/*
+ * Build options
+ */
+
 #define OPT_KILLER 1
 #define OPT_HASH 1
+#define OPT_LMR 1
+#define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
+#define OPT_NULL 1
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -28,13 +36,39 @@ enum {
   CONTEMPT_SCORE = -500,
   MIN_ITERATION_DEPTH = 5,
   MAX_ITERATION_DEPTH = 20,
+  R_NULL = 2, /* Depth reduction for null move search */
+  R_LATE = 1, /* Depth reduction for late move reduction */
 };
 
 struct move mate_move = {.result = CHECK | MATE};
 
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
-                               score_t alpha, score_t beta);
+                               score_t alpha, score_t beta, int do_nullmove);
+
+/* Null-move reduction search - evaluate at depth the consequences of
+   hypothetically passing on a turn without making a move. */
+static inline int search_null(struct search_job *job, struct pv *pv,
+                              struct position *from_position, int depth,
+                              score_t alpha, score_t beta) {
+  /* Can't nullmove if already in check */
+  if (in_check(from_position)) return 0;
+
+  struct position position;
+  copy_position(&position, from_position);
+
+  /* The move would be made here */
+
+  change_player(&position);
+
+  /* Recurse into search_position.  `do_nullmove` = 0 so the next ply can't also
+     test a null move. */
+  score_t score =
+      -search_position(job, pv, &position, depth - R_NULL, -beta, -beta + 1, 0);
+
+  /* Beta cutoff */
+  return (score >= beta);
+}
 
 /* Search a single move - call search_position after making the move. Return 1
    for a beta cutoff, and 0 in all other cases including self-check. */
@@ -46,7 +80,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                               score_t beta, struct move *move,
                               struct move **best_move,  /* in/out */
                               enum tt_entry_type *type, /* in/out */
-                              int *n_legal_moves /* in/out */) {
+                              int *n_legal_moves,       /* in/out */
+                              int is_late_move) {
   struct position position;
 
   /* Copy and move */
@@ -57,18 +92,47 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (in_check(&position)) return 0;
   if (n_legal_moves) (*n_legal_moves)++;
 
-  /* Move history is hashed against the position being moved from */
-  history_push(job->history, from_position->hash, move);
-  change_player(&position);
+  score_t score;
+  /* Breaking the threefold repetition rule or 50 move rule forces a draw. */
+  if (position.halfmove > 50 ||
+      is_repeated_position(job->history, position.hash, 3)) {
+    score = DRAW_SCORE;
+  } else {
+    /* Move history is hashed against the position being moved from */
+    history_push(job->history, from_position->hash, move);
+    change_player(&position);
 
-  /* Record whether this move puts the opponent in check */
-  if (in_check(&position)) move->result |= CHECK;
+    /* Record whether this move puts the opponent in check */
+    if (in_check(&position)) move->result |= CHECK;
 
-  /* Recurse into search_position */
-  score_t score =
-      -search_position(job, pv, &position, depth - 1, -beta, -*alpha);
+    /* Late move reduction and extensions
+       Reduce the search depth for late moves unless they are tactical. Extend
+       the depth for pawn moves to try to find a promotion. */
+    int extend_reduce;
+    if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
+        depth < job->depth - 1)
+      extend_reduce = 1;
+    else if (OPT_LMR && is_late_move && !in_check(from_position) &&
+             !in_check(&position) &&
+             from_position->piece_at[move->to] == EMPTY &&
+             move->promotion == PAWN)
+      extend_reduce = -R_LATE;
+    else
+      extend_reduce = 0;
 
-  history_pop(job->history);
+    /* Recurse into search_position */
+    score = -search_position(job, pv, &position, depth + extend_reduce - 1,
+                             -beta, -*alpha, 1);
+
+    /* If a reduced search produces a score which will cause an update,
+       re-search at full depth in case it turns out to be not so good */
+    if (extend_reduce < 0 && score > *alpha) {
+      score =
+          -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
+    }
+
+    history_pop(job->history);
+  }
 
   if (score > *best_score) {
     *best_score = score;
@@ -87,7 +151,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
                      job->result.n_leaf);
   }
 
-  DEBUG_THOUGHT(job, parent_pv, depth, score, *alpha, beta, position.hash);
+  DEBUG_THOUGHT(job, pv, move, depth, score, *alpha, beta, position.hash);
 
   /* Beta cutoff */
   if (score >= beta) {
@@ -102,8 +166,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 }
 
 /* Update the result if at the top level */
-static inline void update_result(struct search_job *job,
-                                 struct position *position, int depth,
+static inline void update_result(struct search_job *job, int depth,
                                  struct move *move, score_t score) {
   if (depth == job->depth) {
     job->result.score = score;
@@ -124,7 +187,7 @@ static score_t get_draw_score(const struct position *position) {
    move */
 static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
-                               score_t alpha, score_t beta) {
+                               score_t alpha, score_t beta, int do_nullmove) {
   if (job->halt) return 0;
 
   ASSERT((job->depth - depth) < SEARCH_DEPTH_MAX);
@@ -145,14 +208,19 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* First phase - try to exit early */
 
+  /* Principal variation for this node and its children */
+  struct pv pv;
+  pv.length = 0;
+
+  /* Null move pruning */
+  if (OPT_NULL && do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
+      search_null(job, &pv, position, depth, alpha, beta))
+    return beta;
+
   /* If there are any moves, best_move and best_score will be updated by the end
      of the function */
   score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
-
-  /* Struct holding the princpal variation of children for this node */
-  struct pv pv;
-  pv.length = 0;
 
   /* Standing pat - in a quiescence search, evaluate taking no action - this
      could be better than the consequences of taking a piece. */
@@ -170,8 +238,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (OPT_KILLER && (depth >= 0) &&
       !check_legality(position, &job->killer_moves[depth]) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &job->killer_moves[depth], &best_move, &type, 0)) {
-    update_result(job, position, depth, &job->killer_moves[depth], best_score);
+                  beta, &job->killer_moves[depth], &best_move, &type, 0, 0)) {
+    update_result(job, depth, &job->killer_moves[depth], best_score);
     return beta;
   }
 
@@ -195,8 +263,9 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   int n_legal_moves = 0;
   if (tte && !check_legality(position, &tte->best_move) &&
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
-                  beta, &tte->best_move, &best_move, &type, &n_legal_moves)) {
-    update_result(job, position, depth, &tte->best_move, best_score);
+                  beta, &tte->best_move, &best_move, &type, &n_legal_moves,
+                  0)) {
+    update_result(job, depth, &tte->best_move, best_score);
     return beta;
   }
 
@@ -216,18 +285,18 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Search through the list of pseudo-legal moves. search_move will update
      best_score, best_move, alpha, and type, and n_legal_moves. */
-  if (n_pseudo_legal_moves > 0) {
-    while (list_entry) {
-      if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
-        if (search_move(job, parent_pv, &pv, position, depth, &best_score,
-                        &alpha, beta, &list_entry->move, &best_move, &type,
-                        &n_legal_moves)) {
-          update_result(job, position, depth, &list_entry->move, beta);
-          return beta;
-        }
+  int is_late_move = 0;
+  while (list_entry) {
+    if (!(tte && move_equal(&tte->best_move, &list_entry->move))) {
+      if (depth > 3 && n_legal_moves > 1) is_late_move = 1;
+      if (search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
+                      beta, &list_entry->move, &best_move, &type,
+                      &n_legal_moves, is_late_move)) {
+        update_result(job, depth, &list_entry->move, beta);
+        return beta;
       }
-      list_entry = list_entry->next;
     }
+    list_entry = list_entry->next;
   }
 
   /* Checkmate or stalemate. For checkmate, reduce the score by the distance
@@ -244,14 +313,13 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       if (in_check(position)) {
         job->result.type = SEARCH_RESULT_CHECKMATE;
       } else {
-        printf("stalemate\n");
         job->result.type = SEARCH_RESULT_STALEMATE;
       }
     }
   }
 
   /* Update the result if at root */
-  update_result(job, position, depth, best_move, alpha);
+  update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
   if (depth > TT_MIN_DEPTH) {
@@ -298,7 +366,7 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Enter recursive search with the current position as the root */
     struct pv pv;
     search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
-                    INVALID_SCORE);
+                    INVALID_SCORE, 1);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));

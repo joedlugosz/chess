@@ -21,12 +21,14 @@ int ply = 50;
 
 void bench_search(int depth) {
   struct position position;
+  reset_board(&position);
+
   struct history history;
   memset(&history, 0, sizeof(history));
-  reset_board(&position);
 
   clock_t total = 0;
   long long n_searched = 0;
+
   for (int i = 0; i < ply; i++) {
     struct search_result res;
 
@@ -38,6 +40,7 @@ void bench_search(int depth) {
     get_fen(&position, fen, sizeof(fen));
     char move[10];
     format_move(move, &res.move, 0);
+
     printf("move %2d %4d %-70s %8s\n", depth, i, fen, move);
     printf("stat %2d %4d %-70s %8s %10d %4.2lf %16lld %6.2lf\n", depth, i, fen,
            move, res.n_leaf, (double)res.time / 1000000.0, n_searched,
@@ -49,6 +52,7 @@ void bench_search(int depth) {
     history_push(&history, position.hash, &res.move);
     change_player(&position);
   }
+
   printf("avg  %4d %4d %16lld %6.2lf\n", depth, ply, n_searched / ply,
          (double)total / ((double)ply * 1000000.0));
 }
@@ -64,6 +68,7 @@ int main(int argc, const char *argv[]) {
   setbuf(stdout, 0);
   init_board();
   hash_init();
+  debug_init();
   tt_init();
 
   for (int i = 1; i <= max_depth; i++) {
