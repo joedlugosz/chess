@@ -26,3 +26,12 @@ r7/pR1nkb1p/2Bp4/8/2nP3N/P1P1P2P/2P2P2/B1Kq4 w - - # King should take queen
 
 # White has only one move until mated - should not report a draw
 8/1p4pp/2n5/2p2p2/1p3k2/3b4/1r6/4K3 w - - 8 60 bm Kd1; id "MY_Forced.001"
+
+# assert victim piece != king
+2k5/1p3p2/5rp1/PPPR4/2p2P2/2P4P/1K6/8 w - - 1 64
+
+# assert alpha != invalid
+8/1k4p1/4bp2/p3p2p/P1P1P2P/1P3P2/2P1K1P1/8 w - - 3 38 sd 12
+
+# stalemate
+8/8/1KBb4/3Pk3/P7/8/8/8 w - - 1 87 sd 9
