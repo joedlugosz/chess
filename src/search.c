@@ -22,6 +22,7 @@
  * Build options
  */
 
+#define OPT_CONTEMPT 0
 #define OPT_KILLER 1
 #define OPT_HASH 1
 /* OPT_LMR + OPT_NULL = +20 elo over 10 games */
@@ -174,7 +175,7 @@ static inline void update_result(struct search_job *job, int depth,
  * contempt factor for the opponent.  Early and midgame places a penalty of
  * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
 static score_t get_draw_score(const struct position *position) {
-  return (is_endgame(position)) ? DRAW_SCORE : CONTEMPT_SCORE;
+  return (OPT_CONTEMPT && !is_endgame(position)) ? CONTEMPT_SCORE : DRAW_SCORE;
 }
 
 /* Search a single position and all possible moves - call search_move for each
