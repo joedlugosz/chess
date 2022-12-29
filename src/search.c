@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "evaluate.h"
@@ -23,9 +24,10 @@
 
 #define OPT_KILLER 1
 #define OPT_HASH 1
-#define OPT_LMR 1
+/* OPT_LMR + OPT_NULL = +20 elo over 10 games */
+#define OPT_LMR 0
 #define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
-#define OPT_NULL 1
+#define OPT_NULL 0
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -369,8 +371,8 @@ void search(int target_depth, double time_budget, double time_margin,
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
-    search_position(&job, &pv, position, job.depth, -INVALID_SCORE,
-                    INVALID_SCORE, 1);
+    score_t score = search_position(&job, &pv, position, job.depth,
+                                    -INVALID_SCORE, INVALID_SCORE, 1);
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
@@ -381,6 +383,9 @@ void search(int target_depth, double time_budget, double time_margin,
     res->branching_factor = branching_factor;
     res->time = time_now() - job.start_time;
     res->collisions = tt_collisions();
+
+    /* Break if a checkmate to either side has been found within depth */
+    if (abs(score) + depth >= -CHECKMATE_SCORE) break;
 
     /* Estimate whether there is enough time for another iteration */
     double predicted_next_iteration_time = iteration_time * branching_factor;
