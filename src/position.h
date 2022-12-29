@@ -117,6 +117,7 @@ struct position {
   bitboard_t moves[N_PIECES]; /* 8*32 Set of squares each piece can move to */
   bitboard_t
       claim[N_PLAYERS]; /* 8*2 Set of all squares each player can move to */
+  bitboard_t pawn_claim[N_PLAYERS];
   enum square
       piece_square[N_PIECES];      /* 4(?)*32 Square location of each piece */
   int8_t piece_at[N_SQUARES];      /* 1*64 Type of piece at each square */
