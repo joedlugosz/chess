@@ -277,8 +277,7 @@ void make_move(struct position *position, struct move *move) {
 
   /* Test for check on both sides */
   for (enum player player = 0; player < N_PLAYERS; player++) {
-    int king_square = bit2square(position->a[KING + player * N_PIECE_T]);
-    if (get_attacks(position, king_square, opponent[player])) {
+    if ((position->a[KING + player * N_PIECE_T] & position->claim[!player])) {
       position->check[player] = 1;
     } else {
       position->check[player] = 0;
