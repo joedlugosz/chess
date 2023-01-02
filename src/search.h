@@ -21,6 +21,8 @@ struct move_list {
 struct search_result {
   score_t score;
   int n_leaf;
+  int n_node;
+  int n_check_moves;
   double branching_factor;
   double collisions;
   struct move move;
