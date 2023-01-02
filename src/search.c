@@ -92,7 +92,11 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   make_move(&position, move);
 
   /* Return early if moving into self-check. All other moves are legal. */
-  if (in_check(&position)) return 0;
+  if (in_check(&position)) {
+    job->result.n_check_moves++;
+    return 0;
+  }
+  //  ASSERT(!in_check(&position));
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
@@ -190,6 +194,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
+  job->result.n_node++;
 
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
 
