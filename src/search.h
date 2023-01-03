@@ -23,6 +23,7 @@ struct search_result {
   int n_leaf;
   int n_node;
   int n_check_moves;
+  int seldep;
   double branching_factor;
   double collisions;
   struct move move;
