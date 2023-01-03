@@ -36,7 +36,17 @@ struct search_result {
   double time;
 };
 
-enum { SEARCH_DEPTH_MAX = 30, REPEAT_HISTORY_SIZE = 300, N_MOVES = 218 };
+/* SEARCH_DEPTH_MAX - Estimate - if depth = 20 and there is an alternation of
+ * check and quiescence moves.  There are 32 pieces, 29 can be taken, +29 check
+ * evasions = 58, +depth.
+ * REPEAT_HISTORY_SIZE - Estimate - this needs to be the expected max length of
+ * a game + max expected depth.
+ * N_MOVES - Max moves possible in a position.  This has been studied. */
+enum {
+  SEARCH_DEPTH_MAX = 60,
+  REPEAT_HISTORY_SIZE = 300,
+  N_MOVES = 218,
+};
 
 struct history;
 struct search_job {
