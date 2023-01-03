@@ -145,9 +145,12 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 
     /* Update the PV and show it if it updates at root level */
     pv_add(parent_pv, pv, move);
+    double elapsed_time = time_now() - job->start_time;
     if (job->show_thoughts && depth == job->depth)
-      xboard_thought(job, parent_pv, depth, score, time_now() - job->start_time,
-                     job->result.n_leaf);
+      xboard_thought(job, parent_pv, depth, score, elapsed_time,
+                     job->result.n_leaf,
+                     (double)job->result.n_leaf / 1000.0 * elapsed_time,
+                     job->result.seldep);
   }
 
   DEBUG_THOUGHT(job, pv, move, depth, score, *alpha, beta, position.hash);
@@ -197,6 +200,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   job->result.n_node++;
 
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
+  if (job->depth - depth > job->result.seldep)
+    job->result.seldep = job->depth - depth;
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
   if (position->halfmove > 51 ||
