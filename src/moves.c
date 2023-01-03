@@ -122,8 +122,8 @@ bitboard_t pawn_advances[N_PLAYERS][N_SQUARES],
  * position, taking into account captures and blockages by other pieces.  For
  * simplicity, include moves where pawns can take their own side's pieces (these
  * are filtered out elsewhere). */
-static bitboard_t get_pawn_moves(struct position *position, enum square square,
-                                 enum player player) {
+bitboard_t get_pawn_moves(const struct position *position, enum square square,
+                          enum player player) {
   /*
    * Pawns can advance forward by one or two squares as dictated by
    * `pawn_advances`, if they not are blocked from moving by other pieces.  A
@@ -153,8 +153,8 @@ static bitboard_t get_pawn_moves(struct position *position, enum square square,
  * position, taking into account captures and blockages by other pieces.  For
  * simplicity, include moves where rooks can take their own side's pieces (these
  * are filtered out elsewhere). */
-static bitboard_t get_rook_moves(const struct position *position,
-                                 enum square a_square) {
+bitboard_t get_rook_moves(const struct position *position,
+                          enum square a_square) {
   /*
    * Rook move generation reduces to a case for a single 8-bit rank which is
    * handled by an 8 x 256 lookup table.  To calculate horizontal moves, for the
@@ -220,7 +220,7 @@ bitboard_t get_bishop_moves(const struct position *position,
 
 /* Return a bitboard containing the valid king move destinations for a given
    position, including any castling destinations. */
-bitboard_t get_king_moves(struct position *position, enum square from,
+bitboard_t get_king_moves(const struct position *position, enum square from,
                           enum player player) {
   /*
    * Non-castling king moves are taken from a lookup table.  These are returned
@@ -259,6 +259,31 @@ bitboard_t get_king_moves(struct position *position, enum square from,
     }
   }
   return moves;
+}
+
+bitboard_t get_moves(const struct position *position, enum square from) {
+  int piece = position->piece_at[from];
+  if (piece == EMPTY) return 0;
+  enum piece type = piece_type[piece];
+  bitboard_t own_mask = ~position->player_a[piece_player[piece]];
+  switch (type) {
+    case PAWN:
+      return get_pawn_moves(position, from, piece_player[piece]) & own_mask;
+    case KNIGHT:
+      return knight_moves[from] & own_mask;
+    case BISHOP:
+      return get_bishop_moves(position, from) & own_mask;
+    case ROOK:
+      return get_rook_moves(position, from) & own_mask;
+    case QUEEN:
+      return (get_bishop_moves(position, from) |
+              get_rook_moves(position, from)) &
+             own_mask;
+    case KING:
+      return get_king_moves(position, from, piece_player[piece]) & own_mask;
+    default:
+      return 0;
+  }
 }
 
 /* Return a bitboard containing the set of all squares with pieces that
