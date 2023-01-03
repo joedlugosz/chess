@@ -25,6 +25,7 @@
 #define OPT_CONTEMPT 1
 #define OPT_KILLER 1
 #define OPT_HASH 1
+#define OPT_STAND_PAT 1
 /* OPT_LMR + OPT_NULL = +20 elo over 10 games */
 #define OPT_LMR 0
 #define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
@@ -32,13 +33,14 @@
 
 enum {
   TT_MIN_DEPTH = 4,
+  QUIESCENCE_MAX_DEPTH = 50,
+  MIN_ITERATION_DEPTH = 5,
+  MAX_ITERATION_DEPTH = 20,
   INFINITY_SCORE = 10000,
   INVALID_SCORE = 10100,
   CHECKMATE_SCORE = -INFINITY_SCORE,
   DRAW_SCORE = 0,
   CONTEMPT_SCORE = -500,
-  MIN_ITERATION_DEPTH = 5,
-  MAX_ITERATION_DEPTH = 20,
   R_NULL = 2, /* Depth reduction for null move search */
   R_LATE = 1, /* Depth reduction for late move reduction */
 };
@@ -228,9 +230,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
 
-  /* Standing pat - in a quiescence search, evaluate taking no action - this
-     could be better than the consequences of taking a piece. */
-  if (depth <= 0 && !in_check(position)) {
+  /* Early exits in quiescence */
+  if (OPT_STAND_PAT && depth <= 0 && !in_check(position)) {
+    best_score = evaluate(position);
+    /* Standing pat - evaluate taking no action - this
+       could be better than the consequences of taking a piece. */
     best_score = evaluate(position);
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
@@ -286,8 +290,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (depth > 0 || position->check[WHITE] || position->check[BLACK]) {
     n_pseudo_legal_moves = generate_search_movelist(position, &list_entry);
   } else {
+    /* No quiescence moves found - this is the bottom of the search.  Return
+     * evaluation. */
     n_pseudo_legal_moves = generate_quiescence_movelist(position, &list_entry);
-    if (n_pseudo_legal_moves == 0) return best_score;
+    if (n_pseudo_legal_moves == 0)
+      return (OPT_STAND_PAT) ? best_score : evaluate(position);
   }
 
   /* Search through the list of pseudo-legal moves. search_move will update
