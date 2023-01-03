@@ -99,7 +99,6 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     job->result.n_check_moves++;
     return 0;
   }
-  //  ASSERT(!in_check(&position));
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
@@ -247,9 +246,12 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     best_score = evaluate(position);
     /* Standing pat - evaluate taking no action - this
        could be better than the consequences of taking a piece. */
-    best_score = evaluate(position);
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
+  }
+  /* Absolute depth limit */
+  if (job->depth - depth > QUIESCENCE_MAX_DEPTH) {
+    return best_score;
   }
 
   /* Default node type - this will change to TT_EXACT on alpha update or TT_BETA
@@ -293,11 +295,6 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   }
 
   /* Second phase - generate and search all moves */
-
-  printf("gen %d\n", job->result.n_node);
-  if (job->result.n_node == 20045) {
-    printf("stop\n");
-  }
 
   /* Generate the list of pseudo-legal moves (including those leading into
      self-check). list_entry will point to the first sorted item. */
