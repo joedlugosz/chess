@@ -346,8 +346,11 @@ void setup_board(struct position *position, const enum piece *pieces,
       index++;
     }
   }
+
+  position->turn = !position->turn;
   /* Generate moves */
   calculate_moves(position);
+  position->turn = !position->turn;
 }
 
 /* Reset `position` to the starting position */

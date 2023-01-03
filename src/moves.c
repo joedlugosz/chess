@@ -310,73 +310,71 @@ void calculate_moves(struct position *position) {
    * `get_attacks` which requires move information for all other pieces.
    */
 
-  int base = 0;
-  for (enum player player = WHITE; player != N_PLAYERS; player++) {
-    bitboard_t pawns = position->a[base + PAWN];
-    while (pawns) {
-      bitboard_t piece = take_next_bit_from(&pawns);
-      enum square square = bit2square(piece);
-      int index = position->index_at[square];
-      bitboard_t moves = get_pawn_moves(position, square, player);
-      moves &= ~position->player_a[player];
-      position->moves[index] = moves;
-    }
-    bitboard_t knights = position->a[base + KNIGHT];
-    if (knights) {
-      while (knights) {
-        bitboard_t piece = take_next_bit_from(&knights);
-        enum square square = bit2square(piece);
-        int index = position->index_at[square];
-        bitboard_t moves = knight_moves[square];
-        moves &= ~position->player_a[player];
-        position->moves[index] = moves;
-      }
-    }
-    bitboard_t rooks = position->a[base + ROOK];
-    if (rooks) {
-      while (rooks) {
-        bitboard_t piece = take_next_bit_from(&rooks);
-        enum square square = bit2square(piece);
-        int index = position->index_at[square];
-        bitboard_t moves = get_rook_moves(position, square);
-        moves &= ~position->player_a[player];
-        position->moves[index] = moves;
-      }
-    }
-    bitboard_t bishops = position->a[base + BISHOP];
-    if (bishops) {
-      while (bishops) {
-        bitboard_t piece = take_next_bit_from(&bishops);
-        enum square square = bit2square(piece);
-        int index = position->index_at[square];
-        bitboard_t moves = get_bishop_moves(position, square);
-        moves &= ~position->player_a[player];
-        position->moves[index] = moves;
-      }
-    }
-    bitboard_t queens = position->a[base + QUEEN];
-    if (queens) {
-      while (queens) {
-        bitboard_t piece = take_next_bit_from(&queens);
-        enum square square = bit2square(piece);
-        int index = position->index_at[square];
-        bitboard_t moves = get_bishop_moves(position, square) |
-                           get_rook_moves(position, square);
-        moves &= ~position->player_a[player];
-        position->moves[index] = moves;
-      }
-    }
-    base = N_PIECE_T;
-  }
-
-  for (enum player player = WHITE; player != N_PLAYERS; player++) {
-    enum square square =
-        bit2square(position->a[player ? KING + N_PIECE_T : KING]);
+  /* TODO Simplify - this calculates the moves for the opponent, before
+   * change_player. These moves will become the next players moves. */
+  enum player player = !position->turn;
+  int base = player * N_PIECE_T;
+  //  for (enum player player = WHITE; player != N_PLAYERS; player++) {
+  bitboard_t pawns = position->a[base + PAWN];
+  while (pawns) {
+    bitboard_t piece = take_next_bit_from(&pawns);
+    enum square square = bit2square(piece);
     int index = position->index_at[square];
-    bitboard_t moves = get_king_moves(position, square, player);
+    bitboard_t moves = get_pawn_moves(position, square, player);
     moves &= ~position->player_a[player];
     position->moves[index] = moves;
   }
+  bitboard_t knights = position->a[base + KNIGHT];
+  if (knights) {
+    while (knights) {
+      bitboard_t piece = take_next_bit_from(&knights);
+      enum square square = bit2square(piece);
+      int index = position->index_at[square];
+      bitboard_t moves = knight_moves[square];
+      moves &= ~position->player_a[player];
+      position->moves[index] = moves;
+    }
+  }
+  bitboard_t rooks = position->a[base + ROOK];
+  if (rooks) {
+    while (rooks) {
+      bitboard_t piece = take_next_bit_from(&rooks);
+      enum square square = bit2square(piece);
+      int index = position->index_at[square];
+      bitboard_t moves = get_rook_moves(position, square);
+      moves &= ~position->player_a[player];
+      position->moves[index] = moves;
+    }
+  }
+  bitboard_t bishops = position->a[base + BISHOP];
+  if (bishops) {
+    while (bishops) {
+      bitboard_t piece = take_next_bit_from(&bishops);
+      enum square square = bit2square(piece);
+      int index = position->index_at[square];
+      bitboard_t moves = get_bishop_moves(position, square);
+      moves &= ~position->player_a[player];
+      position->moves[index] = moves;
+    }
+  }
+  bitboard_t queens = position->a[base + QUEEN];
+  if (queens) {
+    while (queens) {
+      bitboard_t piece = take_next_bit_from(&queens);
+      enum square square = bit2square(piece);
+      int index = position->index_at[square];
+      bitboard_t moves =
+          get_bishop_moves(position, square) | get_rook_moves(position, square);
+      moves &= ~position->player_a[player];
+      position->moves[index] = moves;
+    }
+  }
+
+  enum square square = bit2square(position->a[base + KING]);
+  int index = position->index_at[square];
+  bitboard_t moves = get_king_moves(position, square, player);
+  moves &= ~position->player_a[player];
+  position->moves[index] = moves;
 }
 
 /* Initialise the module and pre-calculated lookup tables. */
@@ -413,17 +411,17 @@ void init_moves(void) {
   /*
    * Sliding destinations
    *
-   * Generate an 8 x 256 lookup table of permitted sliding destinations within a
-   * single rank.  For each square and rank occupancy, get the set of all pieces
-   * to the left of the target square, find the first occupied square to the
-   * left of the target square, then get the set of all squares to the left of
-   * the first occupied square, which are impossible to move to by slide move.
-   * Do the same for pieces to the right of the square, and combine and invert
-   * them to produce the set of permitted sliding destinations.  The first
-   * occupied square is found using CTZ/CLZ operations, with a special case for
-   * no occupied squares, because these operations are undefined for zero.  For
-   * the CLZ operation, the number of leading zeros must be reduced from the
-   * word size down to the rank size.
+   * Generate an 8 x 256 lookup table of permitted sliding destinations within
+   * a single rank.  For each square and rank occupancy, get the set of all
+   * pieces to the left of the target square, find the first occupied square
+   * to the left of the target square, then get the set of all squares to the
+   * left of the first occupied square, which are impossible to move to by
+   * slide move. Do the same for pieces to the right of the square, and
+   * combine and invert them to produce the set of permitted sliding
+   * destinations.  The first occupied square is found using CTZ/CLZ
+   * operations, with a special case for no occupied squares, because these
+   * operations are undefined for zero.  For the CLZ operation, the number of
+   * leading zeros must be reduced from the word size down to the rank size.
    */
 
   for (enum square square = 0; square < 8; square++) {
@@ -457,10 +455,10 @@ void init_moves(void) {
   /*
    * Knight and King Moves
    *
-   * Generate lookup tables for knight and king moves. For each square, the king
-   * and knight moves are neighbouring squares as shown below.  Moves are added
-   * in turn by shifting a mask of the square, but only if the square is far
-   * enough from the edge of the board that the resulting moves don't wrap
+   * Generate lookup tables for knight and king moves. For each square, the
+   * king and knight moves are neighbouring squares as shown below.  Moves are
+   * added in turn by shifting a mask of the square, but only if the square is
+   * far enough from the edge of the board that the resulting moves don't wrap
    * around between ranks.
    *
    * knight_moves[square]: A-H
@@ -513,11 +511,12 @@ void init_moves(void) {
    *
    * Generate bitboard lookup tables for forward pawn advance and diagonal
    * capture moves for each player and square.  White and black need separate
-   * tables because they advance in different directions.  All pawns can advance
-   * forward by 1 square, and pawns in starting positions can jump advance by 2
-   * squares. `pawn_advances` is the set of all possible advance or jump moves.
-   * Capturing moves are generated from the single advance moves, shifted left
-   * or right, provided that they don't overflow off the edge of the board.
+   * tables because they advance in different directions.  All pawns can
+   * advance forward by 1 square, and pawns in starting positions can jump
+   * advance by 2 squares. `pawn_advances` is the set of all possible advance
+   * or jump moves. Capturing moves are generated from the single advance
+   * moves, shifted left or right, provided that they don't overflow off the
+   * edge of the board.
    */
 
   for (enum player player = 0; player < N_PLAYERS; player++) {
