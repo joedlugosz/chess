@@ -216,7 +216,7 @@ static inline bitboard_t get_my_pieces(const struct position *position) {
 }
 /* Return the set of squares containing the non-moving player's pieces */
 static inline bitboard_t get_opponents_pieces(const struct position *position) {
-  return position->player_a[position->turn];
+  return position->player_a[!position->turn];
 }
 /* The player to move is in check */
 static inline int in_check(const struct position *position) {
