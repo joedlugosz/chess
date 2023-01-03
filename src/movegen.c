@@ -148,19 +148,19 @@ int generate_quiescence_movelist(const struct position *position,
                                  struct move_list **move_buf /* in/out */) {
   struct move_list *prev = 0;
   int count = 0;
-  bitboard_t victims =
-      position->claim[position->turn] & get_opponents_pieces(position);
-  while (victims) {
-    bitboard_t to_mask = take_next_bit_from(&victims);
-    enum square to = bit2square(to_mask);
-    bitboard_t attackers = get_attacks(position, to, position->turn);
-    while (attackers) {
-      bitboard_t from_mask = take_next_bit_from(&attackers);
-      enum square from = bit2square(from_mask);
+
+  bitboard_t pieces = get_my_pieces(position);
+  while (pieces) {
+    enum square from = bit2square(take_next_bit_from(&pieces));
+    bitboard_t moves =
+        get_moves(position, from) & get_opponents_pieces(position);
+    while (moves) {
+      enum square to = bit2square(take_next_bit_from(&moves));
       add_movelist_entries(position, from, to, *move_buf, &prev, &count);
     }
   }
-  if (count) sort_moves(move_buf);
+
+  if (count > 1) sort_moves(move_buf);
   return count;
 }
 

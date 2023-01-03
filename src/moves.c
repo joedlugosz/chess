@@ -223,15 +223,14 @@ bitboard_t get_bishop_moves(const struct position *position,
 bitboard_t get_king_moves(struct position *position, enum square from,
                           enum player player) {
   /*
-   * Non-castling king moves are taken from a lookup table, removing any that
-   * would lead into check.  These are returned if there are no castling rights
-   * or the king is under attack.  Otherwise, for each board side with castling
-   * rights, there is a search for any occupied squares which would block the
-   * rook from sliding, then any squares under attack which would block the king
-   * from sliding.  If there are none, castling destinations are added to the
-   * set of moves.
+   * Non-castling king moves are taken from a lookup table.  These are returned
+   * if there are no castling rights or the king is under attack.  Otherwise,
+   * for each board side with castling rights, there is a search for any
+   * occupied squares which would block the rook from sliding, then any squares
+   * under attack which would block the king from sliding.  If there are none,
+   * castling destinations are added to the set of moves.
    */
-  bitboard_t moves = king_moves[from] & ~position->claim[opponent[player]];
+  bitboard_t moves = king_moves[from];
 
   if (!(position->castling_rights & castling_rights[player][BOTHSIDES]) ||
       get_attacks(position, from, opponent[player])) {
@@ -299,23 +298,20 @@ bitboard_t get_attacks(const struct position *position, enum square target,
 }
 
 /* Pre-calculate bitboards within the given position struct containing the set
-   of all squares that each piece can move to.  Also pre-calculate a claim for
-   each player.  This is called after a move is made. */
+   of all squares that each piece can move to.  This is called after a move is
+   made. */
 void calculate_moves(struct position *position) {
   /*
    * For each piece apart from kings, moves are calculated for the piece
    * including capturing moves.  Moves where the player captures
    * their own piece are filtered out here.  Claim is updated for each side,
    * which is the set of all squares that the side could potentially move to by
-   * capture.  For pawns, the added claim is only the capturing moves, for other
-   * pieces, all moves are added.  King moves are handled last, because
-   * generation depends on `get_attacks` which requires move information for all
-   * other pieces.
+   * capture.  King moves are handled last, because generation depends on
+   * `get_attacks` which requires move information for all other pieces.
    */
 
   int base = 0;
   for (enum player player = WHITE; player != N_PLAYERS; player++) {
-    position->claim[player] = 0;
     bitboard_t pawns = position->a[base + PAWN];
     while (pawns) {
       bitboard_t piece = take_next_bit_from(&pawns);
@@ -324,8 +320,6 @@ void calculate_moves(struct position *position) {
       bitboard_t moves = get_pawn_moves(position, square, player);
       moves &= ~position->player_a[player];
       position->moves[index] = moves;
-      position->claim[player] |=
-          pawn_takes[player][square] & ~position->player_a[player];
     }
     bitboard_t knights = position->a[base + KNIGHT];
     if (knights) {
@@ -336,7 +330,6 @@ void calculate_moves(struct position *position) {
         bitboard_t moves = knight_moves[square];
         moves &= ~position->player_a[player];
         position->moves[index] = moves;
-        position->claim[player] |= moves;
       }
     }
     bitboard_t rooks = position->a[base + ROOK];
@@ -348,7 +341,6 @@ void calculate_moves(struct position *position) {
         bitboard_t moves = get_rook_moves(position, square);
         moves &= ~position->player_a[player];
         position->moves[index] = moves;
-        position->claim[player] |= moves;
       }
     }
     bitboard_t bishops = position->a[base + BISHOP];
@@ -360,7 +352,6 @@ void calculate_moves(struct position *position) {
         bitboard_t moves = get_bishop_moves(position, square);
         moves &= ~position->player_a[player];
         position->moves[index] = moves;
-        position->claim[player] |= moves;
       }
     }
     bitboard_t queens = position->a[base + QUEEN];
@@ -373,55 +364,10 @@ void calculate_moves(struct position *position) {
                            get_rook_moves(position, square);
         moves &= ~position->player_a[player];
         position->moves[index] = moves;
-        position->claim[player] |= moves;
       }
     }
     base = N_PIECE_T;
   }
-
-  //   for (int8_t index = 0; index < N_PIECES; index++) {
-  //     enum square square = position->piece_square[index];
-  //     if (square == NO_SQUARE) {
-  //       continue;
-  //     }
-  //     ASSERT(position->index_at[square] == index);
-  //     int piece = position->piece_at[square];
-  //     if (piece_type[piece] == KING) continue;
-
-  //     enum player player = piece_player[piece];
-  //     bitboard_t moves;
-  //     switch (piece_type[piece]) {
-  // //      case PAWN:
-  //         //        moves = get_pawn_moves(position, square, player);
-  // //        break;
-  //       case ROOK:
-  //         moves = get_rook_moves(position, square);
-  //         break;
-  //       case KNIGHT:
-  //         moves = knight_moves[square];
-  //         break;
-  //       case BISHOP:
-  //         moves = get_bishop_moves(position, square);
-  //         break;
-  //       case QUEEN:
-  //         moves = get_bishop_moves(position, square) |
-  //                 get_rook_moves(position, square);
-  //         break;
-  //       default:
-  //         moves = 0;
-  //         break;
-  //     }
-
-  //     moves &= ~position->player_a[player];
-  //     position->moves[index] = moves;
-
-  //     if (piece_type[piece] != PAWN) {
-  //       position->claim[player] |= moves;
-  //     } else {
-  //       position->claim[player] |=
-  //           pawn_takes[player][square] & ~position->player_a[player];
-  //     }
-  //   }
 
   for (enum player player = WHITE; player != N_PLAYERS; player++) {
     enum square square =
@@ -430,25 +376,7 @@ void calculate_moves(struct position *position) {
     bitboard_t moves = get_king_moves(position, square, player);
     moves &= ~position->player_a[player];
     position->moves[index] = moves;
-    position->claim[player] |= moves;
   }
-
-  // for (int8_t index = 0; index < N_PIECES; index++) {
-  //   enum square square = position->piece_square[index];
-  //   if (square == NO_SQUARE) {
-  //     continue;
-  //   }
-  //   ASSERT(position->index_at[square] == index);
-  //   int piece = position->piece_at[square];
-  //   if (piece_type[piece] != KING) continue;
-  //   enum player player = piece_player[piece];
-  //   bitboard_t moves =
-  //       get_king_moves(position, position->piece_square[index], player);
-  //   /* You can't take your own piece */
-  //   moves &= ~position->player_a[player];
-  //   position->moves[index] = moves;
-  //   position->claim[player] |= moves;
-  // }
 }
 
 /* Initialise the module and pre-calculated lookup tables. */
