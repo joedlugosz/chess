@@ -8,6 +8,7 @@
 
 #include "history.h"
 #include "io.h"
+#include "moves.h"
 #include "position.h"
 
 /* Comparison and insertion for insertion sort.  Insert `insert` at the first
@@ -102,7 +103,7 @@ static inline void add_movelist_entries(const struct position *position,
   } while (--promotion > PAWN);
 }
 
-int generate_test_movelist(const struct position *position,
+int generate_test_movelist(struct position *position,
                            struct move_list **move_buf) {
   struct move_list *prev = 0;
   int count = 0;
@@ -124,8 +125,10 @@ int generate_test_movelist(const struct position *position,
 /* Generate a sorted linked list of moves at the buffer beginning at `move_buf`,
  * for a normal search from `position`, including all possible moves.  Update
  * `move_buf` to the head of the sorted list. */
-int generate_search_movelist(const struct position *position,
+int generate_search_movelist(struct position *position,
                              struct move_list **move_buf /* in/out */) {
+  calculate_moves(position, position->turn);
+
   struct move_list *prev = 0;
   int count = 0;
   bitboard_t pieces = get_my_pieces(position);
@@ -144,8 +147,10 @@ int generate_search_movelist(const struct position *position,
 /* Generate a sorted linked list of moves at the buffer beginning at `move_buf`,
  * for a quiescence search from `position`.  Update `move_buf` to the head of
  * the sorted list.  Quiescence search consists of all attacks to all pieces. */
-int generate_quiescence_movelist(const struct position *position,
+int generate_quiescence_movelist(struct position *position,
                                  struct move_list **move_buf /* in/out */) {
+  calculate_moves(position, position->turn);
+
   struct move_list *prev = 0;
   int count = 0;
 

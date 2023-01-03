@@ -11,8 +11,8 @@
 typedef int score_t;
 
 void evaluate_init();
-score_t evaluate(const struct position *position);
-int is_endgame(const struct position *position);
+score_t evaluate(struct position *position);
+int is_endgame(struct position *position);
 
 static inline int opening_pieces_left(const struct position *position,
                                       enum player player) {

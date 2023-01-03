@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "moves.h"
 #include "options.h"
 #include "position.h"
 
@@ -79,12 +80,14 @@ const struct options eval_opts = {sizeof(_eval_opts) / sizeof(_eval_opts[0]),
  */
 
 /* Evaluate one player's pieces, producing a positive score */
-static inline score_t evaluate_player(const struct position *position,
+static inline score_t evaluate_player(struct position *position,
                                       enum player player) {
   int score = 0;
 
   enum piece player_first_piece = N_PIECE_T * player;
   enum piece opponent_first_piece = N_PIECE_T * !player;
+
+  calculate_moves(position, player);
 
   /* Materials - score the number of each piece type according to
    * `piece_weights` */
@@ -139,14 +142,14 @@ static inline score_t evaluate_player(const struct position *position,
   return score;
 }
 
-int is_endgame(const struct position *position) {
+int is_endgame(struct position *position) {
   return (evaluate_player(position, WHITE) + evaluate_player(position, BLACK)) >
          endgame_material;
 }
 
 /* Evaluate a position, producing a score which is positive if the current
    player is leading */
-score_t evaluate(const struct position *position) {
+score_t evaluate(struct position *position) {
   return (evaluate_player(position, WHITE) - evaluate_player(position, BLACK)) *
          player_factor[position->turn];
 }

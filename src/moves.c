@@ -280,27 +280,33 @@ bitboard_t get_attacks(const struct position *position, enum square target,
   ASSERT(position->piece_at[target] == EMPTY ||
          piece_player[(int)position->piece_at[target]] != attacking);
 
-  bitboard_t attacks = 0;
+  //  bitboard_t attacks = 0;
   int base = attacking * N_PIECE_T;
 
-  attacks = pawn_takes[opponent[attacking]][target] & position->a[base + PAWN];
-  attacks |= knight_moves[target] & position->a[base + KNIGHT];
-  attacks |= king_moves[target] & position->a[base + KING];
-  bitboard_t sliders = position->a[base + ROOK] | position->a[base + BISHOP] |
-                       position->a[base + QUEEN];
-  while (sliders) {
-    bitboard_t attacker = take_next_bit_from(&sliders);
-    if (square2bit[target] &
-        position->moves[(int)position->index_at[bit2square(attacker)]])
-      attacks |= attacker;
-  }
-  return attacks;
+  return (pawn_takes[!attacking][target] & position->a[base + PAWN]) |
+         (knight_moves[target] & position->a[base + KNIGHT]) |
+         (king_moves[target] & position->a[base + KING]) |
+         (get_bishop_moves(position, target) &
+          (position->a[base + BISHOP] | position->a[base + QUEEN])) |
+         (get_rook_moves(position, target) &
+          (position->a[base + ROOK] | position->a[base + QUEEN]));
+
+  // bitboard_t sliders = position->a[base + ROOK] | position->a[base + BISHOP]
+  // |
+  //                      position->a[base + QUEEN];
+  // while (sliders) {
+  //   bitboard_t attacker = take_next_bit_from(&sliders);
+  //   if (square2bit[target] &
+  //       position->moves[(int)position->index_at[bit2square(attacker)]])
+  //     attacks |= attacker;
+  // }
+  // return attacks;
 }
 
 /* Pre-calculate bitboards within the given position struct containing the set
    of all squares that each piece can move to.  This is called after a move is
    made. */
-void calculate_moves(struct position *position) {
+void calculate_moves(struct position *position, int player) {
   /*
    * For each piece apart from kings, moves are calculated for the piece
    * including capturing moves.  Moves where the player captures
@@ -310,11 +316,7 @@ void calculate_moves(struct position *position) {
    * `get_attacks` which requires move information for all other pieces.
    */
 
-  /* TODO Simplify - this calculates the moves for the opponent, before
-   * change_player. These moves will become the next players moves. */
-  enum player player = !position->turn;
   int base = player * N_PIECE_T;
-  //  for (enum player player = WHITE; player != N_PLAYERS; player++) {
   bitboard_t pawns = position->a[base + PAWN];
   while (pawns) {
     bitboard_t piece = take_next_bit_from(&pawns);
@@ -375,6 +377,9 @@ void calculate_moves(struct position *position) {
   bitboard_t moves = get_king_moves(position, square, player);
   moves &= ~position->player_a[player];
   position->moves[index] = moves;
+
+  position->check[player] = (get_attacks(position, square, !player) != 0ull);
+  position->check[!player] = 0;
 }
 
 /* Initialise the module and pre-calculated lookup tables. */

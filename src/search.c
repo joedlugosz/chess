@@ -186,7 +186,7 @@ static inline void update_result(struct search_job *job, int depth,
 /* Draw score is calclated on a basic contempt assumption, having no real
  * contempt factor for the opponent.  Early and midgame places a penalty of
  * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
-static score_t get_draw_score(const struct position *position) {
+static score_t get_draw_score(struct position *position) {
   return (OPT_CONTEMPT && !is_endgame(position)) ? CONTEMPT_SCORE : DRAW_SCORE;
 }
 
@@ -293,6 +293,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   }
 
   /* Second phase - generate and search all moves */
+
+  printf("gen %d\n", job->result.n_node);
+  if (job->result.n_node == 20045) {
+    printf("stop\n");
+  }
 
   /* Generate the list of pseudo-legal moves (including those leading into
      self-check). list_entry will point to the first sorted item. */

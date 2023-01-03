@@ -6,6 +6,6 @@
 
 struct position;
 
-void calculate_moves(struct position *position);
+void calculate_moves(struct position *position, int player);
 
 #endif
