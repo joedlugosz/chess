@@ -204,10 +204,10 @@ static inline void copy_position(struct position *dst,
   memcpy(dst, src, sizeof(struct position));
 }
 /* Return the set of squares that the piece on the given square can move to */
-static inline bitboard_t get_moves(const struct position *position,
-                                   enum square square) {
-  return position->moves[(int)position->index_at[square]];
-}
+// static inline bitboard_t get_moves(const struct position *position,
+//                                    enum square square) {
+//   return position->moves[(int)position->index_at[square]];
+// }
 /* Return the set of squares containing the moving player's pieces */
 static inline bitboard_t get_my_pieces(const struct position *position) {
   return position->player_a[position->turn];

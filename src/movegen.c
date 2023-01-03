@@ -127,19 +127,70 @@ int generate_test_movelist(struct position *position,
  * `move_buf` to the head of the sorted list. */
 int generate_search_movelist(struct position *position,
                              struct move_list **move_buf /* in/out */) {
-  calculate_moves(position, position->turn);
-
   struct move_list *prev = 0;
   int count = 0;
-  bitboard_t pieces = get_my_pieces(position);
-  while (pieces) {
-    enum square from = bit2square(take_next_bit_from(&pieces));
-    bitboard_t moves = get_moves(position, from);
+
+  enum player player = position->turn;
+  int base = player * N_PIECE_T;
+  bitboard_t pawns = position->a[base + PAWN];
+  while (pawns) {
+    enum square from = bit2square(take_next_bit_from(&pawns));
+    bitboard_t moves =
+        (get_pawn_moves(position, from, player) & ~position->player_a[player]);
     while (moves) {
       enum square to = bit2square(take_next_bit_from(&moves));
       add_movelist_entries(position, from, to, *move_buf, &prev, &count);
     }
   }
+  bitboard_t knights = position->a[base + KNIGHT];
+  while (knights) {
+    enum square from = bit2square(take_next_bit_from(&knights));
+    bitboard_t moves = knight_moves[from] & ~position->player_a[player];
+    while (moves) {
+      enum square to = bit2square(take_next_bit_from(&moves));
+      add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+    }
+  }
+  bitboard_t rooks = position->a[base + ROOK];
+  while (rooks) {
+    enum square from = bit2square(take_next_bit_from(&rooks));
+    bitboard_t moves =
+        get_rook_moves(position, from) & ~position->player_a[player];
+    while (moves) {
+      enum square to = bit2square(take_next_bit_from(&moves));
+      add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+    }
+  }
+  bitboard_t bishops = position->a[base + BISHOP];
+  while (bishops) {
+    enum square from = bit2square(take_next_bit_from(&bishops));
+    bitboard_t moves =
+        get_bishop_moves(position, from) & ~position->player_a[player];
+    while (moves) {
+      enum square to = bit2square(take_next_bit_from(&moves));
+      add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+    }
+  }
+  bitboard_t queens = position->a[base + QUEEN];
+  while (queens) {
+    enum square from = bit2square(take_next_bit_from(&queens));
+    bitboard_t moves =
+        (get_rook_moves(position, from) | get_bishop_moves(position, from)) &
+        ~position->player_a[player];
+    while (moves) {
+      enum square to = bit2square(take_next_bit_from(&moves));
+      add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+    }
+  }
+
+  enum square from = bit2square(position->a[base + KING]);
+  bitboard_t moves =
+      get_king_moves(position, from, player) & ~position->player_a[player];
+  while (moves) {
+    enum square to = bit2square(take_next_bit_from(&moves));
+    add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+  }
+
   if (count) sort_moves(move_buf);
   return count;
 }
