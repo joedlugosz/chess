@@ -167,7 +167,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   /* Beta cutoff */
   if (score >= beta) {
     *type = TT_BETA;
-    if (depth >= 0) save_killer_move(job, move, depth);
+    if (depth >= 0 && is_quiet_move) save_killer_move(job, move, depth);
     return 1;
   }
 
