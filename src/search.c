@@ -52,6 +52,11 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                                struct position *position, int depth,
                                score_t alpha, score_t beta, int do_nullmove);
 
+static inline void save_killer_move(struct search_job *job, struct move *move,
+                                    int depth) {
+  memcpy(&job->killer_moves[depth], move, sizeof(job->killer_moves[0]));
+}
+
 /* Null-move reduction search - evaluate at depth the consequences of
    hypothetically passing on a turn without making a move. */
 static inline int search_null(struct search_job *job, struct pv *pv,
@@ -99,7 +104,6 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     job->result.n_check_moves++;
     return 0;
   }
-  //  ASSERT(!in_check(&position));
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
@@ -110,6 +114,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   /* Record whether this move puts the opponent in check */
   if (in_check(&position)) move->result |= CHECK;
 
+  int is_quiet_move = !(move->result & (CAPTURED | CHECK | PROMOTED));
+
   /* Late move reduction and extensions
      Reduce the search depth for late moves unless they are tactical. Extend
      the depth for pawn moves to try to find a promotion. */
@@ -117,9 +123,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
   if (OPT_PAWN_EXTENSION && from_position->piece_at[move->from] == PAWN &&
       depth < job->depth - 1)
     extend_reduce = 1;
-  else if (OPT_LMR && is_late_move && !in_check(from_position) &&
-           !in_check(&position) && from_position->piece_at[move->to] == EMPTY &&
-           move->promotion == PAWN)
+  else if (OPT_LMR && is_late_move && is_quiet_move)
     extend_reduce = -R_LATE;
   else
     extend_reduce = 0;
@@ -162,10 +166,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 
   /* Beta cutoff */
   if (score >= beta) {
-    if (depth >= 0) {
-      memcpy(&job->killer_moves[depth], move, sizeof(job->killer_moves[0]));
-    }
     *type = TT_BETA;
+    if (depth >= 0) save_killer_move(job, move, depth);
     return 1;
   }
 
