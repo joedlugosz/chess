@@ -43,6 +43,7 @@ enum {
   CONTEMPT_SCORE = -500,
   R_NULL = 2, /* Depth reduction for null move search */
   R_LATE = 1, /* Depth reduction for late move reduction */
+  NODES_PER_CHECK = 2000,
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -200,6 +201,15 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
   job->result.n_node++;
+  if (job->next_time_check-- == 0) {
+    job->next_time_check = NODES_PER_CHECK;
+    if (job->stop_time > job->start_time && time_now() > job->stop_time) {
+      job->result.type = SEARCH_RESULT_INVALID;
+      job->halt = 1;
+      printf("Time check\n");
+      return 0;
+    }
+  }
 
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
   if (job->depth - depth > job->result.seldep)
@@ -366,14 +376,17 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Search based on `time_budget` */
     min = MIN_ITERATION_DEPTH;
     max = MAX_ITERATION_DEPTH + 1;
+    job.stop_time = job.start_time + time_budget - 0.01;
   } else if (target_depth < MIN_ITERATION_DEPTH) {
     /* Fixed-depth shallow search without iterative deepening */
     min = target_depth;
     max = target_depth + 1;
+    job.stop_time = 0.0;
   } else {
     /* Fixed depth deep search with iterative deepening */
     min = MIN_ITERATION_DEPTH;
     max = target_depth + 1;
+    job.stop_time = job.start_time + time_budget - 0.01;
   }
 
   for (int depth = min; depth < max; depth++) {
@@ -384,6 +397,8 @@ void search(int target_depth, double time_budget, double time_margin,
     struct pv pv;
     score_t score = search_position(&job, &pv, position, job.depth,
                                     -INVALID_SCORE, INVALID_SCORE, 1);
+
+    if (job.result.type == SEARCH_RESULT_INVALID) break;
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));

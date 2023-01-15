@@ -28,6 +28,7 @@ struct search_result {
   double collisions;
   struct move move;
   enum {
+    SEARCH_RESULT_INVALID,
     SEARCH_RESULT_PLAY,
     SEARCH_RESULT_CHECKMATE,
     SEARCH_RESULT_STALEMATE,
@@ -60,6 +61,8 @@ struct search_job {
   struct history *history;
   struct move killer_moves[SEARCH_DEPTH_MAX];
   int n_ai_moves;
+  int next_time_check;
+  double stop_time;
   /* Results */
   struct search_result result;
 };
