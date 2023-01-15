@@ -265,7 +265,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Probe the transposition table at higher levels */
   struct tt_entry *tte = 0;
-  if (OPT_HASH && depth > TT_MIN_DEPTH)
+  if (OPT_HASH && depth > job->tt_min_depth)
     tte = tt_probe(position->hash, position->total_a);
 
   /* If the position has already been searched at the same or greater depth, use
@@ -350,7 +350,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
-  if (depth > TT_MIN_DEPTH) {
+  if (depth > job->tt_min_depth) {
     tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
   }
 
@@ -392,6 +392,9 @@ void search(int target_depth, double time_budget, double time_margin,
   for (int depth = min; depth < max; depth++) {
     double iteration_start_time = time_now();
     job.depth = depth;
+    job.tt_min_depth = depth - 4;
+    if (job.tt_min_depth < 0) job.tt_min_depth = 0;
+    if (job.tt_min_depth > TT_MIN_DEPTH) job.tt_min_depth = TT_MIN_DEPTH;
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;

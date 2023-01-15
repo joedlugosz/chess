@@ -55,6 +55,7 @@ struct search_job {
   int depth; /* Search depth before quiescence */
   int halt;  /* Halt search */
   int show_thoughts;
+  int tt_min_depth;
   /* position */
   double start_time;
   struct move search_history[SEARCH_DEPTH_MAX];
