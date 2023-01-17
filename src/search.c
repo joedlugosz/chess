@@ -134,6 +134,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     score = -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
   }
 
+  if (job->halt) return 1;
+
   history_pop(job->history);
 
   if (score > *best_score) {
