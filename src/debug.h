@@ -5,10 +5,10 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#ifndef NDEBUG
-#  define ASSERTS
-#  define LOGGING
-#endif /* _DEBUG */
+#define ASSERTS
+// #define LOGGING
+
+void debug_init();
 
 #ifdef ASSERTS
 
@@ -24,22 +24,19 @@ void assert_fail(const char *file, const char *func, const int line,
 #endif
 
 #ifdef LOGGING
-#  include "evaluate.h"
-#  define DEBUG_THOUGHT(j, p, d, s, a, b) debug_thought(j, p, d, s, a, b)
+#  define DEBUG_THOUGHT(j, p, m, d, s, a, b, h) \
+    debug_thought(j, p, m, d, s, a, b, h)
 
 struct search_job;
 struct pv;
+struct move;
 
-void debug_thought(const struct search_job *job, const struct pv *pv, int depth,
-                   score_t score, score_t alpha, score_t beta);
+void debug_thought(const struct search_job *job, const struct pv *pv,
+                   struct move *move, int depth, int score, int alpha, int beta,
+                   unsigned long long hash);
 
-#else
-#  define DEBUG_THOUGHT(j, p, d, s, a, b)
-#endif /* LOGGING */
-
-#include <stdio.h>
-extern FILE *logfile;
-void debug_init();
-void debug_exit();
 void debug_print(const char *fmt, ...);
+#else
+#  define DEBUG_THOUGHT(j, p, m, d, s, a, b, h)
+#endif
 #endif /* DEBUG_H */

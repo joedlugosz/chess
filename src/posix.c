@@ -10,12 +10,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "debug.h"
 #include "os.h"
 
 void init_os(void) {}
+
+double time_now() {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return now.tv_sec + now.tv_nsec * 1e-9;
+}
 
 /* SIGSEGV handler */
 static void sigsegv_handler(int sig, siginfo_t *si, void *unused) {
@@ -176,10 +183,9 @@ void print_backtrace(FILE *f) {
   }
 
   /* Print backtrace */
-  fprintf(logfile, "\n{ Call stack: }\n");
+  fprintf(f, "\n{ Call stack: }\n");
   for (int i = 3; i < n_bt; i++) {
-    fprintf(logfile, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function,
-            bt[i].line);
+    fprintf(f, "{  %-40s %-20s %s }\n", bt_syms[i], bt[i].function, bt[i].line);
     if (strcmp(bt[i].function, "main") == 0) break;
   }
 }

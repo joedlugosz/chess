@@ -14,3 +14,10 @@ target_include_directories (bench_epd PRIVATE
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/bench
 )
+
+add_executable (bench_moves moves.c)
+target_link_libraries (bench_moves common)
+target_include_directories (bench_moves PRIVATE
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/bench
+)

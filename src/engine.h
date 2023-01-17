@@ -7,6 +7,7 @@
 
 #include <time.h>
 
+#include "clock.h"
 #include "history.h"
 #include "position.h"
 
@@ -22,8 +23,7 @@ struct engine {
   int xboard_mode;
   int waiting;
   int resign_delayed;
-  clock_t start_time;
-  clock_t elapsed_time;
+  int is_seeking_draw;
 
   unsigned long otim;
   //  int move_n;
@@ -31,8 +31,8 @@ struct engine {
 
   struct position game;
   struct history history;
-
-  int depth;
+  struct clock clock;
+  int search_depth;
 };
 
 #endif /* ENGINE_H */

@@ -8,30 +8,31 @@
 #include <string.h>
 #include <time.h>
 
+#include "clock.h"
 #include "commands.h"
 #include "debug.h"
 #include "engine.h"
+#include "evaluate.h"
 #include "info.h"
 #include "io.h"
+#include "options.h"
 #include "os.h"
 #include "search.h"
 
-/* Buffer sizes for move and position*/
+/* Buffer sizes for move and position */
 enum { POS_BUF_SIZE = 3, MOVE_BUF_SIZE = 10 };
 
-/*
- *  Game clocks
- */
+enum {
+  TIME_CTRL_PERIOD_DEFAULT = 5 * 60,
+  TIME_CTRL_MPS_DEFAULT = 40,
+  TIME_CTRL_INCREMENT_DEFAULT = 1 * 60,
+};
 
-/* Reset the elapsed time and set the starting of the next interval. */
-static inline void reset_time(struct engine *engine) {
-  engine->start_time = clock();
-  engine->elapsed_time = 0;
-}
-
-/* Mark the elapsed time since the last call to `reset_time`. */
-static inline void mark_time(struct engine *engine) {
-  engine->elapsed_time = clock() - engine->start_time;
+void reset_time_control(struct engine *e) {
+  e->clock.time_control = TIME_CTRL_PERIOD_DEFAULT;
+  e->clock.moves_per_session = TIME_CTRL_MPS_DEFAULT;
+  e->clock.increment_seconds = TIME_CTRL_INCREMENT_DEFAULT;
+  e->clock.mode = TIME_CTRL_CLASSICAL;
 }
 
 /*
@@ -57,8 +58,16 @@ static inline int is_in_normal_play(struct engine *engine) {
 static inline void print_statistics(struct engine *engine,
                                     struct search_result *result) {
   if (!engine->xboard_mode) {
-    double time = (double)(engine->elapsed_time) / (double)CLOCKS_PER_SEC;
-    printf("\n%d : %0.2lf sec", evaluate(&engine->game) / 10, time);
+    //    double time = clock_get_period_marked_time(&engine->clock);
+    double time = engine->clock.last_move_time[engine->game.turn];
+    int white_s = (int)(engine->clock.time_remaining[WHITE]);
+    int white_m = white_s / 60;
+    white_s %= 60;
+    int black_s = (int)(engine->clock.time_remaining[BLACK]);
+    int black_m = black_s / 60;
+    black_s %= 60;
+    printf("\n%d : %0.2lf sec : %d:%02d/%d:%02d", evaluate(&engine->game) / 10,
+           time, white_m, white_s, black_m, black_s);
     if (is_ai_turn(engine) && result) {
       printf(" : %d nodes : b = %0.3lf : %0.2lf knps : %0.2lf%% collisions",
              result->n_leaf, result->branching_factor,
@@ -119,13 +128,17 @@ static inline void print_ai_move(struct engine *engine,
 
 /* Print a checkmate score message */
 static inline void print_checkmate_message(const struct engine *engine) {
-  printf("\nCheckmate - %d-%d\n\n", engine->game.check[BLACK],
-         engine->game.check[WHITE]);
+  printf("\n%d-%d {%s mates}\n\n", engine->game.check[BLACK],
+         engine->game.check[WHITE],
+         engine->game.check[BLACK] ? "White" : "Black");
 }
 
 /* Print a stalemate score message */
 static inline void print_stalemate_message() {
-  printf("\nStalemate - 1/2-1/2\n\n");
+  printf("\n1/2-1/2 {Stalemate}\n\n");
+}
+static inline void print_repetition_message() {
+  printf("\n1/2-1/2 {Draw by repetition}\n\n");
 }
 
 /* Print a formatted error message about a move, of the form
@@ -199,34 +212,44 @@ int ui_check_legality(struct engine *engine, struct move *move) {
 static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
-  search(engine->depth, &engine->history, &engine->game, &result, 1);
+  double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
+  double time_margin = clock_get_time_margin(&engine->clock);
+  search(engine->search_depth, time_budget, time_margin, &engine->history,
+         &engine->game, &result, 1);
 
   /* If no AI move was found, print checkmate or stalemate messages and end the
    * game. */
-  if (result.move.from == result.move.to) {
-    if (engine->game.check[engine->game.turn]) {
-      mark_time(engine);
-      print_checkmate_message(engine);
-      print_ai_resign(engine);
-    } else {
-      print_stalemate_message();
+  if (result.type != SEARCH_RESULT_PLAY) {
+    switch (result.type) {
+      case SEARCH_RESULT_CHECKMATE:
+        print_checkmate_message(engine);
+        print_ai_resign(engine);
+        break;
+      case SEARCH_RESULT_DRAW_BY_REPETITION:
+        print_repetition_message();
+        break;
+      case SEARCH_RESULT_STALEMATE:
+        print_stalemate_message();
+        break;
+      default:
+        break;
     }
+    clock_end_turn(&engine->clock, engine->game.turn);
     engine->mode = ENGINE_FORCE_MODE;
     return;
   }
 
   /* Make the AI move */
-  make_move(&engine->game, &result.move);
   history_push(&engine->history, engine->game.hash, &result.move);
-  mark_time(engine);
+  make_move(&engine->game, &result.move);
+  clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
   change_player(&engine->game);
   print_game_state(engine);
-  reset_time(engine);
 
-  /* Search at depth 1 to see if human has any moves.  If not, print
-     checkmate or stalemate messages for human and end the game. */
-  search(1, &engine->history, &engine->game, &result, 0);
+  /* Search at depth 1 to see if opponent has any moves.  If not, print
+     checkmate or stalemate messages for oppenent and end the game. */
+  search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
   if (result.move.from == result.move.to) {
     if (engine->game.check[engine->game.turn]) {
       print_checkmate_message(engine);
@@ -249,16 +272,20 @@ static inline int accept_move(struct engine *engine, const char *input) {
   if (parse_move(input, &move)) return 1;
   if (ui_check_legality(engine, &move)) return 1;
 
-  mark_time(engine);
+  // clock_mark_period(&engine->clock);
   /* If waiting after a new game when the user is white, the first user move
    * begins the game.  Reset the elapsed time so that it is not counted while
    * waiting for the move. */
   if (engine->waiting) {
     engine->waiting = 0;
-    reset_time(engine);
+    clock_start_game(&engine->clock);
+    clock_reset_period(&engine->clock);
   }
-  make_move(&engine->game, &move);
+
+  clock_end_turn(&engine->clock, engine->game.turn);
+
   history_push(&engine->history, engine->game.hash, &move);
+  make_move(&engine->game, &move);
 
   if (is_in_normal_play(engine)) {
     print_statistics(engine, 0);
@@ -323,5 +350,6 @@ void init_engine(struct engine *engine) {
   engine->game_n = 1;
   engine->waiting = 1;
   engine->mode = ENGINE_PLAYING_AS_BLACK;
-  engine->depth = 8;
+  reset_time_control(engine);
+  clock_start_game(&engine->clock);
 }

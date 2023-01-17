@@ -13,6 +13,7 @@
  */
 #include <ctype.h>
 #include <malloc.h>
+#include <math.h>
 #include <stdio.h>
 
 #include "fen.h"
@@ -44,6 +45,7 @@ char output[1100];
 int show_pass = 1;
 int show_fail = 1;
 int show_total = 1;
+int show_stats = 1;
 int show_board = 0;
 int show_thought = 0;
 
@@ -52,12 +54,66 @@ int direct_mate = 0;
 /* Number of fullmoves to mate */
 int full_move = 0;
 
+struct epd_stat {
+  double total;
+  double max;
+  double min;
+  double mean;
+  double variance;
+  double std_dev;
+};
+const int n_stats = sizeof(struct epd_stat) / sizeof(double);
+
+const char stat_name[][20] = {
+    "\u03a3",                            /* Total */
+    "max",    "min", "mean", "\u03c3^2", /* Variance */
+    "\u03c3",                            /* Std dev */
+};
+
+typedef double (*var_get_func)(const struct search_result *);
+
+struct epd_var {
+  const char name[20];
+  const char format[10];
+  var_get_func get;
+};
+
+static double get_n_leaf(const struct search_result *r) {
+  return (double)r->n_leaf / 1000.0;
+}
+static double get_n_node(const struct search_result *r) {
+  return (double)r->n_node / 1000.0;
+}
+static double get_n_check_node(const struct search_result *r) {
+  return (double)r->n_check_moves / 1000.0;
+}
+static double get_r_check_node(const struct search_result *r) {
+  return (double)r->n_check_moves / (double)r->n_node;
+}
+static double get_branching_factor(const struct search_result *r) {
+  return r->branching_factor;
+}
+static double get_time(const struct search_result *r) { return r->time; }
+
+const struct epd_var vars[] = {
+    {"time (s)", "%16.2lf", get_time},
+    {"branching factor", "%16.2lf", get_branching_factor},
+    {"n_leaf (k)", "%16.0lf", get_n_leaf},
+    {"n_node (k)", "%16.0lf", get_n_node},
+    {"n_check_node (k)", "%16.0lf", get_n_check_node},
+    {"r_check_node", "%16.2lf", get_r_check_node},
+};
+const int n_vars = sizeof(vars) / sizeof(vars[0]);
+
 /* A set of EPD cases */
 struct epd_set {
   char name[MAX_SET_NAME];
   int n_pass;
   int n_total;
+  //  struct search_result set_total;
 };
+
+struct epd_stat *stats;
 
 /* List of all EPD sets */
 struct epd_set epd_sets[MAX_SET];
@@ -68,27 +124,33 @@ int n_sets;
 /* The set of the current command */
 char current_set[MAX_SET_NAME];
 
+struct search_result *search_results;
+int *id_set;
+
 /* Add a new set of EPD cases to the global list */
-struct epd_set *add_set(const char *name) {
+int add_set(const char *name) {
   strcpy(epd_sets[n_sets].name, name);
-  return &epd_sets[n_sets++];
+  int ret = n_sets++;
+  return ret;
 }
 
 /* Find an existing set of EPD cases in the global list */
-struct epd_set *find_set(const char *name) {
+int find_set(const char *name) {
   for (int i = 0; i < n_sets; i++) {
-    if (strcmp(epd_sets[i].name, name) == 0) return &epd_sets[i];
+    if (strcmp(epd_sets[i].name, name) == 0) return i;
   }
-  return 0;
+  return -1;
 }
 
 /* Add an EPD test result for a test within a set */
-static void add_result(const char *name, int pass) {
-  struct epd_set *set = find_set(name);
-  if (!set) set = add_set(name);
-  if (set) {
+static void add_result(const char *name, int pass, int id) {
+  int set_id = find_set(name);
+  if (set_id == -1) set_id = add_set(name);
+  if (set_id != -1) {
+    struct epd_set *set = &epd_sets[set_id];
     if (pass) set->n_pass++;
     set->n_total++;
+    id_set[id] = set_id;
   }
 }
 
@@ -188,7 +250,7 @@ static epd_fn epd_find_cmd(const char *name, struct epd_cmd *epd_cmds) {
 }
 
 /* Run an EPD case */
-int epd_run(const char *epd_line, int depth) {
+int epd_run(const char *epd_line, int depth, int id) {
   struct position position;
   int pass = 1;
   direct_mate = 0;
@@ -242,22 +304,24 @@ int epd_run(const char *epd_line, int depth) {
   struct search_result first_result;
   struct search_result result;
   if (direct_mate == 0) {
-    search(depth, &history, &position, &result, show_board);
+    search(depth, 0.0, 0.0, &history, &position, &result, show_board);
     memcpy(&first_result, &result, sizeof(first_result));
   } else {
     while (full_move <= direct_mate) {
-      search(depth, &history, &position, &result, show_board);
+      search(depth, 0.0, 0.0, &history, &position, &result, show_board);
       if (full_move == 0) memcpy(&first_result, &result, sizeof(first_result));
       if (result.move.result & MATE) break;
       make_move(&position, &result.move);
       change_player(&position);
-      search(depth, &history, &position, &result, show_thought);
+      search(depth, 0.0, 0.0, &history, &position, &result, show_thought);
       if (result.move.result & MATE) break;
       make_move(&position, &result.move);
       change_player(&position);
       full_move++;
     }
   }
+
+  memcpy(&search_results[id], &first_result, sizeof(search_results[0]));
 
   /* Match and execute commands that should be executed after search */
   for (int i = 0; i < n_ops; i++) {
@@ -302,11 +366,24 @@ int epd_test(const char *filename, int depth) {
   }
   fseek(f, SEEK_SET, 0);
 
+  search_results =
+      (struct search_result *)malloc(n_tests * sizeof(struct search_result));
+  if (search_results == 0) return 1;
+  id_set = (int *)malloc(n_tests * sizeof(int));
+  if (id_set == 0) return 1;
+  for (int i = 0; i < n_tests; i++) id_set[i] = -1;
+
+  if (show_stats) {
+    stats = (struct epd_stat *)calloc(n_sets * n_vars, sizeof(struct epd_stat));
+    if (stats == 0) return 1;
+  }
+
   int index = 0;
   int n_pass = 0;
+  int id = 0;
   while (fgets(epd_line, sizeof(epd_line), f)) {
     if (*epd_line == '#') continue;
-    int pass = epd_run(epd_line, depth);
+    int pass = epd_run(epd_line, depth, id);
     index++;
     char buf[2000];
     sprintf(buf, "%d/%d %s", index, n_tests, output);
@@ -318,7 +395,8 @@ int epd_test(const char *filename, int depth) {
     }
 
     /* current_set is set by epd_id */
-    if (current_set[0]) add_result(current_set, pass);
+    if (current_set[0]) add_result(current_set, pass, id);
+    id++;
   }
 
   fclose(f);
@@ -327,9 +405,83 @@ int epd_test(const char *filename, int depth) {
     printf("\nResults by category:\n");
     print_results();
     printf("\nTotal:\n");
-    printf("   %d/%d %0.2lf%%\n", n_pass, n_tests,
-           (double)n_pass / (double)n_tests);
+    // printf("   %d/%d %0.2lf%%\n", n_pass, n_tests,
+    //        (double)n_pass / (double)n_tests);
   }
+
+  if (show_stats) {
+    for (int i = 0; i < n_tests; i++) {
+      int set_id = id_set[i];
+      if (set_id == -1) continue;
+      for (int j = 0; j < n_vars; j++) {
+        struct epd_stat *stat = &stats[set_id * n_vars + j];
+        stat->total = 0.0;
+        stat->max = -INFINITY;
+        stat->min = INFINITY;
+        stat->variance = 0.0;
+      }
+    }
+    for (int i = 0; i < n_tests; i++) {
+      int set_id = id_set[i];
+      if (set_id == -1) continue;
+      for (int j = 0; j < n_vars; j++) {
+        const struct epd_var *var = &vars[j];
+        struct epd_stat *stat = &stats[set_id * n_vars + j];
+        double val = var->get(&search_results[i]);
+        stat->total += val;
+        stat->max = fmax(stat->max, val);
+        stat->min = fmin(stat->min, val);
+      }
+    }
+    for (int i = 0; i < n_sets; i++) {
+      for (int j = 0; j < n_vars; j++) {
+        struct epd_stat *stat = &stats[i * n_vars + j];
+        stat->mean = stat->total / (double)epd_sets[i].n_total;
+      }
+    }
+    for (int i = 0; i < n_tests; i++) {
+      int set_id = id_set[i];
+      if (set_id == -1) continue;
+      for (int j = 0; j < n_vars; j++) {
+        const struct epd_var *var = &vars[j];
+        struct epd_stat *stat = &stats[set_id * n_vars + j];
+        double val = var->get(&search_results[i]);
+        stat->variance += pow(val - stat->mean, 2.0);
+      }
+    }
+    for (int i = 0; i < n_sets; i++) {
+      for (int j = 0; j < n_vars; j++) {
+        struct epd_stat *stat = &stats[i * n_vars + j];
+        stat->variance /= (double)n_tests;
+        stat->std_dev = pow(stat->variance, 0.5);
+      }
+    }
+
+    printf("  %-30s\n", "Test");
+    for (int i = 0; i < n_sets; i++) {
+      printf("  %-30s", epd_sets[i].name);
+      for (int j = 0; j < n_stats; j++) {
+        printf("%-16s ", stat_name[j]);
+      }
+      printf("\n");
+      for (int j = 0; j < n_vars; j++) {
+        printf("    %-20s ", vars[j].name);
+        double *s = (double *)&stats[i * n_vars + j];
+        for (int k = 0; k < n_stats; k++) {
+          printf(vars[j].format, s[k]);
+        }
+        printf("\n");
+      }
+      printf("Avg. r_check_node %0.2lf\n",
+             stats[i * n_vars + 1].total / stats[i * n_vars + 0].total);
+      printf("\n");
+    }
+
+    free(stats);
+  }
+
+  free(search_results);
+  free(id_set);
 
   return 0;
 }

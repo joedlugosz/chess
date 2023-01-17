@@ -32,15 +32,28 @@ static void ui_force(struct engine *e) { e->mode = ENGINE_FORCE_MODE; }
  * turn */
 static void ui_go(struct engine *e) { e->mode = e->game.turn; }
 
-/* Not used by CECP v2 */
-static void ui_black(struct engine *e) {}
-static void ui_white(struct engine *e) {}
-
 /* Tell this AI that it is playing another AI - not implemented */
 static void ui_computer(struct engine *e) {}
 
 /* XBoard notifies a result */
-static void ui_result(struct engine *e) { get_input(); }
+static void ui_result(struct engine *e) {
+  const char *result = get_input();
+  if (strcmp(result, "1/2-1/2") == 0) {
+  } else if (strcmp(result, "0-1") == 0) {
+  } else if (strcmp(result, "1-0") == 0) {
+  } else {
+    return;
+  }
+  e->mode = ENGINE_FORCE_MODE;
+}
+
+static void ui_offer_draw(struct engine *e) {
+  if (!e->is_seeking_draw) return;
+  const char *draw = get_input();
+  if (strcmp(draw, "draw") == 0) {
+    if (e->xboard_mode) printf("offer draw\n");
+  }
+}
 
 /* New game */
 static void ui_new(struct engine *e) {
@@ -50,24 +63,65 @@ static void ui_new(struct engine *e) {
   e->waiting = 1;
   e->game.turn = WHITE;
   e->mode = ENGINE_PLAYING_AS_BLACK;
+  reset_time_control(e);
+  e->search_depth = 0;
+  clock_start_game(&e->clock);
   reset_board(&e->game);
   history_clear(&e->history);
 }
 
 /* -- Engine control */
 
-/* Search depth - not implemented */
+/* Search depth */
 static void ui_sd(struct engine *e) {
-  int depth;
-  sscanf(get_input(), "%d", &depth);
-  /* TODO: depth */
+  sscanf(get_input(), "%d", &e->search_depth);
 }
 
-/* Set time control mode - not implemented */
+static int ui_parse_time(const char *txt, int *time) {
+  char time_txt[20];
+  strncpy(time_txt, txt, sizeof(time_txt) - 1);
+  int minutes = 0;
+  int seconds = 0;
+  char *ptr = strstr(time_txt, ":");
+  if (ptr) {
+    *ptr = ' ';
+    if (sscanf(time_txt, "%d %d", &minutes, &seconds) != 2) return 1;
+  } else {
+    if (sscanf(time_txt, "%d", &minutes) != 1) return 1;
+  }
+  *time = minutes * 60.0 + seconds;
+  return 0;
+}
+
+/* Search time - at most n seconds */
+static void ui_st(struct engine *e) {
+  int time = 0;
+  if (sscanf(get_input(), "%d", &time) != 1) return;
+  e->clock.increment_seconds = (double)time;
+  e->clock.mode = TIME_CTRL_FIXED;
+}
+
+/* Set time control mode */
 static void ui_level(struct engine *e) {
-  get_input();
-  get_input();
-  get_input();
+  int mps;
+  if (sscanf(get_input(), "%d", &mps) != 1) return;
+  int tc;
+  if (ui_parse_time(get_input(), &tc) != 0) return;
+  int tincr;
+  if (sscanf(get_input(), "%d", &tincr) != 1) return;
+  e->clock.moves_per_session = mps;
+  e->clock.time_control = (double)tc;
+  e->clock.increment_seconds = (double)tincr;
+  e->clock.mode = (mps == 0) ? TIME_CTRL_INCREMENTAL : TIME_CTRL_CLASSICAL;
+}
+
+/* XBoard sets player time remaining */
+static void ui_time(struct engine *e) {
+  int ds_time;
+  if (sscanf(get_input(), "%d", &ds_time) != 1) return;
+  double time = (double)ds_time / 100;
+  clock_set_remaining(&e->clock, time,
+                      (e->mode == ENGINE_PLAYING_AS_WHITE) ? WHITE : BLACK);
 }
 
 /* XBoard sets protocol version */
@@ -123,7 +177,7 @@ static void ui_fen(struct engine *e) {
   get_input_to_buf(fullmove, sizeof(fullmove));
   if (load_fen(&e->game, placement, active, castling, enpassant, halfmove,
                fullmove)) {
-    printf("sFEN string not recognised\n");
+    printf("FEN string not recognised\n");
   }
 }
 
@@ -150,6 +204,19 @@ static void ui_attacks(struct engine *e) {
   }
   print_board(&(e->game), target,
               get_attacks(&(e->game), target, opponent[e->game.turn]));
+}
+
+static void ui_allmoves(struct engine *e) {
+  struct move_list move_buf[N_MOVES];
+  struct move_list *list_head = move_buf;
+  generate_search_movelist(&e->game, &list_head);
+  for (struct move_list *list_entry = list_head; list_entry != 0;
+       list_entry = list_entry->next) {
+    char buf[10];
+    format_move_san(buf, &list_entry->move);
+    printf("%s ", buf);
+  }
+  printf("\n");
 }
 
 /* Print board showing squares a piece can move to */
@@ -212,9 +279,10 @@ static void ui_help(struct engine *e);
 /* Table of commands */
 const struct command cmds[] = {
     /* clang-format off */
+  { CT_DISPLAY, "allmoves", ui_allmoves,   "     - Print a list of all possible moves" },
   { CT_DISPLAY, "attacks",  ui_attacks,    "POS  - Display all pieces that can attack POS" },
   { CT_XBOARD,  "accepted", ui_accepted,   "     - ???" },
-  { CT_GAMECTL, "black",    ui_black,      "     - AI to play as black" },
+  { CT_UNIMP,   "black",    ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_XBOARD,  "computer", ui_computer,   "     - ???" },
   { CT_DISPLAY, "eval",     ui_eval,       "     - Evaluate game" },
   { CT_GAMECTL, "fen",      ui_fen,        "FEN  - Set the position using a FEN string" },
@@ -223,25 +291,27 @@ const struct command cmds[] = {
   { CT_GAMECTL, "go",       ui_go,         "     - AI to make first move if playing as white" },
   { CT_GAMECTL, "help",     ui_help,       "     - Display a list of all commands" },
   { CT_DISPLAY, "info",     ui_info,       "     - Display build information"},
-  { CT_XBOARD,  "level",    ui_level,      "     - ???"},
+  { CT_GAMECTL, "level",    ui_level,      "MPS BASE INC - Set time control settings"},
   { CT_DISPLAY, "moves",    ui_moves,      "POS  - Display all squares that the piece at POS can move to" },
   { CT_GAMECTL, "new",      ui_new,        "     - New game" },
+  { CT_XBOARD,  "offer",    ui_offer_draw, "     - Offer a draw by agreement, or accept an offer" },
   { CT_XBOARD,  "option",   ui_option,     "     - Set engine option" },
   { CT_UNIMP,   "otim",     ui_noop_1arg,  "TIME - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "perft",    ui_perft,      "     - Move generator performance test" },
   { CT_GAMECTL, "perftd",   ui_perftd,     "     - Move generator performance test, divided by move" },
   { CT_DISPLAY, "print",    ui_print,      "     - Display the board" },
-  { CT_XBOARD,  "protover", ui_protover,   "PROT - ??? Selects an XBoard protocol of at least PROT" },
+  { CT_XBOARD,  "protover", ui_protover,   "PROT - Selects an XBoard protocol of at least PROT and displays options" },
   { CT_GAMECTL, "quit",     ui_quit,       "     - Quit the program" },
   { CT_GAMECTL, "q",        ui_quit,       "     - Quit the program more quickly" },
-  { CT_UNIMP,   "st",       ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
+  { CT_GAMECTL, "setboard", ui_fen,        "FEN  - Set the position using a FEN string" },
+  { CT_GAMECTL, "st",       ui_st,         "     - Set the time control period" },
   { CT_GAMECTL, "sd",       ui_sd,         "D    - Set the search depth" },
-  { CT_UNIMP,   "time",     ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
+  { CT_UNIMP,   "time",     ui_time,       "MS   - Advise the current player's remaining time" },
   { CT_UNIMP,   "random",   ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "result",   ui_result,     "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "undo",     ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_UNIMP,   "variant",  ui_noop_1arg,  "     - This function is accepted but currently has no effect" },
-  { CT_GAMECTL, "white",    ui_white,      "     - AI to play as white (enter 'go' to start)" },
+  { CT_UNIMP,   "white",    ui_noop,       "     - This function is accepted but currently has no effect" },
   { CT_GAMECTL, "xboard",   ui_xboard,     "     - Enter XBoard mode" }
     /* clang-format on */
 };
@@ -275,9 +345,8 @@ static void ui_help(struct engine *e) {
     }
   }
   printf(
-      "\n   The following commands are accepted for compatibility with XBoard, "
-      "but have no "
-      "effect:");
+      "\n   The following commands are accepted for compatibility with "
+      "XBoard,\nbut have no effect:");
   int j = 0;
   for (int i = 0; i < N_UI_CMDS; i++) {
     if (cmds[i].type == CT_UNIMP) {
@@ -291,8 +360,8 @@ static void ui_help(struct engine *e) {
   printf("\n");
 }
 
-/* Accept a valid command phrase.  Search through commands and call the command
- * function if found.  Return 0 if accepted. */
+/* Accept a valid command phrase.  Search through commands and call the
+ * command function if found.  Return 0 if accepted. */
 int accept_command(struct engine *engine, const char *input) {
   int i;
   for (i = 0; i < N_UI_CMDS; i++) {

@@ -167,7 +167,7 @@ void print_board(struct position *position, bitboard_t mask1,
 
   term = is_terminal(stdout);
 
-  struct tt_entry *tte = tt_probe(position->hash);
+  struct tt_entry *tte = tt_probe(position->hash, position->total_a);
 
   if (tte) {
     mask1 = square2bit[tte->best_move.from];
@@ -251,9 +251,10 @@ void print_board(struct position *position, bitboard_t mask1,
 
 /* Print thoughts in a format compatible with XBoard */
 void xboard_thought(struct search_job *job, struct pv *pv, int depth,
-                    score_t score, clock_t time, int nodes) {
-  printf("  %2d %7d %7lu %7d ", depth, score, time / (CLOCKS_PER_SEC / 100),
-         nodes);
+                    score_t score, double time, int nodes, double knps,
+                    int seldep) {
+  printf("  %2d %7d %7d %7d %d %.lf\t", depth, score, (int)(time * 100.0),
+         nodes, seldep, knps);
   print_pv(stdout, pv);
   printf("\n");
 }

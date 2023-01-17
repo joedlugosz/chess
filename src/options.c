@@ -23,6 +23,7 @@
  * Arrays of options are declared in other modules
  */
 extern const struct options eval_opts;
+extern const struct options ui_opts;
 
 /* Array of options from each module */
 const struct options *const module_opts[] = {&eval_opts};
@@ -97,7 +98,7 @@ static inline int interpret_option_args(const struct option *opt,
                                         struct engine *engine,
                                         const char *val_txt,
                                         int *val /* in/out */) {
-  val = 0;
+  *val = 0;
   switch (opt->type) {
     default:
       break;
@@ -214,7 +215,7 @@ struct feature {
 const struct feature features[] = {
     {"done", INT_FEAT, 0, ""}, /* Don't timeout waiting for further features */
     {"myname", TEXT_FEAT, 0, app_name}, /* The name of the engine */
-    {"setboard", INT_FEAT, 0, ""}, /* setboard command is not implemented */
+    {"setboard", INT_FEAT, 1, ""},      /* setboard command is implemented */
     {"name", INT_FEAT, 0, ""}, /* We don't care about opponent engine's name*/
     {"ping", INT_FEAT, 0, ""}, /* `ping` is not implemented */
     {"variants", TEXT_FEAT, 0,
