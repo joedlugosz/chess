@@ -34,7 +34,7 @@
 enum {
   TT_MIN_DEPTH = 4,
   QUIESCENCE_MAX_DEPTH = 50,
-  MIN_ITERATION_DEPTH = 5,
+  MIN_ITERATION_DEPTH = 1,
   MAX_ITERATION_DEPTH = 20,
   INFINITY_SCORE = 10000,
   INVALID_SCORE = 10100,
@@ -43,6 +43,7 @@ enum {
   CONTEMPT_SCORE = -500,
   R_NULL = 2, /* Depth reduction for null move search */
   R_LATE = 1, /* Depth reduction for late move reduction */
+  NODES_PER_CHECK = 2000,
 };
 
 struct move mate_move = {.result = CHECK | MATE};
@@ -133,6 +134,8 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     score = -search_position(job, pv, &position, depth - 1, -beta, -*alpha, 1);
   }
 
+  if (job->halt) return 1;
+
   history_pop(job->history);
 
   if (score > *best_score) {
@@ -200,6 +203,15 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   /* For statistics, count leaf nodes at horizon only (even if they extend) */
   if (depth == 0) job->result.n_leaf++;
   job->result.n_node++;
+  if (job->next_time_check-- == 0) {
+    job->next_time_check = NODES_PER_CHECK;
+    if (job->stop_time > job->start_time && time_now() > job->stop_time) {
+      job->result.type = SEARCH_RESULT_INVALID;
+      job->halt = 1;
+      printf("Time check\n");
+      return 0;
+    }
+  }
 
   if (depth == job->depth) job->result.type = SEARCH_RESULT_PLAY;
   if (job->depth - depth > job->result.seldep)
@@ -255,7 +267,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Probe the transposition table at higher levels */
   struct tt_entry *tte = 0;
-  if (OPT_HASH && depth > TT_MIN_DEPTH)
+  if (OPT_HASH && depth > job->tt_min_depth)
     tte = tt_probe(position->hash, position->total_a);
 
   /* If the position has already been searched at the same or greater depth, use
@@ -340,7 +352,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   update_result(job, depth, best_move, alpha);
 
   /* Update the transposition table at higher levels */
-  if (depth > TT_MIN_DEPTH) {
+  if (depth > job->tt_min_depth) {
     tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
   }
 
@@ -366,24 +378,32 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Search based on `time_budget` */
     min = MIN_ITERATION_DEPTH;
     max = MAX_ITERATION_DEPTH + 1;
+    job.stop_time = job.start_time + time_budget - 0.01;
   } else if (target_depth < MIN_ITERATION_DEPTH) {
     /* Fixed-depth shallow search without iterative deepening */
     min = target_depth;
     max = target_depth + 1;
+    job.stop_time = 0.0;
   } else {
     /* Fixed depth deep search with iterative deepening */
     min = MIN_ITERATION_DEPTH;
     max = target_depth + 1;
+    job.stop_time = job.start_time + time_budget - 0.01;
   }
 
   for (int depth = min; depth < max; depth++) {
     double iteration_start_time = time_now();
     job.depth = depth;
+    job.tt_min_depth = depth - 4;
+    if (job.tt_min_depth < 0) job.tt_min_depth = 0;
+    if (job.tt_min_depth > TT_MIN_DEPTH) job.tt_min_depth = TT_MIN_DEPTH;
 
     /* Enter recursive search with the current position as the root */
     struct pv pv;
     score_t score = search_position(&job, &pv, position, job.depth,
                                     -INVALID_SCORE, INVALID_SCORE, 1);
+
+    if (job.result.type == SEARCH_RESULT_INVALID) break;
 
     /* Copy results and calculate stats */
     memcpy(res, &job.result, sizeof(*res));
