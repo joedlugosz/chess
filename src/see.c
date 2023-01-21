@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <stdio.h>
+
 #include "moves.h"
 #include "position.h"
 
@@ -13,17 +16,19 @@ bitboard_t get_lva(const struct position *position, bitboard_t attackers) {
       return lva;
     }
   }
+  return 0ull;
 }
 
-int see_after_move(const struct position *position, const struct move *move) {
-  enum square square = move->to;
-  enum piece moving_piece = move->piece;
-  enum piece first_victim = piece_type[position->piece_at[square]];
-  int score = see_piece_scores[first_victim];
+static inline int max(int a, int b) { return (a > b) ? a : b; }
 
+int see_after_move(const struct position *position, enum square square,
+                   enum piece moving_piece) {
   enum piece pieces[32];
 
-  int index;
+  /* First victim */
+  pieces[0] = see_piece_scores[piece_type[position->piece_at[square]]];
+
+  int index = 1;
   enum player player = !position->turn;
   for (;;) {
     bitboard_t attackers = get_attacks(position, square, player);
@@ -31,13 +36,16 @@ int see_after_move(const struct position *position, const struct move *move) {
 
     int base = player * N_PIECE_T;
     bitboard_t lva = 0ull;
+    enum piece start = PAWN;
     enum piece piece;
-    for (piece = PAWN; piece < KING; piece++) {
+    for (piece = start; piece < KING; piece++) {
       bitboard_t lvas = position->a[base + piece] & attackers;
       if (lvas) {
         lva = take_next_bit_from(&lvas);
         attackers &= ~lva;
         break;
+      } else {
+        start++;
       }
     }
 
@@ -49,9 +57,8 @@ int see_after_move(const struct position *position, const struct move *move) {
   }
 
   while (--index) {
-    printf("%d ", pieces[index]);
+    printf("%d %d\n", pieces[index], pieces[index - 1]);
+    pieces[index - 1] = -max(-pieces[index - 1], pieces[index]);
   }
-  printf("\n");
-
-  return 0;
+  return pieces[0];
 }

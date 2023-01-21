@@ -19,8 +19,9 @@ set (
     movegen.c
     moves.c
     options.c
-    search.c
     position.c
+    search.c
+    see.c
     ui.c
 )
 
