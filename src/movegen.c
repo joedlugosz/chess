@@ -9,6 +9,7 @@
 #include "history.h"
 #include "io.h"
 #include "position.h"
+#include "see.h"
 
 /* Comparison and insertion for insertion sort.  Insert `insert` at the first
  * position in the list where `insert->score` > the score of the next item.  If
@@ -157,7 +158,9 @@ int generate_quiescence_movelist(const struct position *position,
     while (attackers) {
       bitboard_t from_mask = take_next_bit_from(&attackers);
       enum square from = bit2square(from_mask);
-      add_movelist_entries(position, from, to, *move_buf, &prev, &count);
+
+      if (see_after_move(position, to, position->piece_at[from]) > 0)
+        add_movelist_entries(position, from, to, *move_buf, &prev, &count);
     }
   }
   if (count) sort_moves(move_buf);
