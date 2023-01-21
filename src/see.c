@@ -30,7 +30,7 @@ int see_after_move(const struct position *position, enum square square,
 
   int index = 1;
   enum player player = !position->turn;
-  for (;;) {
+  for (index = 1; index < 32; index++) {
     bitboard_t attackers = get_attacks(position, square, player);
     if (!attackers) break;
 
@@ -52,12 +52,11 @@ int see_after_move(const struct position *position, enum square square,
     if (piece == KING) break;
 
     pieces[index] = see_piece_scores[piece];
-    index++;
     player = !player;
   }
 
   while (--index) {
-    printf("%d %d\n", pieces[index], pieces[index - 1]);
+    // printf("%d %d\n", pieces[index], pieces[index - 1]);
     pieces[index - 1] = -max(-pieces[index - 1], pieces[index]);
   }
   return pieces[0];
