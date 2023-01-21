@@ -42,7 +42,7 @@ enum {
   DRAW_SCORE = 0,
   CONTEMPT_SCORE = -500,
   R_NULL = 2, /* Depth reduction for null move search */
-  R_LATE = 1, /* Depth reduction for late move reduction */
+  R_LATE = 2, /* Depth reduction for late move reduction */
   NODES_PER_CHECK = 2000,
 };
 
