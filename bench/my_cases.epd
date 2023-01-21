@@ -39,3 +39,6 @@ r7/pR1nkb1p/2Bp4/8/2nP3N/P1P1P2P/2P2P2/B1Kq4 w - - # King should take queen
 # 50 move rule
 #6R1/8/5N1r/4K3/8/5k2/8/8 b - - 50 151
 
+# Time control
+# Does not complete depth 1 with quiescence on 40/1
+1nbqk1n1/8/r4b1r/pppppppp/PPPPPPPP/2B4R/R7/1N1QKBN1 w - - 0 1
