@@ -378,16 +378,19 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Search based on `time_budget` */
     min = MIN_ITERATION_DEPTH;
     max = MAX_ITERATION_DEPTH + 1;
-    job.stop_time = job.start_time + time_budget - 0.01;
   } else if (target_depth < MIN_ITERATION_DEPTH) {
     /* Fixed-depth shallow search without iterative deepening */
     min = target_depth;
     max = target_depth + 1;
-    job.stop_time = 0.0;
   } else {
     /* Fixed depth deep search with iterative deepening */
     min = MIN_ITERATION_DEPTH;
     max = target_depth + 1;
+  }
+
+  if (target_depth <= 1) {
+    job.stop_time = 0.0;
+  } else {
     job.stop_time = job.start_time + time_budget - 0.01;
   }
 
