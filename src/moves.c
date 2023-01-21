@@ -286,11 +286,6 @@ bitboard_t get_attacks(const struct position *position, enum square target,
   bitboard_t target_mask = square2bit[target];
   int base = attacking * N_PIECE_T;
 
-  /* Check player is not trying to attack own piece (checking an empty square is
-   * ok because it needs to be done for castling) */
-  ASSERT(position->piece_at[target] == EMPTY ||
-         piece_player[(int)position->piece_at[target]] != attacking);
-
   attacks = pawn_takes[opponent[attacking]][target] & position->a[base + PAWN];
   attacks |= knight_moves[target] & position->a[base + KNIGHT];
   attacks |= king_moves[target] & position->a[base + KING];
