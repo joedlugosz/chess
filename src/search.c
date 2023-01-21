@@ -205,7 +205,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   job->result.n_node++;
   if (job->next_time_check-- == 0) {
     job->next_time_check = NODES_PER_CHECK;
-    if (job->stop_time > job->start_time && time_now() > job->stop_time) {
+    if (job->depth > 1 && job->stop_time > job->start_time &&
+        time_now() > job->stop_time) {
       job->result.type = SEARCH_RESULT_INVALID;
       job->halt = 1;
       printf("Time check\n");
