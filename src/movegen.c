@@ -160,7 +160,7 @@ int generate_quiescence_movelist(const struct position *position,
       bitboard_t from_mask = take_next_bit_from(&attackers);
       enum square from = bit2square(from_mask);
 
-      if (see_after_move(position, to, position->piece_at[from]) > 0)
+      if (see_after_move(position, from, to, position->piece_at[from]) > 0)
         add_movelist_entries(position, from, to, *move_buf, &prev, &count);
     }
   }
