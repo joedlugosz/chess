@@ -267,7 +267,8 @@ int check_legality(const struct position *position, const struct move *move) {
   if (move->from == move->to) return ERR_SRC_EQUAL_DEST;
   if ((square2bit[move->from] & get_my_pieces(position)) == 0)
     return ERR_NOT_MY_PIECE;
-  if ((square2bit[move->to] & get_moves(position, move->from)) == 0)
+  if ((square2bit[move->to] & get_moves(position, move->from) &
+       ~get_my_pieces(position)) == 0)
     return ERR_CANT_MOVE_THERE;
   if ((is_promotion_move(position, move->from, move->to) &&
        (position->piece_at[move->from] == PAWN ||

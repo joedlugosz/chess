@@ -132,8 +132,7 @@ int generate_search_movelist(const struct position *position,
   bitboard_t pieces = get_my_pieces(position);
   while (pieces) {
     enum square from = bit2square(take_next_bit_from(&pieces));
-    bitboard_t moves =
-        get_moves(position, from) & ~position->player_a[position->turn];
+    bitboard_t moves = get_moves(position, from) & ~get_my_pieces(position);
     while (moves) {
       enum square to = bit2square(take_next_bit_from(&moves));
       add_movelist_entries(position, from, to, *move_buf, &prev, &count);

@@ -231,7 +231,9 @@ static void ui_moves(struct engine *e) {
   if (ui_no_piece_at_square(e, from)) {
     return;
   }
-  print_board(&(e->game), get_moves(&(e->game), from), square2bit[from]);
+  print_board(&(e->game),
+              get_moves(&(e->game), from) & ~get_my_pieces(&e->game),
+              square2bit[from]);
 }
 
 /* Evaluate the position and print the score */
