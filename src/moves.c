@@ -356,7 +356,7 @@ void calculate_moves(struct position *position) {
     position->moves[index] = moves;
 
     if (piece_type[piece] != PAWN) {
-      position->claim[player] |= moves;
+      position->claim[player] |= moves & ~position->player_a[player];
     } else {
       position->claim[player] |=
           pawn_takes[player][square] & ~position->player_a[player];
@@ -375,7 +375,7 @@ void calculate_moves(struct position *position) {
     bitboard_t moves =
         get_king_moves(position, position->piece_square[index], player);
     position->moves[index] = moves;
-    position->claim[player] |= moves;
+    position->claim[player] |= moves & ~position->player_a[player];
   }
 }
 
