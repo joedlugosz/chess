@@ -195,7 +195,8 @@ void perft(struct perft_stats *data, struct position *position, int depth,
       int found_escape = 0;
       while (list_entry) {
         copy_position(&next_position, position);
-        make_move(&next_position, &list_entry->move);
+        struct unmake unmake;
+        make_move(&next_position, &list_entry->move, &unmake);
         if (!in_check(&next_position)) {
           found_escape = 1;
           break;
@@ -213,7 +214,8 @@ void perft(struct perft_stats *data, struct position *position, int depth,
   list_entry = move_buf_head;
   while (list_entry) {
     copy_position(&next_position, position);
-    make_move(&next_position, &list_entry->move);
+    struct unmake unmake;
+    make_move(&next_position, &list_entry->move, &unmake);
     /* Can't move into check */
     if (!in_check(&next_position)) {
       change_player(&next_position);
@@ -243,7 +245,8 @@ void perft_divide(struct position *position, int depth) {
   list_entry = move_buf_head;
   while (list_entry) {
     copy_position(&next_position, position);
-    make_move(&next_position, &list_entry->move);
+    struct unmake unmake;
+    make_move(&next_position, &list_entry->move, &unmake);
     /* Can't move into check */
     if (!in_check(&next_position)) {
       change_player(&next_position);
