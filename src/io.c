@@ -167,7 +167,8 @@ void print_board(struct position *position, bitboard_t mask1,
 
   term = is_terminal(stdout);
 
-  struct tt_entry *tte = tt_probe(position->hash, position->total_a);
+  struct tt_entry *tte =
+      position ? tt_probe(position->hash, position->total_a) : 0;
 
   if (tte) {
     mask1 = square2bit[tte->best_move.from];
@@ -184,7 +185,7 @@ void print_board(struct position *position, bitboard_t mask1,
     for (file = 0; file <= 7; file++)
 #endif
     {
-      int piece = position->piece_at[rank * 8 + file];
+      int piece = position ? position->piece_at[rank * 8 + file] : -1;
       /* Print square colours if a terminal */
       if (term) {
         if (mask1 & square2bit[rank * 8 + file]) {
@@ -217,16 +218,18 @@ void print_board(struct position *position, bitboard_t mask1,
     }
 
     char buf[100];
-    switch (rank) {
-      case 7:
-        get_fen(position, buf, sizeof(buf));
-        printf("     %s", buf);
-        break;
-      case 6:
-        printf("     %016llx", position->hash);
-        break;
-      default:
-        break;
+    if (position) {
+      switch (rank) {
+        case 7:
+          get_fen(position, buf, sizeof(buf));
+          printf("     %s", buf);
+          break;
+        case 6:
+          printf("     %016llx", position->hash);
+          break;
+        default:
+          break;
+      }
     }
 
     const char type[3][3] = {">=", "<=", "="};
