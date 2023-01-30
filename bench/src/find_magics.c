@@ -4,6 +4,7 @@
 
 #include "hash.h"
 #include "io.h"
+#include "moves.h"
 #include "position.h"
 
 bitboard_t sparse_rand() {
@@ -37,33 +38,6 @@ bitboard_t create_rook_blocker_mask(enum square square) {
   return relevant;
 }
 
-bitboard_t create_rook_moves(enum square square, bitboard_t blockers) {
-  int rank = square / 8;
-  int file = square % 8;
-  bitboard_t moves = 0ull;
-  for (int i = rank + 1; i < 8; i++) {
-    bitboard_t bit = 1ull << (i * 8 + file);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int i = rank - 1; i >= 0; i--) {
-    bitboard_t bit = 1ull << (i * 8 + file);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int i = file + 1; i < 8; i++) {
-    bitboard_t bit = 1ull << (rank * 8 + i);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int i = file - 1; i >= 0; i--) {
-    bitboard_t bit = 1ull << (rank * 8 + i);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  return moves;
-}
-
 bitboard_t create_bishop_blocker_mask(enum square square) {
   int rank = square / 8;
   int file = square % 8;
@@ -82,60 +56,6 @@ bitboard_t create_bishop_blocker_mask(enum square square) {
       relevant |= 1ull << (r * 8 + f);
   return relevant;
 }
-
-bitboard_t create_bishop_moves(enum square square, bitboard_t blockers) {
-  int rank = square / 8;
-  int file = square % 8;
-  bitboard_t moves = 0ull;
-  for (int r = rank + 1, f = file + 1; r < 8 && f < 8; r++, f++) {
-    bitboard_t bit = 1ull << (r * 8 + f);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int r = rank - 1, f = file - 1; r > 0 && f > 0; r--, f--) {
-    bitboard_t bit = 1ull << (r * 8 + f);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int r = rank - 1, f = file + 1; r > 0 && f < 7; r--, f++) {
-    bitboard_t bit = 1ull << (r * 8 + f);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  for (int r = rank + 1, f = file - 1; r < 7 && f > 0; r++, f--) {
-    bitboard_t bit = 1ull << (r * 8 + f);
-    moves |= bit;
-    if (blockers & bit) break;
-  }
-  return moves;
-}
-
-bitboard_t pack_moves(bitboard_t template, bitboard_t unpacked) {
-  bitboard_t packed = 0;
-  while (template) {
-    packed <<= 1;
-    bitboard_t bit = take_next_bit_from(&template);
-    if (unpacked & bit) {
-      packed |= 1;
-    }
-  }
-  return packed;
-}
-
-bitboard_t unpack_moves(bitboard_t template, bitboard_t packed) {
-  bitboard_t unpacked = 0;
-  while (template) {
-    bitboard_t bit = take_next_bit_from(&template);
-    if (packed & 1) {
-      unpacked |= bit;
-    }
-    packed >>= 1;
-  }
-  return unpacked;
-}
-
-typedef bitboard_t (*generate_blocker_fn)(enum square);
-typedef bitboard_t (*generate_moves_fn)(enum square, bitboard_t);
 
 int find_magics(generate_blocker_fn generate_blocker_mask,
                 generate_moves_fn generate_moves, int *shift,
@@ -192,9 +112,9 @@ int find_magics(generate_blocker_fn generate_blocker_mask,
   return 0;
 }
 
-int check_magics(generate_blocker_fn generate_blocker_mask,
-                 generate_moves_fn generate_moves, int *shift,
-                 bitboard_t *magics, bitboard_t *magic_moves) {
+static int find_check_magics(generate_blocker_fn generate_blocker_mask,
+                             generate_moves_fn generate_moves, int *shift,
+                             bitboard_t *magics, bitboard_t *magic_moves) {
   for (int i = 0; i < 10000000; i++) {
     int square = rand() & 0x3f;
     bitboard_t blocker_mask = generate_blocker_mask(square);
@@ -229,10 +149,12 @@ int main(void) {
       malloc(N_SQUARES * 4096 * sizeof(*rook_magic_moves));
   bitboard_t rook_magic_mask[N_SQUARES];
 
-  if (find_magics(create_rook_blocker_mask, create_rook_moves, rook_magic_shift,
-                  rook_magic_mask, rook_magic_number, rook_magic_moves) ||
-      check_magics(create_rook_blocker_mask, create_rook_moves,
-                   rook_magic_shift, rook_magic_number, rook_magic_moves)) {
+  if (find_magics(create_rook_blocker_mask, generate_rook_moves,
+                  rook_magic_shift, rook_magic_mask, rook_magic_number,
+                  rook_magic_moves) ||
+      find_check_magics(create_rook_blocker_mask, generate_rook_moves,
+                        rook_magic_shift, rook_magic_number,
+                        rook_magic_moves)) {
     free(rook_magic_moves);
     return 1;
   }
@@ -263,12 +185,12 @@ int main(void) {
       malloc(N_SQUARES * 4096 * sizeof(*bishop_magic_moves));
   bitboard_t bishop_magic_mask[N_SQUARES];
 
-  if (find_magics(create_bishop_blocker_mask, create_bishop_moves,
+  if (find_magics(create_bishop_blocker_mask, generate_bishop_moves,
                   bishop_magic_shift, bishop_magic_mask, bishop_magic_number,
                   bishop_magic_moves) ||
-      check_magics(create_bishop_blocker_mask, create_bishop_moves,
-                   bishop_magic_shift, bishop_magic_number,
-                   bishop_magic_moves)) {
+      find_check_magics(create_bishop_blocker_mask, generate_bishop_moves,
+                        bishop_magic_shift, bishop_magic_number,
+                        bishop_magic_moves)) {
     free(bishop_magic_moves);
     return 1;
   }
