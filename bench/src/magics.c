@@ -1,4 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "io.h"
 #include "position.h"
+
 const int rook_magic_shift[N_SQUARES] = {
     52, 53, 53, 53, 53, 53, 53, 52, 53, 54, 54, 54, 54, 54, 54, 53,
     53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53,
@@ -169,7 +174,19 @@ bitboard_t generate_bishop_moves(enum square square, bitboard_t blockers) {
   return moves;
 }
 
-void init_magic_moves(generate_moves_fn generate_moves,
+bitboard_t unpack_moves(bitboard_t template, bitboard_t packed) {
+  bitboard_t unpacked = 0;
+  while (template) {
+    bitboard_t bit = take_next_bit_from(&template);
+    if (packed & 1) {
+      unpacked |= bit;
+    }
+    packed >>= 1;
+  }
+  return unpacked;
+}
+
+void init_magic_moves(generate_moves_fn generate_moves, const int *shift,
                       const bitboard_t *magic_mask,
                       const bitboard_t *magic_number, bitboard_t *magic_moves) {
   for (enum square square = A1; square <= H8; square++) {
@@ -177,47 +194,47 @@ void init_magic_moves(generate_moves_fn generate_moves,
     int n_bits = pop_count(blocker_mask);
     for (bitboard_t occupancy = 0; occupancy < (1 << n_bits); occupancy++) {
       bitboard_t blocker_board = unpack_moves(blocker_mask, occupancy);
-      bitboard_t hash =
-          (blocker_board * magic_number[square]) >> rook_magic_shift[square];
+      bitboard_t hash = (blocker_board * magic_number[square]) >> shift[square];
       bitboard_t *entry = &magic_moves[square * 4096 + hash];
       if (!*entry) *entry = generate_moves(square, blocker_board);
     }
   }
 }
 
-int check_magics(generate_moves_fn generate_moves, int *shift,
-                 bitboard_t *magics, bitboard_t *magic_moves) {
-  for (int i = 0; i < 10000000; i++) {
-    int square = rand() & 0x3f;
-    bitboard_t blocker_mask = generate_blocker_mask(square);
-    bitboard_t occ;
-    while (!(
-        occ = unpack_moves(
-            blocker_mask, rand() & ((1ull << pop_count(blocker_mask)) - 1ull))))
-      ;
-    bitboard_t g_moves = generate_moves(square, occ);
-    bitboard_t hash = (occ * magics[square]) >> shift[square];
-    bitboard_t m_moves = magic_moves[square * 4096 + hash];
-    if (m_moves != g_moves) {
-      printf("Occupancy:\n");
-      print_board(0, occ, 0);
-      printf("Generated moves:\n");
-      print_board(0, g_moves, 0);
-      printf("Magic moves:\n");
-      print_board(0, m_moves, 0);
-      return 1;
+int check_magics(generate_moves_fn generate_moves, const int *shift,
+                 const bitboard_t *blocker_mask, const bitboard_t *magics,
+                 const bitboard_t *magic_moves) {
+  for (int square = 0; square < 64; square++) {
+    for (bitboard_t test = 1; test < 4096; test++) {
+      bitboard_t occ = unpack_moves(blocker_mask[square], test);
+      bitboard_t g_moves = generate_moves(square, occ);
+      bitboard_t hash = (occ * magics[square]) >> shift[square];
+      bitboard_t m_moves = magic_moves[square * 4096 + hash];
+      if (m_moves != g_moves) {
+        printf("Occupancy:\n");
+        print_board(0, occ, 1ull << square);
+        printf("Generated moves:\n");
+        print_board(0, g_moves, 0);
+        printf("Magic moves:\n");
+        print_board(0, m_moves, 0);
+      }
     }
   }
   return 0;
 }
 
 int main(void) {
+  init_board();
   bitboard_t *rook_magic_moves =
       malloc(N_SQUARES * 4096 * sizeof(*rook_magic_moves));
-  init_magic_moves(generate_rook_moves, rook_magic_mask, rook_magic_number,
-                   rook_magic_moves);
+  init_magic_moves(generate_rook_moves, rook_magic_shift, rook_magic_mask,
+                   rook_magic_number, rook_magic_moves);
+  check_magics(generate_rook_moves, rook_magic_shift, rook_magic_mask,
+               rook_magic_number, rook_magic_moves);
   bitboard_t *bishop_magic_moves =
       malloc(N_SQUARES * 4096 * sizeof(*bishop_magic_moves));
-  init_magic_moves(generate_bishop_moves, bishop_magic_mask,
+  init_magic_moves(generate_bishop_moves, bishop_magic_shift, bishop_magic_mask,
                    bishop_magic_number, bishop_magic_moves);
+  check_magics(generate_bishop_moves, bishop_magic_shift, bishop_magic_mask,
+               bishop_magic_number, bishop_magic_moves);
 }
