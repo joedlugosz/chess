@@ -139,8 +139,8 @@ typedef bitboard_t (*generate_moves_fn)(enum square, bitboard_t);
 
 int find_magics(generate_blocker_fn generate_blocker_mask,
                 generate_moves_fn generate_moves, int *shift,
-                bitboard_t *magics, bitboard_t *magic_moves) {
-  bitboard_t blocker_masks[N_SQUARES];
+                bitboard_t *blocker_masks, bitboard_t *magics,
+                bitboard_t *magic_moves) {
   bitboard_t blocker_boards[N_SQUARES * 4096];
   bitboard_t generated_moves[N_SQUARES * 4096];
 
@@ -224,55 +224,73 @@ int main(void) {
   init_board();
 
   int rook_magic_shift[N_SQUARES];
-  bitboard_t rook_magic_numbers[N_SQUARES];
+  bitboard_t rook_magic_number[N_SQUARES];
   bitboard_t *rook_magic_moves =
       malloc(N_SQUARES * 4096 * sizeof(*rook_magic_moves));
+  bitboard_t rook_magic_mask[N_SQUARES];
 
   if (find_magics(create_rook_blocker_mask, create_rook_moves, rook_magic_shift,
-                  rook_magic_numbers, rook_magic_moves) ||
+                  rook_magic_mask, rook_magic_number, rook_magic_moves) ||
       check_magics(create_rook_blocker_mask, create_rook_moves,
-                   rook_magic_shift, rook_magic_numbers, rook_magic_moves)) {
+                   rook_magic_shift, rook_magic_number, rook_magic_moves)) {
     free(rook_magic_moves);
     return 1;
   }
 
-  printf("int rook_shift[N_SQUARES] = {\n");
+  printf("const int rook_magic_shift[N_SQUARES] = {\n");
   for (int i = A1; i <= H8; i++) {
     printf("%d,\n", rook_magic_shift[i]);
   }
   printf("};\n\n");
-  printf("bitboard_t rook_magic[N_SQUARES] = {\n");
+
+  printf("const bitboard_t rook_magic_number[N_SQUARES] = {\n");
   for (int i = A1; i <= H8; i++) {
-    printf("%016llx,\n", rook_magic_numbers[i]);
+    printf("0x%016llx,\n", rook_magic_number[i]);
   }
-  printf("};\n");
+  printf("};\n\n");
+
+  printf("const bitboard_t rook_magic_mask[N_SQUARES] = {\n");
+  for (int i = A1; i <= H8; i++) {
+    printf("0x%016llx,\n", rook_magic_mask[i]);
+  }
+  printf("};\n\n");
+
   free(rook_magic_moves);
 
   int bishop_magic_shift[N_SQUARES];
-  bitboard_t bishop_magic_numbers[N_SQUARES];
+  bitboard_t bishop_magic_number[N_SQUARES];
   bitboard_t *bishop_magic_moves =
       malloc(N_SQUARES * 4096 * sizeof(*bishop_magic_moves));
+  bitboard_t bishop_magic_mask[N_SQUARES];
 
   if (find_magics(create_bishop_blocker_mask, create_bishop_moves,
-                  bishop_magic_shift, bishop_magic_numbers,
+                  bishop_magic_shift, bishop_magic_mask, bishop_magic_number,
                   bishop_magic_moves) ||
       check_magics(create_bishop_blocker_mask, create_bishop_moves,
-                   bishop_magic_shift, bishop_magic_numbers,
+                   bishop_magic_shift, bishop_magic_number,
                    bishop_magic_moves)) {
     free(bishop_magic_moves);
     return 1;
   }
 
-  printf("int bishop_shift[N_SQUARES] = {\n");
+  printf("const int bishop_magic_shift[N_SQUARES] = {\n");
   for (int i = A1; i <= H8; i++) {
     printf("%d,\n", bishop_magic_shift[i]);
   }
   printf("};\n\n");
-  printf("bitboard_t bishop_magic[N_SQUARES] = {\n");
+
+  printf("const bitboard_t bishop_magic_number[N_SQUARES] = {\n");
   for (int i = A1; i <= H8; i++) {
-    printf("%016llx,\n", bishop_magic_numbers[i]);
+    printf("0x%016llx,\n", bishop_magic_number[i]);
   }
-  printf("};\n");
+  printf("};\n\n");
+
+  printf("const bitboard_t bishop_magic_mask[N_SQUARES] = {\n");
+  for (int i = A1; i <= H8; i++) {
+    printf("0x%016llx,\n", bishop_magic_mask[i]);
+  }
+  printf("};\n\n");
+
   free(bishop_magic_moves);
 
   return 0;
