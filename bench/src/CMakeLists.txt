@@ -22,6 +22,13 @@ target_include_directories (bench_moves PRIVATE
   ${PROJECT_SOURCE_DIR}/bench
 )
 
+add_executable (bench_magics magics.c)
+target_link_libraries (bench_magics common)
+target_include_directories (bench_magics PRIVATE
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/bench
+)
+
 add_executable (find_magics find_magics.c)
 target_link_libraries (find_magics common)
 target_include_directories (find_magics PRIVATE
