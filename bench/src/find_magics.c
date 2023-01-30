@@ -168,7 +168,7 @@ int find_magics(generate_blocker_fn generate_blocker_mask,
       fail = 0;
       bitboard_t magic = sparse_rand();
       memset(moves, -1, sizeof(moves));
-      for (bitboard_t test = 1; test < (1 << n_bits) && !fail; test++) {
+      for (bitboard_t test = 0; test < (1 << n_bits) && !fail; test++) {
         bitboard_t blocker_board = blocker_boards[square * 4096 + test];
         bitboard_t hashed = (blocker_board * magic) >> shift[square];
         bitboard_t g_moves = generated_moves[square * 4096 + test];
