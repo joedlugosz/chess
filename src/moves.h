@@ -7,5 +7,6 @@
 struct position;
 
 void calculate_moves(struct position *position);
+void check_magics();
 
 #endif
