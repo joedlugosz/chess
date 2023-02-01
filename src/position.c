@@ -18,24 +18,6 @@ void init_moves(void);
 
 /* clang-format off */
 
-/* Mapping from A-square to B-square. Calculated by `init_board`. */
-enum square square_a2b[N_SQUARES];
-
-/* Mapping from A-square to C-square */
-const enum square square_a2c[N_SQUARES] = {
-   0,  1,  3,  6, 10, 15, 21, 28,
-   2,  4,  7, 11, 16, 22, 29, 36,
-   5,  8, 12, 17, 23, 30, 37, 43,
-   9, 13, 18, 24, 31, 38, 44, 49,
-  14, 19, 25, 32, 39, 45, 50, 54,
-  20, 26, 33, 40, 46, 51, 55, 58,
-  27, 34, 41, 47, 52, 56, 59, 61,
-  35, 42, 48, 53, 57, 60, 62, 63
-};
-
-/* Mapping from A-square to D-square. Calculated by `init_board`. */
-enum square square_a2d[N_SQUARES];
-
 /* Rook starting squares */
 const enum square rook_start_square[N_PLAYERS][2] = { { 0, 7 }, { 56, 63 } };
 
@@ -89,21 +71,9 @@ static inline void add_piece(struct position *position, enum square square,
   ASSERT(position->piece_at[square] == EMPTY);
   enum piece player = piece_player[piece];
   bitboard_t a_mask = square2bit[square];
-  bitboard_t b_mask = square2bit[square_a2b[square]];
-  bitboard_t c_mask = square2bit[square_a2c[square]];
-  bitboard_t d_mask = square2bit[square_a2d[square]];
   position->a[piece] |= a_mask;
-  position->b[piece] |= b_mask;
-  position->c[piece] |= c_mask;
-  position->d[piece] |= d_mask;
   position->player_a[player] |= a_mask;
-  position->player_b[player] |= b_mask;
-  position->player_c[player] |= c_mask;
-  position->player_d[player] |= d_mask;
   position->total_a |= a_mask;
-  position->total_b |= b_mask;
-  position->total_c |= c_mask;
-  position->total_d |= d_mask;
   position->piece_square[(int)index] = square;
   position->piece_at[square] = piece;
   position->index_at[square] = index;
@@ -116,21 +86,9 @@ static inline void remove_piece(struct position *position, enum square square) {
   int8_t piece = position->piece_at[square];
   enum piece player = piece_player[piece];
   bitboard_t a_mask = square2bit[square];
-  bitboard_t b_mask = square2bit[square_a2b[square]];
-  bitboard_t c_mask = square2bit[square_a2c[square]];
-  bitboard_t d_mask = square2bit[square_a2d[square]];
   position->a[piece] &= ~a_mask;
-  position->b[piece] &= ~b_mask;
-  position->c[piece] &= ~c_mask;
-  position->d[piece] &= ~d_mask;
   position->player_a[player] &= ~a_mask;
-  position->player_b[player] &= ~b_mask;
-  position->player_c[player] &= ~c_mask;
-  position->player_d[player] &= ~d_mask;
   position->total_a &= ~a_mask;
-  position->total_b &= ~b_mask;
-  position->total_c &= ~c_mask;
-  position->total_d &= ~d_mask;
   position->piece_square[(int)position->index_at[square]] = NO_SQUARE;
   position->piece_at[square] = EMPTY;
   position->index_at[square] = EMPTY;
@@ -362,8 +320,6 @@ void init_board(void) {
   square2bit[NO_SQUARE] = 0;
   for (enum square square = 0; square < N_SQUARES; square++) {
     square2bit[square] = 1ull << square;
-    square_a2b[square] = (square / 8) + (square % 8) * 8;
-    square_a2d[square] = square_a2c[(square / 8) * 8 + (7 - square % 8)];
   }
   init_moves();
 }
