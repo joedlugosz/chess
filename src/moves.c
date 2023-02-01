@@ -273,68 +273,24 @@ static bitboard_t get_pawn_moves(struct position *position, enum square square,
  * position, taking into account captures and blockages by other pieces.  For
  * simplicity, include moves where rooks can take their own side's pieces (these
  * are filtered out elsewhere). */
-static bitboard_t get_rook_moves(struct position *position,
-                                 enum square a_square) {
-  /*
-   * Rook move generation reduces to a case for a single 8-bit rank which is
-   * handled by an 8 x 256 lookup table.  To calculate horizontal moves, for the
-   * rank containing the piece, calculate:
-   *  - the shift required to the bitboard to shift the rank down to rank zero
-   *  - the file of the moving piece within the rank
-   *  - the piece occupancy of other pieces in the rank
-   * Then look up the permitted moves for the piece, given the occupancy and
-   * file, then shift the permitted moves back onto a bitboard at the original
-   * rank. The process is repeated on the 90-degree-rotated B-stack to calculate
-   * the vertical moves, and a lookup table is used to convert the moves to a
-   * bitboard in the A-stack which is shifted to the correct file, and finally
-   * combined with the horizontal moves.
-   */
-  int a_shift = a_square & ~7ul;
-  int a_file = a_square & 7ul;
-  rank_t a_occupancy = (rank_t)((position->total_a >> a_shift) & 0xfful);
-  rank_t a_moves = permitted_slide_moves[a_file][a_occupancy];
-  bitboard_t h_mask = (bitboard_t)a_moves << a_shift;
-
-  int b_square = square_a2b[a_square];
-  int b_shift = b_square & ~7ul;
-  int b_file = b_square & 7ul;
-  rank_t b_occupancy = (rank_t)((position->total_b >> b_shift) & 0xfful);
-  rank_t b_moves = permitted_slide_moves[b_file][b_occupancy];
-  bitboard_t b_mask = occ_b2a[b_moves];
-  bitboard_t v_mask = b_mask << a_file;
-
-  return (h_mask | v_mask);
+static inline bitboard_t get_rook_moves(bitboard_t occupancy,
+                                        enum square square) {
+  return rook_magic_moves[square * 4096 +
+                          (((occupancy & rook_magic_mask[square]) *
+                            rook_magic_number[square]) >>
+                           rook_magic_shift[square])];
 }
 
 /* Return a bitboard containing the valid bishop move destinations for a given
  * position, taking into account captures and blockages by other pieces. For
  * simplicity, include moves where bishops can capture their own side's pieces
  * (these are filtered out elsewhere). */
-bitboard_t get_bishop_moves(struct position *position, enum square a_square) {
-  /*
-   * Move generation for bishops is similar to rooks, but with sliding move
-   * calculations performed on the 45-degree-rotated C- and D-stacks.
-   * Calculation of shifts and masks is more complicated because the board
-   * is diamond-shaped from these perspectives, so the ranks are of different
-   * lengths.  Lookup tables are used to get the mask and shift used to isolate
-   * the rank, and also to get the bitboard of the moves and the amount it needs
-   * to be shifted.
-   */
-  int c_shift = shift_c[a_square];
-  rank_t c_mask = mask_c[a_square];
-  int c_file = square_a2c[a_square] - c_shift;
-  rank_t c_occ = (rank_t)((position->total_c) >> c_shift) & c_mask;
-  rank_t c_moves = permitted_slide_moves[c_file][c_occ] & c_mask;
-  bitboard_t c_ret = occ_c2a[c_moves] << shift_c2a[a_square];
-
-  int d_shift = shift_d[a_square];
-  rank_t d_mask = mask_d[a_square];
-  int d_file = square_a2d[a_square] - d_shift;
-  rank_t d_occ = (rank_t)((position->total_d) >> d_shift) & d_mask;
-  rank_t d_moves = permitted_slide_moves[d_file][d_occ] & d_mask;
-  bitboard_t d_ret = occ_d2a[d_moves] << shift_d2a[a_square];
-
-  return (c_ret | d_ret);
+static inline bitboard_t get_bishop_moves(bitboard_t occupancy,
+                                          enum square square) {
+  return bishop_magic_moves[square * 4096 +
+                            (((occupancy & bishop_magic_mask[square]) *
+                              bishop_magic_number[square]) >>
+                             bishop_magic_shift[square])];
 }
 
 /* Return a bitboard containing the valid king move destinations for a given
@@ -448,17 +404,17 @@ void calculate_moves(struct position *position) {
         moves = get_pawn_moves(position, square, player);
         break;
       case ROOK:
-        moves = get_rook_moves(position, square);
+        moves = get_rook_moves(position->total_a, square);
         break;
       case KNIGHT:
         moves = knight_moves[square];
         break;
       case BISHOP:
-        moves = get_bishop_moves(position, square);
+        moves = get_bishop_moves(position->total_a, square);
         break;
       case QUEEN:
-        moves = get_bishop_moves(position, square) |
-                get_rook_moves(position, square);
+        moves = get_bishop_moves(position->total_a, square) |
+                get_rook_moves(position->total_a, square);
         break;
       case KING:
         moves = get_king_moves(position, square, player);
