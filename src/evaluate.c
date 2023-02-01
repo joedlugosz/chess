@@ -99,11 +99,12 @@ static inline score_t evaluate_player(const struct position *position,
     score += mobility_bonus * pop_count(get_moves(position, square));
   }
 
-  /* Doubled pawns - look for pawn occupancy of >1 on any rank of the B-stack */
-  pieces = position->b[PAWN + player_first_piece];
+  /* Doubled pawns - look for pawn occupancy of >1 on any rank of the A-stack */
+  pieces = position->a[PAWN + player_first_piece];
   while (pieces) {
-    if (pop_count(pieces & 0xffull) > 1) score -= doubled_pawn_penalty;
-    pieces >>= 8;
+    if (pop_count(pieces & 0x0101010101010101ull) > 1)
+      score -= doubled_pawn_penalty;
+    pieces >>= 1;
   }
 
   /* Blocked and passed pawns */

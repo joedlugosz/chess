@@ -103,17 +103,8 @@ enum phase {
 struct position {
   /* The stacks */
   bitboard_t a[N_PLANES];         /* 8*12 -  Horizontal    */
-  bitboard_t b[N_PLANES];         /* 8*12 |  Vertical      */
-  bitboard_t c[N_PLANES];         /* 8*12 /  Diagonal      */
-  bitboard_t d[N_PLANES];         /* 8*12 \  Diagonal      */
   bitboard_t player_a[N_PLAYERS]; /* 8*2  Set of each players pieces */
-  bitboard_t player_b[N_PLAYERS]; /* 8*2  Set of each players pieces */
-  bitboard_t player_c[N_PLAYERS]; /* 8*2  Set of each players pieces */
-  bitboard_t player_d[N_PLAYERS]; /* 8*2  Set of each players pieces */
   bitboard_t total_a;             /* 8    Set of all pieces */
-  bitboard_t total_b;             /* 8    Set of all pieces */
-  bitboard_t total_c;             /* 8    Set of all pieces */
-  bitboard_t total_d;             /* 8    Set of all pieces */
   bitboard_t moves[N_PIECES]; /* 8*32 Set of squares each piece can move to */
   bitboard_t
       claim[N_PLAYERS]; /* 8*2 Set of all squares each player can move to */
