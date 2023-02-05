@@ -93,11 +93,12 @@ static inline score_t evaluate_player(const struct position *position,
   }
 
   /* Mobility - a bonus for each possible move. */
-  bitboard_t pieces = position->player_a[player];
+  bitboard_t my_pieces = position->player_a[player];
+  bitboard_t pieces = my_pieces;
   while (pieces) {
     enum square square = bit2square(take_next_bit_from(&pieces));
-    score += mobility_bonus *
-             pop_count(get_moves(position, square) & ~get_my_pieces(position));
+    score +=
+        mobility_bonus * pop_count(get_moves(position, square) & ~my_pieces);
   }
 
   /* Doubled pawns - look for pawn occupancy of >1 on any rank of the A-stack */
@@ -115,8 +116,7 @@ static inline score_t evaluate_player(const struct position *position,
     enum square square = bit2square(take_next_bit_from(&pieces));
 
     /* Penalise blocked pawns which have no moves. */
-    if (pop_count(get_moves(position, square) & ~get_my_pieces(position)) ==
-        0ull)
+    if (pop_count(get_moves(position, square) & ~my_pieces) == 0ull)
       score -= blocked_pawn_penalty;
 
     /* If the pawn is a passed pawn, reward its advancement across the board to
