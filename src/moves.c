@@ -207,8 +207,7 @@ static bitboard_t get_pawn_moves(struct position *position, enum square square,
  * position, taking into account captures and blockages by other pieces.  For
  * simplicity, include moves where rooks can take their own side's pieces (these
  * are filtered out elsewhere). */
-static inline bitboard_t get_rook_moves(bitboard_t occupancy,
-                                        enum square square) {
+bitboard_t get_rook_moves(bitboard_t occupancy, enum square square) {
   return rook_magic_moves[square * 4096 +
                           (((occupancy & rook_magic_mask[square]) *
                             rook_magic_number[square]) >>
@@ -219,8 +218,7 @@ static inline bitboard_t get_rook_moves(bitboard_t occupancy,
  * position, taking into account captures and blockages by other pieces. For
  * simplicity, include moves where bishops can capture their own side's pieces
  * (these are filtered out elsewhere). */
-static inline bitboard_t get_bishop_moves(bitboard_t occupancy,
-                                          enum square square) {
+bitboard_t get_bishop_moves(bitboard_t occupancy, enum square square) {
   return bishop_magic_moves[square * 4096 +
                             (((occupancy & bishop_magic_mask[square]) *
                               bishop_magic_number[square]) >>

@@ -15,5 +15,6 @@ typedef bitboard_t (*generate_blocker_fn)(enum square);
 typedef bitboard_t (*generate_moves_fn)(enum square, bitboard_t);
 bitboard_t generate_bishop_moves(enum square square, bitboard_t blockers);
 bitboard_t generate_rook_moves(enum square square, bitboard_t blockers);
-
+bitboard_t get_rook_moves(bitboard_t occupancy, enum square square);
+bitboard_t get_bishop_moves(bitboard_t occupancy, enum square square);
 #endif
