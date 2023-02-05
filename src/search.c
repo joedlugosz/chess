@@ -54,12 +54,9 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
 /* Null-move reduction search - evaluate at depth the consequences of
    hypothetically passing on a turn without making a move. */
-static inline int search_null(struct search_job *job, struct pv *pv,
-                              struct position *from_position, int depth,
-                              score_t alpha, score_t beta) {
-  /* Can't nullmove if already in check */
-  if (in_check(from_position)) return 0;
-
+static inline score_t search_null(struct search_job *job, struct pv *pv,
+                                  struct position *from_position, int depth,
+                                  score_t alpha, score_t beta) {
   struct position position;
   copy_position(&position, from_position);
 
@@ -69,11 +66,8 @@ static inline int search_null(struct search_job *job, struct pv *pv,
 
   /* Recurse into search_position.  `do_nullmove` = 0 so the next ply can't also
      test a null move. */
-  score_t score =
-      -search_position(job, pv, &position, depth - R_NULL, -beta, -beta + 1, 0);
-
-  /* Beta cutoff */
-  return (score >= beta);
+  return -search_position(job, pv, &position, depth - R_NULL, -beta, -beta + 1,
+                          0);
 }
 
 /* Search a single move - call search_position after making the move. Return 1
@@ -233,18 +227,17 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   pv.length = 0;
 
   /* Null move pruning */
-  if (OPT_NULL && do_nullmove && depth <= job->depth - 2 && depth >= 2 &&
-      search_null(job, &pv, position, depth, alpha, beta))
-    return beta;
-
-  /* If there are any moves, best_move and best_score will be updated by the end
-     of the function */
+  if (OPT_NULL && do_nullmove && depth <= job->depth - 2 && depth >= 2) {
+    score_t score = search_null(job, &pv, position, depth, alpha, beta);
+    if (score >= beta) return score;
+  }
+  /* If there are any moves, best_move and best_score will be updated by the
+     end of the function */
   score_t best_score = -INVALID_SCORE;
   struct move *best_move = 0;
 
   /* Early exits in quiescence */
   if (OPT_STAND_PAT && depth <= 0 && !in_check(position)) {
-    best_score = evaluate(position);
     /* Standing pat - evaluate taking no action - this
        could be better than the consequences of taking a piece. */
     best_score = evaluate(position);
@@ -252,8 +245,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     if (best_score > alpha) alpha = best_score;
   }
 
-  /* Default node type - this will change to TT_EXACT on alpha update or TT_BETA
-     on beta cutoff */
+  /* Default node type - this will change to TT_EXACT on alpha update or
+     TT_BETA on beta cutoff */
   enum tt_entry_type type = TT_ALPHA;
 
   /* Try to get a beta cutoff or alpha update from a killer move */
@@ -270,9 +263,9 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (OPT_HASH && depth > job->tt_min_depth)
     tte = tt_probe(position->hash, position->total_a);
 
-  /* If the position has already been searched at the same or greater depth, use
-     the result from the tt.  Do not use this at the root, because the move that
-     will be made needs to be searched. */
+  /* If the position has already been searched at the same or greater depth,
+     use the result from the tt.  Do not use this at the root, because the
+     move that will be made needs to be searched. */
   if (tte && (tte->depth >= depth)) {
     if (depth < job->depth) {
       if (tte->type == TT_ALPHA && tte->score > alpha) return tte->score;
