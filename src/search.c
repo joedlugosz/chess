@@ -248,7 +248,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     /* Standing pat - evaluate taking no action - this
        could be better than the consequences of taking a piece. */
     best_score = evaluate(position);
-    if (best_score >= beta) return beta;
+    if (best_score >= beta) return best_score;
     if (best_score > alpha) alpha = best_score;
   }
 
@@ -262,7 +262,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
       search_move(job, parent_pv, &pv, position, depth, &best_score, &alpha,
                   beta, &job->killer_moves[depth], &best_move, &type, 0, 0)) {
     update_result(job, depth, &job->killer_moves[depth], best_score);
-    return beta;
+    return best_score;
   }
 
   /* Probe the transposition table at higher levels */
@@ -289,7 +289,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                   beta, &tte->best_move, &best_move, &type, &n_legal_moves,
                   0)) {
     update_result(job, depth, &tte->best_move, best_score);
-    return beta;
+    return best_score;
   }
 
   /* Second phase - generate and search all moves */
@@ -320,7 +320,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
                         &alpha, beta, &list_entry->move, &best_move, &type,
                         &n_legal_moves, is_late_move)) {
           update_result(job, depth, &list_entry->move, beta);
-          return beta;
+          return best_score;
         }
       }
       list_entry = list_entry->next;
@@ -332,10 +332,10 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   if (n_legal_moves == 0) {
     type = TT_EXACT;
     if (in_check(position)) {
-      alpha = CHECKMATE_SCORE + (job->depth - depth);
+      best_score = CHECKMATE_SCORE + (job->depth - depth);
       best_move = &mate_move;
     } else {
-      alpha = get_draw_score(position);
+      best_score = get_draw_score(position);
     }
     if (depth == job->depth) {
       if (in_check(position)) {
@@ -346,17 +346,18 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     }
   }
 
-  ASSERT(alpha > -INVALID_SCORE && alpha < INVALID_SCORE);
+  ASSERT(best_score > -INVALID_SCORE && best_score < INVALID_SCORE);
 
   /* Update the result if at root */
-  update_result(job, depth, best_move, alpha);
+  update_result(job, depth, best_move, best_score);
 
   /* Update the transposition table at higher levels */
   if (depth > job->tt_min_depth) {
-    tt_update(position->hash, type, depth, alpha, best_move, position->total_a);
+    tt_update(position->hash, type, depth, best_score, best_move,
+              position->total_a);
   }
 
-  return alpha;
+  return best_score;
 }
 
 /* Perform a search */
