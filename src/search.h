@@ -57,13 +57,14 @@ struct search_job {
   int show_thoughts;
   int tt_min_depth;
   /* position */
-  double start_time;
   struct move search_history[SEARCH_DEPTH_MAX];
   struct history *history;
   struct move killer_moves[SEARCH_DEPTH_MAX];
   int n_ai_moves;
   int next_time_check;
+  double start_time;
   double stop_time;
+  int forever;
   /* Results */
   struct search_result result;
 };
