@@ -36,6 +36,9 @@ r7/pR1nkb1p/2Bp4/8/2nP3N/P1P1P2P/2P2P2/B1Kq4 w - - # King should take queen
 # stalemate
 #8/8/1KBb4/3Pk3/P7/8/8/8 w - - 1 87 sd 9
 
+# white is winning and should avoid causing stalemate
+8/8/8/5R1P/6Pk/5P2/6rK/8 w - - 11 60
+
 # 50 move rule
 #6R1/8/5N1r/4K3/8/5k2/8/8 b - - 50 151
 
