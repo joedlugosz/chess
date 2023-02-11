@@ -110,10 +110,14 @@ static inline double clock_get_time_budget(struct clock *clock,
   }
 }
 
-static inline double clock_get_time_margin(struct clock *clock) {
+static inline double clock_get_time_margin(struct clock *clock,
+                                           enum player turn) {
   switch (clock->mode) {
     case TIME_CTRL_CLASSICAL:
-      return 1.0;
+      return (clock->time_remaining[turn] <
+              3.0 * clock->time_control / (double)clock->moves_per_session)
+                 ? 1.0
+                 : 0.0;
     case TIME_CTRL_INCREMENTAL:
       return 0.5;
     default:
