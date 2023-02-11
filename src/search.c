@@ -205,7 +205,7 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
   job->result.n_node++;
   if (job->next_time_check-- == 0) {
     job->next_time_check = NODES_PER_CHECK;
-    if (job->stop_time > job->start_time && time_now() > job->stop_time) {
+    if (!job->forever && time_now() > job->stop_time) {
       job->result.type = SEARCH_RESULT_INVALID;
       job->halt = 1;
       printf("Time check\n");
@@ -383,7 +383,7 @@ void search(int target_depth, double time_budget, double time_margin,
     /* Fixed-depth shallow search without iterative deepening */
     min = target_depth;
     max = target_depth + 1;
-    job.stop_time = 0.0;
+    job.forever = 1;
   } else {
     /* Fixed depth deep search with iterative deepening */
     min = MIN_ITERATION_DEPTH;
