@@ -213,7 +213,7 @@ static inline void do_ai_turn(struct engine *engine) {
   /* Search for AI move */
   struct search_result result;
   double time_budget = clock_get_time_budget(&engine->clock, engine->game.turn);
-  double time_margin = clock_get_time_margin(&engine->clock);
+  double time_margin = clock_get_time_margin(&engine->clock, engine->game.turn);
   search(engine->search_depth, time_budget, time_margin, &engine->history,
          &engine->game, &result, 1);
 
