@@ -39,3 +39,10 @@ r7/pR1nkb1p/2Bp4/8/2nP3N/P1P1P2P/2P2P2/B1Kq4 w - - # King should take queen
 # 50 move rule
 #6R1/8/5N1r/4K3/8/5k2/8/8 b - - 50 151
 
+# Causes sigsegv
+8/3k3R/5Q2/8/3K4/r7/8/8 b - - 4 90
+
+# White should checkmate with queen and king, avoid draw by rep
+8/4K3/8/8/3Q4/1k6/8/8 b - - 22 71
+# White should avoid draw by rep
+8/8/2k5/3NP3/5N2/8/2K5/8 w - - 9 61
