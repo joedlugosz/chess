@@ -104,6 +104,7 @@ static inline score_t evaluate_player(const struct position *position,
   while (pieces) {
     if (pop_count(pieces & 0x0101010101010101ull) > 1)
       score -= doubled_pawn_penalty;
+    pieces &= ~0x0101010101010101ull;
     pieces >>= 1;
   }
 
