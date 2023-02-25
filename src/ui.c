@@ -240,7 +240,8 @@ static inline void do_ai_turn(struct engine *engine) {
   }
 
   /* Make the AI move */
-  history_push(&engine->history, engine->game.hash, &result.move);
+  history_push(&engine->history, engine->game.hash, engine->game.total_a,
+               &result.move);
   make_move(&engine->game, &result.move);
   clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
@@ -284,7 +285,8 @@ static inline int accept_move(struct engine *engine, const char *input) {
 
   clock_end_turn(&engine->clock, engine->game.turn);
 
-  history_push(&engine->history, engine->game.hash, &move);
+  history_push(&engine->history, engine->game.hash, engine->game.total_a,
+               &move);
   make_move(&engine->game, &move);
 
   if (is_in_normal_play(engine)) {

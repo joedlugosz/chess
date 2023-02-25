@@ -11,8 +11,10 @@
 #include "search.h"
 
 /* Push position hash onto the top of the history stack */
-void history_push(struct history *history, hash_t hash, struct move *move) {
+void history_push(struct history *history, hash_t hash, bitboard_t occ,
+                  struct move *move) {
   history->hash[history->index] = hash;
+  history->occ[history->index] = occ;
   history->is_breaking_move[history->index] =
       (move->result & (CAPTURED | PROMOTED)) ? 1 : 0;
   history->index++;
@@ -39,12 +41,12 @@ void history_clear(struct history *history) {
    it impossible for the position to be repeated, there is no need to continue
    searching. Return true if there is are more repetitions than allowed.  */
 int is_repeated_position(const struct history *history, hash_t hash,
-                         int repetitions) {
+                         bitboard_t occ, int repetitions) {
   int index = history->index;
   int count = 0;
   while (index > 0) {
     index -= 2;
-    if (history->hash[index] == hash) count++;
+    if (history->hash[index] == hash && history->occ[index] == occ) count++;
     if (history->is_breaking_move[index] == hash) break;
   }
   return (count >= (repetitions - 1));
