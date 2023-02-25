@@ -250,14 +250,16 @@ static inline void do_ai_turn(struct engine *engine) {
 
   /* Search at depth 1 to see if opponent has any moves.  If not, print
      checkmate or stalemate messages for oppenent and end the game. */
-  search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
-  if (result.move.from == result.move.to) {
-    if (engine->game.check[engine->game.turn]) {
-      print_checkmate_message(engine);
-    } else {
-      print_stalemate_message();
+  if (!engine->xboard_mode) {
+    search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
+    if (result.move.from == result.move.to) {
+      if (engine->game.check[engine->game.turn]) {
+        print_checkmate_message(engine);
+      } else {
+        print_stalemate_message();
+      }
+      engine->mode = ENGINE_FORCE_MODE;
     }
-    engine->mode = ENGINE_FORCE_MODE;
   }
 }
 
