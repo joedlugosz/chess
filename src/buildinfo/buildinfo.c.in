@@ -4,6 +4,9 @@
 
 /* Supplied by version.cmake */
 const char git_version[] = "@git_version@";
+const char git_version_tag[] = "@git_version_tag@";
+const char git_branch[] = "@git_branch_name@";
+const char git_commit[] = "@git_commit_short@";
 const char os_name[] = "@os_name@";
 const char target_name[] = "@target_name@";
 

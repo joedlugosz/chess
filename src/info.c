@@ -56,3 +56,8 @@ void print_program_info() {
   }
   printf("\n");
 }
+
+void print_git_info() {
+  printf("version %s\nbranch %s\ncommit %s\n", git_version_tag, git_branch,
+         git_commit);
+}
