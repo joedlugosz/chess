@@ -23,8 +23,9 @@ jobs:
         run: ctest -C ${{env.BUILD_TYPE}}
 
       - name: Upload
-        run: curl \
-          -X 'POST' \
-          -F "file=@${{github.workspace}}/build/app/chess" \
-          -F "auth_token=${{ secrets.CHESSTEST_API_TOKEN }}" \
-          ${{ vars.DEPLOY_HOST }}/upload
+        run: |
+          curl \
+            -X 'POST' \
+            -F "file=@${{github.workspace}}/build/app/chess" \
+            -F "auth_token=${{ secrets.CHESSTEST_API_TOKEN }}" \
+            ${{ vars.DEPLOY_HOST }}/upload
