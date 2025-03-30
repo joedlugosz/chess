@@ -441,7 +441,8 @@ void init_moves(void) {
       unsigned int r_pieces = r_squares & rank;
       unsigned int r_impossible;
       if (r_pieces) {
-        int r_first_occupied = sizeof(unsigned int) * 8 - 1 - clz(r_pieces);
+        int r_first_occupied =
+            sizeof(unsigned long long) * 8 - 1 - clz(r_pieces);
         r_impossible = 0xff >> (8 - r_first_occupied);
       } else {
         r_impossible = 0;
