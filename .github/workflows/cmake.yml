@@ -25,6 +25,7 @@ jobs:
       - name: Upload
         run: |
           curl \
+            --insecure \
             -X 'POST' \
             -F "file=@${{github.workspace}}/build/app/chess" \
             -F "auth_token=${{ secrets.CHESSTEST_API_TOKEN }}" \
