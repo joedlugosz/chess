@@ -190,6 +190,9 @@ static void ui_getfen(struct engine *e) {
 
 /* -- Debugging */
 
+/* Print git info */
+static void ui_gitinfo(struct engine *e) { print_git_info(); }
+
 /* Print board */
 static void ui_print(struct engine *e) { print_board(&(e->game), 0, 0); }
 
@@ -288,6 +291,7 @@ const struct command cmds[] = {
   { CT_GAMECTL, "fen",      ui_fen,        "FEN  - Set the position using a FEN string" },
   { CT_GAMECTL, "force",    ui_force,      "     - Enter force mode" },
   { CT_GAMECTL, "getfen",   ui_getfen,     "     - Get the position in FEN notation" },
+  { CT_DISPLAY, "gitinfo",  ui_gitinfo,    "     - Show git info" },
   { CT_GAMECTL, "go",       ui_go,         "     - AI to make first move if playing as white" },
   { CT_GAMECTL, "help",     ui_help,       "     - Display a list of all commands" },
   { CT_DISPLAY, "info",     ui_info,       "     - Display build information"},
