@@ -27,7 +27,7 @@
 #define OPT_HASH 1
 #define OPT_STAND_PAT 1
 /* OPT_LMR + OPT_NULL = +20 elo over 10 games */
-#define OPT_LMR 0
+#define OPT_LMR 1
 #define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
 #define OPT_NULL 0
 
