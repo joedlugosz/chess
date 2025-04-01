@@ -27,9 +27,9 @@
 #define OPT_HASH 1
 #define OPT_STAND_PAT 1
 /* OPT_LMR + OPT_NULL = +20 elo over 10 games */
-#define OPT_LMR 0
+#define OPT_LMR 1
 #define OPT_PAWN_EXTENSION 0 /* This is probably a bad idea */
-#define OPT_NULL 0
+#define OPT_NULL 1
 
 enum {
   TT_MIN_DEPTH = 4,
@@ -42,7 +42,7 @@ enum {
   DRAW_SCORE = 0,
   CONTEMPT_SCORE = -500,
   R_NULL = 2, /* Depth reduction for null move search */
-  R_LATE = 1, /* Depth reduction for late move reduction */
+  R_LATE = 2, /* Depth reduction for late move reduction */
   NODES_PER_CHECK = 2000,
 };
 
