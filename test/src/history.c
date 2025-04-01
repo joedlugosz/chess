@@ -25,10 +25,10 @@ void test_history(void) {
     reset_board(&position);
     int found_at = -1;
     for (int i = 0; i < sizeof(test_moves) / sizeof(test_moves[0]); i++) {
-      history_push(&history, position.hash, &test_moves[i]);
+      history_push(&history, position.hash, position.total_a, &test_moves[i]);
       make_move(&position, &test_moves[i]);
       change_player(&position);
-      if (is_repeated_position(&history, position.hash, 3)) {
+      if (is_repeated_position(&history, position.hash, position.total_a, 3)) {
         found_at = i;
       }
     }

@@ -104,7 +104,7 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
 
   score_t score;
   /* Move history is hashed against the position being moved from */
-  history_push(job->history, from_position->hash, move);
+  history_push(job->history, from_position->hash, from_position->total_a, move);
   change_player(&position);
 
   /* Record whether this move puts the opponent in check */
@@ -219,7 +219,8 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
 
   /* Breaking the 50-move rule or threefold repetition rule forces a draw */
   if (position->halfmove > 51 ||
-      is_repeated_position(job->history, position->hash, 3)) {
+      is_repeated_position(job->history, position->hash, position->total_a,
+                           3)) {
     if (depth == job->depth)
       job->result.type = SEARCH_RESULT_DRAW_BY_REPETITION;
     parent_pv->length = 0;

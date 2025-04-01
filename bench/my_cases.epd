@@ -39,3 +39,5 @@ r7/pR1nkb1p/2Bp4/8/2nP3N/P1P1P2P/2P2P2/B1Kq4 w - - # King should take queen
 # 50 move rule
 #6R1/8/5N1r/4K3/8/5k2/8/8 b - - 50 151
 
+# Eval bug in evaluate_player where player=BLACK
+r1bqkb1r/ppp1pppp/2p2n2/8/8/8/PPPPPPPP/RNBQKB1R w KQkq - 0 4

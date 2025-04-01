@@ -240,7 +240,8 @@ static inline void do_ai_turn(struct engine *engine) {
   }
 
   /* Make the AI move */
-  history_push(&engine->history, engine->game.hash, &result.move);
+  history_push(&engine->history, engine->game.hash, engine->game.total_a,
+               &result.move);
   make_move(&engine->game, &result.move);
   clock_end_turn(&engine->clock, engine->game.turn);
   print_ai_move(engine, &result);
@@ -249,14 +250,16 @@ static inline void do_ai_turn(struct engine *engine) {
 
   /* Search at depth 1 to see if opponent has any moves.  If not, print
      checkmate or stalemate messages for oppenent and end the game. */
-  search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
-  if (result.move.from == result.move.to) {
-    if (engine->game.check[engine->game.turn]) {
-      print_checkmate_message(engine);
-    } else {
-      print_stalemate_message();
+  if (!engine->xboard_mode) {
+    search(1, 0.0, 0.0, &engine->history, &engine->game, &result, 0);
+    if (result.move.from == result.move.to) {
+      if (engine->game.check[engine->game.turn]) {
+        print_checkmate_message(engine);
+      } else {
+        print_stalemate_message();
+      }
+      engine->mode = ENGINE_FORCE_MODE;
     }
-    engine->mode = ENGINE_FORCE_MODE;
   }
 }
 
@@ -284,7 +287,8 @@ static inline int accept_move(struct engine *engine, const char *input) {
 
   clock_end_turn(&engine->clock, engine->game.turn);
 
-  history_push(&engine->history, engine->game.hash, &move);
+  history_push(&engine->history, engine->game.hash, engine->game.total_a,
+               &move);
   make_move(&engine->game, &move);
 
   if (is_in_normal_play(engine)) {

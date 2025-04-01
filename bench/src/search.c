@@ -49,7 +49,7 @@ void bench_search(int depth) {
     if (res.move.from == A1 && res.move.to == A1) break;
 
     make_move(&position, &res.move);
-    history_push(&history, position.hash, &res.move);
+    history_push(&history, position.hash, position.total_a, &res.move);
     change_player(&position);
   }
 
