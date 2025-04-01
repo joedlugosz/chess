@@ -272,9 +272,6 @@ void make_move(struct position *position, struct move *move) {
     }
   }
 
-  /* Pre-calculate moves for all pieces */
-  calculate_moves(position);
-
   /* Test for check on both sides */
   for (enum player player = 0; player < N_PLAYERS; player++) {
     int king_square = bit2square(position->a[KING + player * N_PIECE_T]);
@@ -346,8 +343,9 @@ void setup_board(struct position *position, const enum piece *pieces,
       index++;
     }
   }
+
   /* Generate moves */
-  calculate_moves(position);
+  // calculate_moves(position, position->turn);
 }
 
 /* Reset `position` to the starting position */

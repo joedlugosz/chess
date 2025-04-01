@@ -29,9 +29,10 @@ struct test {
 double time_calculate_moves(struct position *position) {
   double start = time_now();
   for (int i = 0; i < REPEATS; i++) {
-    calculate_moves(position);
+    calculate_moves(position, WHITE);
+    calculate_moves(position, BLACK);
   }
-  return (time_now() - start) * 1000.0 / (double)REPEATS;
+  return (time_now() - start) * 500.0 / (double)REPEATS;
 }
 
 double time_king_attacks(struct position *position) {

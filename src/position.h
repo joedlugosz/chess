@@ -115,8 +115,6 @@ struct position {
   bitboard_t total_c;             /* 8    Set of all pieces */
   bitboard_t total_d;             /* 8    Set of all pieces */
   bitboard_t moves[N_PIECES]; /* 8*32 Set of squares each piece can move to */
-  bitboard_t
-      claim[N_PLAYERS]; /* 8*2 Set of all squares each player can move to */
   enum square
       piece_square[N_PIECES];      /* 4(?)*32 Square location of each piece */
   int8_t piece_at[N_SQUARES];      /* 1*64 Type of piece at each square */
@@ -206,10 +204,10 @@ static inline void copy_position(struct position *dst,
   memcpy(dst, src, sizeof(struct position));
 }
 /* Return the set of squares that the piece on the given square can move to */
-static inline bitboard_t get_moves(const struct position *position,
-                                   enum square square) {
-  return position->moves[(int)position->index_at[square]];
-}
+// static inline bitboard_t get_moves(const struct position *position,
+//                                    enum square square) {
+//   return position->moves[(int)position->index_at[square]];
+// }
 /* Return the set of squares containing the moving player's pieces */
 static inline bitboard_t get_my_pieces(const struct position *position) {
   return position->player_a[position->turn];

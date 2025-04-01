@@ -10,6 +10,7 @@
 #include "info.h"
 #include "io.h"
 #include "movegen.h"
+#include "moves.h"
 #include "options.h"
 #include "search.h"
 #include "ui.h"

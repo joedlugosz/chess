@@ -99,7 +99,6 @@ static inline int search_move(struct search_job *job, struct pv *parent_pv,
     job->result.n_check_moves++;
     return 0;
   }
-  //  ASSERT(!in_check(&position));
   if (n_legal_moves) (*n_legal_moves)++;
 
   score_t score;
@@ -186,7 +185,7 @@ static inline void update_result(struct search_job *job, int depth,
 /* Draw score is calclated on a basic contempt assumption, having no real
  * contempt factor for the opponent.  Early and midgame places a penalty of
  * CONTEMPT_SCORE on seeking a draw, otherwise DRAW_SCORE (zero) */
-static score_t get_draw_score(const struct position *position) {
+static score_t get_draw_score(struct position *position) {
   return (OPT_CONTEMPT && !is_endgame(position)) ? CONTEMPT_SCORE : DRAW_SCORE;
 }
 
@@ -247,9 +246,12 @@ static score_t search_position(struct search_job *job, struct pv *parent_pv,
     best_score = evaluate(position);
     /* Standing pat - evaluate taking no action - this
        could be better than the consequences of taking a piece. */
-    best_score = evaluate(position);
     if (best_score >= beta) return beta;
     if (best_score > alpha) alpha = best_score;
+  }
+  /* Absolute depth limit */
+  if (job->depth - depth > QUIESCENCE_MAX_DEPTH) {
+    return best_score;
   }
 
   /* Default node type - this will change to TT_EXACT on alpha update or TT_BETA
